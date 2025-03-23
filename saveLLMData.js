@@ -30,6 +30,8 @@ export function saveLLMData() {
     if (statusElement && statusElement.dataset.generatedCode) {
         llmData.customCharacterCode = statusElement.dataset.generatedCode;
         console.log("Saved custom character code:", llmData.customCharacterCode.substring(0, 50) + "...");
+    } else {
+        console.log("No custom character code found to save");
     }
     
     // Check if we're in edit mode

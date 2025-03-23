@@ -14,6 +14,14 @@ let humanoidMixer = null; // Initialize mixer as null
 let selectedMesh = null; // Track the currently selected mesh
 
 export function setupLLMCreationInterface(llmToEdit) {
+    // Clear previous generation state
+    const statusElement = document.getElementById('generation-status');
+    if (statusElement) {
+        statusElement.textContent = '';
+        delete statusElement.dataset.generatedCode;
+    }
+    customCharacter = null;
+    
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
     
