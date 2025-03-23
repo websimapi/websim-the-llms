@@ -30,6 +30,7 @@ async function handleGenerateCharacter() {
     const promptInput = document.getElementById('llm-custom-prompt');
     const userPrompt = promptInput.value.trim();
     const statusElement = document.getElementById('generation-status');
+    const generateBtn = document.getElementById('generate-character-btn');
     
     if (userPrompt.length < 5) {
         statusElement.textContent = "Please enter a more detailed description";
