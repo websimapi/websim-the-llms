@@ -101,7 +101,6 @@ body {
 
 .tip-text {
     color: #fff;
-    transition: opacity 0.5s ease;
 }
 
 @keyframes pulse {

@@ -1,6 +1,15 @@
 export const config = {
     // Loading screen settings
-    loadingTime: 10000, // Extended loading time to allow for 10 tips
-    tipChangeMinTime: 3000, // Minimum time between tips (3 seconds)
-    tipChangeMaxTime: 7000, // Maximum time between tips (7 seconds)
+    loadingTime: 6000, // Total loading time in ms
+    loadingTips: [
+        "LLMs need regular prompting to stay happy.",
+        "Don't forget to fine-tune your LLMs for better performance.",
+        "Hallucinations are a feature, not a bug!",
+        "Your LLM's token limit is directly related to their intelligence.",
+        "Need more money? Try 'rosebud' in the chat prompt!",
+        "Low on GPU? Try reducing your context window.",
+        "Different models have different personalities.",
+        "Overtraining can lead to model burnout."
+    ]
 };
+
