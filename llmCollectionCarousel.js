@@ -325,20 +325,77 @@ function createStandardModel(llm) {
         roughness: 0.2
     });
     
-    // Add arms and legs
-    const arms = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 0.2, 0.2),
-        limbsMaterial
-    );
-    arms.position.y = 1.3;
-    group.add(arms);
+    // Upper arms
+    const upperArmGeometry = new THREE.CylinderGeometry(0.08, 0.07, 0.4);
+    const lowerArmGeometry = new THREE.CylinderGeometry(0.07, 0.06, 0.4);
     
-    const legs = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.15, 1),
+    // Left arm
+    const leftUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
+    leftUpperArm.position.set(-0.4, 1.3, 0);
+    leftUpperArm.rotation.z = Math.PI / 6;
+    leftUpperArm.castShadow = true;
+    group.add(leftUpperArm);
+    
+    const leftLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
+    leftLowerArm.position.set(-0.55, 1.0, 0);
+    leftLowerArm.rotation.z = Math.PI / 4;
+    leftLowerArm.castShadow = true;
+    group.add(leftLowerArm);
+    
+    // Right arm
+    const rightUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
+    rightUpperArm.position.set(0.4, 1.3, 0);
+    rightUpperArm.rotation.z = -Math.PI / 6;
+    rightUpperArm.castShadow = true;
+    group.add(rightUpperArm);
+    
+    const rightLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
+    rightLowerArm.position.set(0.55, 1.0, 0);
+    rightLowerArm.rotation.z = -Math.PI / 4;
+    rightLowerArm.castShadow = true;
+    group.add(rightLowerArm);
+    
+    // Legs
+    const upperLegGeometry = new THREE.CylinderGeometry(0.09, 0.08, 0.4);
+    const lowerLegGeometry = new THREE.CylinderGeometry(0.08, 0.07, 0.4);
+    
+    // Left leg
+    const leftUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
+    leftUpperLeg.position.set(-0.15, 0.5, 0);
+    leftUpperLeg.castShadow = true;
+    group.add(leftUpperLeg);
+    
+    const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
+    leftLowerLeg.position.set(-0.15, 0.1, 0);
+    leftLowerLeg.castShadow = true;
+    group.add(leftLowerLeg);
+    
+    const leftFoot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 0.05, 0.25),
         limbsMaterial
     );
-    legs.position.y = 0.5;
-    group.add(legs);
+    leftFoot.position.set(-0.15, -0.1, 0.05);
+    leftFoot.castShadow = true;
+    group.add(leftFoot);
+    
+    // Right leg
+    const rightUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
+    rightUpperLeg.position.set(0.15, 0.5, 0);
+    rightUpperLeg.castShadow = true;
+    group.add(rightUpperLeg);
+    
+    const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
+    rightLowerLeg.position.set(0.15, 0.1, 0);
+    rightLowerLeg.castShadow = true;
+    group.add(rightLowerLeg);
+    
+    const rightFoot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 0.05, 0.25),
+        limbsMaterial
+    );
+    rightFoot.position.set(0.15, -0.1, 0.05);
+    rightFoot.castShadow = true;
+    group.add(rightFoot);
     
     return group;
 }
