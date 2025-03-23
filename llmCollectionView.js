@@ -1,11 +1,7 @@
 import { llmDataManager } from './llmDataManager.js';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
-import { createCollectionModels } from './llmCollectionViewUtils.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
-import { setupLLMCarousel, cleanupCarousel } from './llmCarouselView.js';
+import { setupLLMCarouselView, disposeCarouselView } from './llmCarouselView.js';
 
 let collectionAnimationId;
 
@@ -58,8 +54,8 @@ export function setupLLMCollectionView() {
             llmList.appendChild(llmItem);
         });
         
-        // Setup carousel view for models
-        setupLLMCarousel(collectionViewport, llms);
+        // Setup carousel view instead of 3D scene
+        setupLLMCarouselView(collectionViewport);
         
         // Add event listeners for buttons
         document.querySelectorAll('.llm-edit-btn').forEach(btn => {
@@ -86,8 +82,8 @@ export function setupLLMCollectionView() {
     // Add close button event listener
     document.querySelector('.collection-close').addEventListener('click', () => {
         collectionUI.classList.remove('active');
-        // Cleanup carousel
-        cleanupCarousel();
+        // Dispose carousel
+        disposeCarouselView();
     });
     
     // Add create new button event listener
@@ -97,9 +93,13 @@ export function setupLLMCollectionView() {
         // Initialize the creation interface
         setupLLMCreationInterface();
         
-        // Cleanup carousel
-        cleanupCarousel();
+        // Dispose carousel
+        disposeCarouselView();
     });
+}
+
+function viewLLMDetails(id) {
+    setupLLMViewInterface(id);
 }
 
 function handleEditLLM(id) {

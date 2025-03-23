@@ -1,34 +1,47 @@
 import * as THREE from 'three';
-import { createCollectionModels } from './llmCollectionViewUtils.js';
 import { createCustomCharacter } from './characterGenerator.js';
 import { llmDataManager } from './llmDataManager.js';
 
 let carouselScene, carouselCamera, carouselRenderer;
 let carouselModels = [];
-let currentIndex = 0;
-let animationId;
+let currentStartIndex = 0;
 let totalLLMs = 0;
+let carouselAnimationId;
 
-export function setupLLMCarousel(viewport, llms) {
-    // Cancel any existing animation
-    if (animationId) {
-        cancelAnimationFrame(animationId);
-    }
-    
-    totalLLMs = llms.length;
-    
+export function setupLLMCarouselView(viewport) {
     // Clear existing content
     viewport.innerHTML = '';
     
-    if (llms.length === 0) {
+    // Cancel any existing animation
+    if (carouselAnimationId) {
+        cancelAnimationFrame(carouselAnimationId);
+    }
+    
+    // Get all LLMs
+    const llms = llmDataManager.getAllLLMs();
+    totalLLMs = llms.length;
+    
+    if (totalLLMs === 0) {
+        // Show empty state message
         const emptyMessage = document.createElement('div');
         emptyMessage.className = 'empty-carousel';
-        emptyMessage.textContent = 'No LLMs to display';
+        emptyMessage.innerHTML = '<p>No LLMs to display</p>';
         viewport.appendChild(emptyMessage);
         return;
     }
     
     // Setup Three.js scene
+    initCarouselScene(viewport);
+    
+    // Update the carousel with initial models
+    updateCarouselModels(llms);
+    
+    // Setup navigation arrows
+    setupCarouselNavigation(viewport, llms);
+}
+
+function initCarouselScene(viewport) {
+    // Setup scene
     carouselScene = new THREE.Scene();
     carouselScene.background = new THREE.Color(0x111111);
     
@@ -39,7 +52,7 @@ export function setupLLMCarousel(viewport, llms) {
         0.1, 
         1000
     );
-    carouselCamera.position.set(0, 3, 8);
+    carouselCamera.position.set(0, 1.7, 6);
     carouselCamera.lookAt(0, 1, 0);
     
     // Setup renderer
@@ -48,36 +61,29 @@ export function setupLLMCarousel(viewport, llms) {
     carouselRenderer.shadowMap.enabled = true;
     viewport.appendChild(carouselRenderer.domElement);
     
-    // Setup lighting
+    // Add lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     carouselScene.add(ambientLight);
     
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 7);
+    directionalLight.position.set(5, 5, 5);
     directionalLight.castShadow = true;
     carouselScene.add(directionalLight);
     
-    // Add ground plane
-    const groundGeometry = new THREE.PlaneGeometry(30, 30);
-    const groundMaterial = new THREE.MeshStandardMaterial({ 
+    // Add floor
+    const floorGeometry = new THREE.PlaneGeometry(20, 20);
+    const floorMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x222222,
         roughness: 0.8,
         metalness: 0.2
     });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    ground.position.y = -1;
-    carouselScene.add(ground);
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    floor.position.y = -1;
+    carouselScene.add(floor);
     
-    // Load all models but only display 3 at a time
-    loadCarouselModels(llms);
-    updateVisibleModels();
-    
-    // Create navigation arrows
-    createNavigationArrows(viewport);
-    
-    // Handle window resize
+    // Handle resize
     window.addEventListener('resize', () => {
         if (carouselCamera && carouselRenderer && viewport) {
             carouselCamera.aspect = viewport.clientWidth / viewport.clientHeight;
@@ -86,40 +92,151 @@ export function setupLLMCarousel(viewport, llms) {
         }
     });
     
-    // Start animation loop
+    // Start animation
     animateCarousel();
 }
 
-function loadCarouselModels(llms) {
+function updateCarouselModels(llms) {
+    // Remove existing models
+    carouselModels.forEach(model => {
+        if (model && model.parent) {
+            model.parent.remove(model);
+        }
+    });
     carouselModels = [];
     
-    llms.forEach((llm) => {
+    // Determine which LLMs to show (3 at a time)
+    const displayCount = Math.min(3, totalLLMs);
+    
+    // Calculate positions for models
+    const spacing = 2.5; // Space between models
+    const startX = -spacing * (displayCount - 1) / 2;
+    
+    // Create and position models
+    for (let i = 0; i < displayCount; i++) {
+        const llmIndex = (currentStartIndex + i) % totalLLMs;
+        const llm = llms[llmIndex];
+        
         let model;
         
         if (llm.customCharacterCode) {
-            // Create custom character from stored code
             try {
                 model = createCustomCharacter(THREE, llm.customCharacterCode);
             } catch (error) {
                 console.error("Error creating custom character:", error);
-                model = createStandardModel(llm);
+                model = createFallbackModel(llm);
             }
         } else {
-            // Create standard model based on stored properties
             model = createStandardModel(llm);
         }
         
-        model.visible = false;
-        model.userData = { id: llm.id };
-        model.scale.set(0.8, 0.8, 0.8);
+        // Position model
+        model.position.set(startX + i * spacing, 0, 0);
+        model.userData = { id: llm.id, index: llmIndex };
         
         carouselScene.add(model);
         carouselModels.push(model);
+        
+        // Add nameplate
+        addNameplate(llm.name, startX + i * spacing, model);
+    }
+}
+
+function addNameplate(name, xPosition, model) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#333';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add border
+    ctx.strokeStyle = '#3cb371';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+    
+    // Add text
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 24px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        side: THREE.DoubleSide
     });
+    
+    const nameplate = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.5, 0.4),
+        material
+    );
+    nameplate.position.set(0, 2.3, 0);
+    nameplate.rotation.x = -0.2;
+    model.add(nameplate);
+}
+
+function setupCarouselNavigation(viewport, llms) {
+    // Create left arrow
+    const leftArrow = document.createElement('div');
+    leftArrow.className = 'carousel-arrow left-arrow';
+    leftArrow.innerHTML = '&lt;';
+    viewport.appendChild(leftArrow);
+    
+    // Create right arrow
+    const rightArrow = document.createElement('div');
+    rightArrow.className = 'carousel-arrow right-arrow';
+    rightArrow.innerHTML = '&gt;';
+    viewport.appendChild(rightArrow);
+    
+    // Add click handlers
+    leftArrow.addEventListener('click', () => {
+        if (totalLLMs <= 3) return; // No need to scroll
+        currentStartIndex = (currentStartIndex - 1 + totalLLMs) % totalLLMs;
+        updateCarouselModels(llms);
+    });
+    
+    rightArrow.addEventListener('click', () => {
+        if (totalLLMs <= 3) return; // No need to scroll
+        currentStartIndex = (currentStartIndex + 1) % totalLLMs;
+        updateCarouselModels(llms);
+    });
+    
+    // Add item indicators (dots)
+    if (totalLLMs > 3) {
+        const indicators = document.createElement('div');
+        indicators.className = 'carousel-indicators';
+        
+        for (let i = 0; i < totalLLMs; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'carousel-dot';
+            dot.dataset.index = i;
+            if (i === currentStartIndex) {
+                dot.classList.add('active');
+            }
+            
+            dot.addEventListener('click', () => {
+                currentStartIndex = i;
+                updateCarouselModels(llms);
+                
+                // Update active dot
+                document.querySelectorAll('.carousel-dot').forEach(d => {
+                    d.classList.remove('active');
+                });
+                dot.classList.add('active');
+            });
+            
+            indicators.appendChild(dot);
+        }
+        
+        viewport.appendChild(indicators);
+    }
 }
 
 function createStandardModel(llm) {
-    // Create a simple robot model based on the LLM properties
     const group = new THREE.Group();
     
     const color = new THREE.Color(llm.color || 0x3cb371);
@@ -137,7 +254,20 @@ function createStandardModel(llm) {
         headMaterial
     );
     head.position.y = 1.8;
+    head.castShadow = true;
     group.add(head);
+    
+    // Eyes
+    const eyeGeometry = new THREE.SphereGeometry(0.06, 16, 16);
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+    
+    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.1, 1.85, 0.2);
+    group.add(leftEye);
+    
+    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    rightEye.position.set(0.1, 1.85, 0.2);
+    group.add(rightEye);
     
     // Create body
     const bodyMaterial = new THREE.MeshStandardMaterial({
@@ -151,186 +281,84 @@ function createStandardModel(llm) {
         bodyMaterial
     );
     body.position.y = 1.2;
+    body.castShadow = true;
     group.add(body);
     
-    // Create simple limbs
+    // Create limbs
     const limbsMaterial = new THREE.MeshStandardMaterial({
         color: 0x444444,
         metalness: 0.8,
         roughness: 0.2
     });
     
-    // Add simple arms and legs
+    // Arms
     const arms = new THREE.Mesh(
         new THREE.BoxGeometry(1.2, 0.2, 0.2),
         limbsMaterial
     );
     arms.position.y = 1.3;
+    arms.castShadow = true;
     group.add(arms);
     
+    // Legs
     const legs = new THREE.Mesh(
         new THREE.CylinderGeometry(0.2, 0.15, 1),
         limbsMaterial
     );
     legs.position.y = 0.5;
+    legs.castShadow = true;
     group.add(legs);
     
     return group;
 }
 
-function updateVisibleModels() {
-    // Hide all models first
-    carouselModels.forEach(model => {
-        model.visible = false;
-    });
+function createFallbackModel(llm) {
+    const group = new THREE.Group();
     
-    // Show only 3 models starting from currentIndex
-    for (let i = 0; i < 3; i++) {
-        const index = (currentIndex + i) % totalLLMs;
-        if (carouselModels[index]) {
-            carouselModels[index].visible = true;
-            
-            // Position the models in a row
-            const xPos = (i - 1) * 3; // -3, 0, 3
-            carouselModels[index].position.set(xPos, 0, 0);
-            
-            // Add nameplate to each model
-            updateNameplate(carouselModels[index], index);
-        }
-    }
-}
-
-function updateNameplate(model, index) {
-    // Remove existing nameplate if any
-    model.children.forEach(child => {
-        if (child.userData && child.userData.isNameplate) {
-            model.remove(child);
-        }
-    });
+    const color = new THREE.Color(llm.color || 0x3cb371);
     
-    // Get LLM data
-    const llmId = model.userData.id;
-    const llm = llmDataManager.getLLMById(llmId);
-    if (!llm) return;
-    
-    // Create a nameplate
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.fillStyle = '#222';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.strokeStyle = '#3cb371';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 24px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(llm.name, canvas.width / 2, canvas.height / 2 + 8);
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    const nameplateMaterial = new THREE.MeshBasicMaterial({ 
-        map: texture,
-        transparent: true
-    });
-    
-    const nameplate = new THREE.Mesh(
-        new THREE.PlaneGeometry(2, 0.5),
-        nameplateMaterial
+    // Simple cylinder body
+    const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.3, 1.7),
+        new THREE.MeshStandardMaterial({ color })
     );
-    nameplate.position.set(0, 2.5, 0);
-    nameplate.userData = { isNameplate: true };
-    model.add(nameplate);
-}
-
-function createNavigationArrows(viewport) {
-    // Create left arrow
-    const leftArrow = document.createElement('div');
-    leftArrow.className = 'carousel-arrow left-arrow';
-    leftArrow.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-        </svg>
-    `;
-    viewport.appendChild(leftArrow);
+    body.position.y = 0.85;
+    body.castShadow = true;
+    group.add(body);
     
-    // Create right arrow
-    const rightArrow = document.createElement('div');
-    rightArrow.className = 'carousel-arrow right-arrow';
-    rightArrow.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-        </svg>
-    `;
-    viewport.appendChild(rightArrow);
-    
-    // Create indicator dots
-    const dotsContainer = document.createElement('div');
-    dotsContainer.className = 'carousel-dots';
-    
-    for (let i = 0; i < Math.ceil(totalLLMs / 3); i++) {
-        const dot = document.createElement('div');
-        dot.className = 'carousel-dot';
-        if (i === 0) dot.classList.add('active');
-        dotsContainer.appendChild(dot);
-    }
-    
-    viewport.appendChild(dotsContainer);
-    
-    // Add event listeners
-    leftArrow.addEventListener('click', () => {
-        navigateCarousel(-1);
-    });
-    
-    rightArrow.addEventListener('click', () => {
-        navigateCarousel(1);
-    });
-}
-
-function navigateCarousel(direction) {
-    currentIndex = (currentIndex + direction + totalLLMs) % totalLLMs;
-    updateVisibleModels();
-    updateDotIndicators();
-}
-
-function updateDotIndicators() {
-    const dots = document.querySelectorAll('.carousel-dot');
-    const currentPage = Math.floor(currentIndex / 3);
-    
-    dots.forEach((dot, index) => {
-        if (index === currentPage) {
-            dot.classList.add('active');
-        } else {
-            dot.classList.remove('active');
-        }
-    });
+    return group;
 }
 
 function animateCarousel() {
     if (!carouselScene || !carouselCamera || !carouselRenderer) return;
     
-    animationId = requestAnimationFrame(animateCarousel);
+    carouselAnimationId = requestAnimationFrame(animateCarousel);
     
-    // Simple idle animation for models
-    carouselModels.forEach((model, index) => {
-        if (model.visible) {
+    // Rotate models gently
+    carouselModels.forEach((model, i) => {
+        if (model) {
             const time = Date.now() * 0.001;
-            const offset = index * 0.5;
-            
-            // Simple hovering and rotation
-            model.position.y = Math.sin(time + offset) * 0.1;
-            model.rotation.y = Math.sin(time * 0.5 + offset) * 0.3;
+            model.rotation.y = Math.sin(time * 0.5 + i) * 0.5;
         }
     });
     
     carouselRenderer.render(carouselScene, carouselCamera);
 }
 
-export function cleanupCarousel() {
-    if (animationId) {
-        cancelAnimationFrame(animationId);
+export function disposeCarouselView() {
+    if (carouselAnimationId) {
+        cancelAnimationFrame(carouselAnimationId);
     }
+    
+    if (carouselRenderer) {
+        carouselRenderer.dispose();
+    }
+    
+    carouselModels.forEach(model => {
+        if (model && model.parent) {
+            model.parent.remove(model);
+        }
+    });
+    
+    carouselModels = [];
 }
