@@ -28,8 +28,11 @@ export function setupLLMViewInterface(llmId) {
         // Initialize the 3D view
         initViewScene();
         
-        // Create the model
-        displayLLMModel(llm);
+        // Only display model after scene is initialized
+        if (viewScene) {
+            // Create the model
+            displayLLMModel(llm);
+        }
         
         // Show edit button and add event listener
         const editButton = document.querySelector('.edit-llm-btn');
@@ -37,7 +40,7 @@ export function setupLLMViewInterface(llmId) {
             editButton.setAttribute('data-id', llm.id);
             editButton.addEventListener('click', () => handleEditLLM(llm.id));
         }
-    }, 50);
+    }, 100); // Increase timeout to ensure DOM and Three.js scene are ready
 }
 
 function createViewport(detailsPanel) {
@@ -167,6 +170,12 @@ function displayLLMModel(llm) {
     if (viewModel && viewModel.parent) {
         viewModel.parent.remove(viewModel);
         viewModel = null;
+    }
+    
+    // Check if scene is initialized before trying to create model
+    if (!viewScene) {
+        console.error("View scene not initialized");
+        return;
     }
     
     if (llm.customCharacterCode) {
