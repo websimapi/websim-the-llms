@@ -1,6 +1,7 @@
 import { config } from './config.js';
 import { cityData } from './cityData.js';
 import * as THREE from 'three';
+import { setupLLMCreationInterface } from './llmCreationInterface.js';
 
 let bgAudio;
 let useLLMTips = localStorage.getItem('useLLMTips') !== null ? 
@@ -323,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
             createLLMUI.classList.add('active');
-            window.setupLLMCreationInterface();
+            setupLLMCreationInterface();
         });
         
         closeCreateLLMButton.addEventListener('click', () => {
