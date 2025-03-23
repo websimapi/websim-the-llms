@@ -26,12 +26,10 @@ export function saveLLMData() {
     };
     
     // If we have a custom character, save its code
-    if (window.customCharacter) {
-        // Store the generated code
-        const generatedCodeElement = document.getElementById('generation-status');
-        if (generatedCodeElement && generatedCodeElement.dataset.generatedCode) {
-            llmData.customCharacterCode = generatedCodeElement.dataset.generatedCode;
-        }
+    const statusElement = document.getElementById('generation-status');
+    if (statusElement && statusElement.dataset.generatedCode) {
+        llmData.customCharacterCode = statusElement.dataset.generatedCode;
+        console.log("Saved custom character code:", llmData.customCharacterCode.substring(0, 50) + "...");
     }
     
     // Check if we're in edit mode
@@ -42,8 +40,21 @@ export function saveLLMData() {
     if (isEditMode && editId) {
         // Update existing LLM
         llmData.id = editId;
-        llmData.createdAt = llmDataManager.getLLMById(editId).createdAt;
-        llmDataManager.updateLLM(llmData);
+        const existingLLM = llmDataManager.getLLMById(editId);
+        if (existingLLM) {
+            llmData.createdAt = existingLLM.createdAt;
+            
+            // If no new character was generated, keep the existing character code
+            if (!llmData.customCharacterCode && existingLLM.customCharacterCode) {
+                llmData.customCharacterCode = existingLLM.customCharacterCode;
+            }
+            
+            llmDataManager.updateLLM(llmData);
+        } else {
+            console.error("Could not find LLM with ID:", editId);
+            // Fall back to adding as new
+            llmDataManager.addLLM(llmData);
+        }
     } else {
         // Save as new LLM
         llmDataManager.addLLM(llmData);

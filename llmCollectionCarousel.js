@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createCustomCharacter } from './characterGenerator.js';
+import { renderLLMCharacter } from './llmCharacterRenderer.js';
 
 // State for carousel
 let carouselLLMs = [];
@@ -182,7 +182,7 @@ function updateCarouselModels() {
         const position = calculatePosition(index - currentIndex);
         
         try {
-            const model = createLLMModel(llm);
+            const model = renderLLMCharacter(THREE, llm);
             
             model.position.set(position.x, position.y, position.z);
             model.rotation.y = position.rotation;
@@ -204,151 +204,6 @@ function calculatePosition(offset) {
     const rotation = -offset * 0.3; // Turn model slightly toward camera
     
     return { x, y, z, rotation };
-}
-
-function createLLMModel(llm) {
-    if (llm.customCharacterCode) {
-        // Create custom character from stored code
-        try {
-            return createCustomCharacter(THREE, llm.customCharacterCode);
-        } catch (error) {
-            console.error("Error creating custom character:", error);
-            // Fall back to standard model
-            return createStandardModel(llm);
-        }
-    } else {
-        // Create standard model
-        return createStandardModel(llm);
-    }
-}
-
-function createStandardModel(llm) {
-    // Create a robot model based on the stored properties
-    const group = new THREE.Group();
-    
-    const color = new THREE.Color(llm.color || 0x3cb371);
-    
-    // Create head
-    const headMaterial = new THREE.MeshStandardMaterial({
-        color: color,
-        emissive: color.clone().multiplyScalar(0.3),
-        metalness: 0.7,
-        roughness: 0.3
-    });
-    
-    const head = new THREE.Mesh(
-        new THREE.BoxGeometry(0.4, 0.4, 0.4),
-        headMaterial
-    );
-    head.position.y = 1.8;
-    group.add(head);
-    
-    // Eyes
-    const eyeGeometry = new THREE.SphereGeometry(0.06, 16, 16);
-    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-    
-    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.1, 1.85, 0.2);
-    group.add(leftEye);
-    
-    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.1, 1.85, 0.2);
-    group.add(rightEye);
-    
-    // Create body
-    const bodyMaterial = new THREE.MeshStandardMaterial({
-        color: color.clone().multiplyScalar(0.8),
-        metalness: 0.5,
-        roughness: 0.5
-    });
-    
-    const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.6, 0.8, 0.3),
-        bodyMaterial
-    );
-    body.position.y = 1.2;
-    group.add(body);
-    
-    // Create limbs
-    const limbsMaterial = new THREE.MeshStandardMaterial({
-        color: 0x444444,
-        metalness: 0.8,
-        roughness: 0.2
-    });
-    
-    // Upper arms
-    const upperArmGeometry = new THREE.CylinderGeometry(0.08, 0.07, 0.4);
-    const lowerArmGeometry = new THREE.CylinderGeometry(0.07, 0.06, 0.4);
-    
-    // Left arm
-    const leftUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
-    leftUpperArm.position.set(-0.4, 1.3, 0);
-    leftUpperArm.rotation.z = Math.PI / 6;
-    leftUpperArm.castShadow = true;
-    group.add(leftUpperArm);
-    
-    const leftLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
-    leftLowerArm.position.set(-0.55, 1.0, 0);
-    leftLowerArm.rotation.z = Math.PI / 4;
-    leftLowerArm.castShadow = true;
-    group.add(leftLowerArm);
-    
-    // Right arm
-    const rightUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
-    rightUpperArm.position.set(0.4, 1.3, 0);
-    rightUpperArm.rotation.z = -Math.PI / 6;
-    rightUpperArm.castShadow = true;
-    group.add(rightUpperArm);
-    
-    const rightLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
-    rightLowerArm.position.set(0.55, 1.0, 0);
-    rightLowerArm.rotation.z = -Math.PI / 4;
-    rightLowerArm.castShadow = true;
-    group.add(rightLowerArm);
-    
-    // Legs
-    const upperLegGeometry = new THREE.CylinderGeometry(0.09, 0.08, 0.4);
-    const lowerLegGeometry = new THREE.CylinderGeometry(0.08, 0.07, 0.4);
-    
-    // Left leg
-    const leftUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
-    leftUpperLeg.position.set(-0.15, 0.5, 0);
-    leftUpperLeg.castShadow = true;
-    group.add(leftUpperLeg);
-    
-    const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
-    leftLowerLeg.position.set(-0.15, 0.1, 0);
-    leftLowerLeg.castShadow = true;
-    group.add(leftLowerLeg);
-    
-    const leftFoot = new THREE.Mesh(
-        new THREE.BoxGeometry(0.15, 0.05, 0.25),
-        limbsMaterial
-    );
-    leftFoot.position.set(-0.15, -0.1, 0.05);
-    leftFoot.castShadow = true;
-    group.add(leftFoot);
-    
-    // Right leg
-    const rightUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
-    rightUpperLeg.position.set(0.15, 0.5, 0);
-    rightUpperLeg.castShadow = true;
-    group.add(rightUpperLeg);
-    
-    const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
-    rightLowerLeg.position.set(0.15, 0.1, 0);
-    rightLowerLeg.castShadow = true;
-    group.add(rightLowerLeg);
-    
-    const rightFoot = new THREE.Mesh(
-        new THREE.BoxGeometry(0.15, 0.05, 0.25),
-        limbsMaterial
-    );
-    rightFoot.position.set(0.15, -0.1, 0.05);
-    rightFoot.castShadow = true;
-    group.add(rightFoot);
-    
-    return group;
 }
 
 function displayEmptyState(viewportElement) {
