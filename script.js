@@ -1,7 +1,9 @@
 import { config } from './config.js';
 import { cityData } from './cityData.js';
+import { llmService } from './llmService.js';
 
 let bgAudio;
+let tipUpdateInterval;
 
 document.addEventListener('DOMContentLoaded', () => {
     const startOverlay = document.getElementById('start-overlay');
@@ -12,6 +14,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const skipButton = document.getElementById('skip-button');
     const loadingScreen = document.getElementById('loading-screen');
     const gameContainer = document.getElementById('game-container');
+    const llmToggle = document.getElementById('llm-toggle');
+    
+    // Initialize LLM toggle based on stored preference
+    llmToggle.checked = llmService.isEnabled();
+    
+    // Add event listener for toggle
+    llmToggle.addEventListener('change', () => {
+        llmService.toggleLLM(llmToggle.checked);
+        
+        // Reset tip interval when toggle changes
+        clearInterval(tipUpdateInterval);
+        setRandomTip();
+        startTipInterval();
+    });
     
     // Hide loading screen initially
     loadingScreen.style.display = 'none';
@@ -60,22 +76,49 @@ document.addEventListener('DOMContentLoaded', () => {
     window.fadeOutAudio = fadeOutAudio;
     
     // Randomly select a tip
-    function setRandomTip() {
+    async function setRandomTip() {
+        if (llmService.isEnabled()) {
+            // Generate tip with LLM
+            const generatedTip = await llmService.generateTip();
+            if (generatedTip) {
+                tipText.textContent = generatedTip;
+                return;
+            }
+        }
+        
+        // Fallback to predefined tips
         const randomIndex = Math.floor(Math.random() * config.loadingTips.length);
         tipText.textContent = config.loadingTips[randomIndex];
     }
     
-    // Set initial random tip
-    setRandomTip();
+    // Start tip interval function
+    function startTipInterval() {
+        // Clear existing interval if any
+        if (tipUpdateInterval) {
+            clearInterval(tipUpdateInterval);
+        }
+        
+        // Set interval time based on whether LLM is enabled
+        const intervalTime = llmService.isEnabled() ? 7000 : 3000;
+        
+        // Set initial random tip
+        setRandomTip();
+        
+        // Change tip on interval
+        tipUpdateInterval = setInterval(setRandomTip, intervalTime);
+    }
     
-    // Change tip every 3 seconds
-    setInterval(setRandomTip, 3000);
+    // Set initial tip and start interval
+    startTipInterval();
     
     // Function to complete loading and show game
     function completeLoading() {
         fadeOutAudio();
         loadingScreen.style.display = 'none';
         gameContainer.classList.remove('hidden');
+        
+        // Clear tip interval when loading completes
+        clearInterval(tipUpdateInterval);
     }
     
     // Start experience button
