@@ -398,7 +398,6 @@ body {
 
 .create-llm-btn:hover::before {
     opacity: 1;
-    animation: fireworks 2s infinite;
 }
 
 @keyframes fireworks {
