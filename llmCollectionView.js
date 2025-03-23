@@ -5,6 +5,7 @@ import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
 import { createCollectionModels } from './llmCollectionViewUtils.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
+import { initLLMCarousel, nextCarouselModel, prevCarouselModel } from './llmCarouselView.js';
 
 let collectionScene, collectionCamera, collectionRenderer;
 let llmModels = [];
@@ -143,17 +144,26 @@ function initCollectionScene(viewport, llms) {
     directionalLight.castShadow = true;
     collectionScene.add(directionalLight);
     
-    // Create models using the utility function
-    const { models, positions, scene: modelScene } = createCollectionModels(llms, llmDataManager, createCustomCharacter);
-    
-    // Add all model scene objects to our collection scene
-    modelScene.children.forEach(child => {
-        collectionScene.add(child);
+    // Add floor
+    const floorGeometry = new THREE.PlaneGeometry(50, 50);
+    const floorMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x222222,
+        roughness: 0.8,
+        metalness: 0.2
     });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    floor.position.y = -1;
+    collectionScene.add(floor);
     
-    llmModels = models;
-    modelPositions.length = 0;
-    positions.forEach(pos => modelPositions.push(pos));
+    // Initialize the carousel
+    initLLMCarousel(llms, collectionScene);
+    
+    // Add carousel navigation buttons
+    if (llms.length > 3) {
+        addCarouselControls(viewport);
+    }
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -166,6 +176,24 @@ function initCollectionScene(viewport, llms) {
     
     // Start animation loop
     animateCollection();
+}
+
+function addCarouselControls(viewport) {
+    // Create left arrow
+    const leftArrow = document.createElement('button');
+    leftArrow.className = 'carousel-arrow left-arrow';
+    leftArrow.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>';
+    viewport.appendChild(leftArrow);
+    
+    // Create right arrow
+    const rightArrow = document.createElement('button');
+    rightArrow.className = 'carousel-arrow right-arrow';
+    rightArrow.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
+    viewport.appendChild(rightArrow);
+    
+    // Add event listeners
+    leftArrow.addEventListener('click', prevCarouselModel);
+    rightArrow.addEventListener('click', nextCarouselModel);
 }
 
 function viewLLMDetails(id) {
@@ -186,7 +214,7 @@ function handleEditLLM(id) {
     createUI.setAttribute('data-edit-id', id);
     
     // Set up the creation interface with the LLM data
-    setupLLMCreationInterface();
+    setupLLMCreationInterface(llm);
     
     // Cancel animation if active
     if (collectionAnimationId) {
@@ -208,20 +236,14 @@ function animateCollection() {
     collectionAnimationId = requestAnimationFrame(animateCollection);
     
     // Simple animations for models
-    llmModels.forEach((model, index) => {
-        if (!model || !modelPositions[index]) return;
-        
-        const time = Date.now() * 0.001;
-        const offset = index * 0.5;
-        
-        // Simple hovering animation
-        model.position.y = modelPositions[index].y + Math.sin(time + offset) * 0.1;
-        
-        // Subtle rotation
-        model.rotation.y = -Math.atan2(
-            modelPositions[index].z,
-            modelPositions[index].x
-        ) + Math.sin(time * 0.5 + offset) * 0.2;
+    const time = Date.now() * 0.001;
+    
+    // Apply gentle floating animation to all visible models in carousel
+    collectionScene.traverse((child) => {
+        if (child.userData && child.userData.id && child.visible) {
+            const offset = child.position.x * 0.1; // Different timing based on position
+            child.position.y = Math.sin(time + offset) * 0.1;
+        }
     });
     
     collectionRenderer.render(collectionScene, collectionCamera);

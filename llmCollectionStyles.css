@@ -49,3 +49,39 @@
     min-width: 80px;
 }
 
+/* Carousel navigation arrows */
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    background-color: rgba(60, 179, 113, 0.7);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+    z-index: 10;
+}
+
+.carousel-arrow:hover {
+    background-color: rgba(60, 179, 113, 0.9);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.left-arrow {
+    left: 20px;
+}
+
+.right-arrow {
+    right: 20px;
+}
+
+.carousel-arrow svg {
+    width: 30px;
+    height: 30px;
+}
