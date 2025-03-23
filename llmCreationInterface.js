@@ -6,6 +6,7 @@ let robotModel;
 let headMaterial, bodyMaterial, limbsMaterial;
 let customCharacter = null;
 let generatingCharacter = false;
+let humanoidMixer = null;
 
 export function setupLLMCreationInterface() {
     // Setup default values for the form
