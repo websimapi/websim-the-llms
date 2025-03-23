@@ -671,6 +671,8 @@ input:checked + .llm-toggle-slider:before {
     background-color: #111;
     border-radius: 5px;
     position: relative;
+    box-shadow: 0 0 20px rgba(60, 179, 113, 0.3);
+    overflow: hidden;
 }
 
 .create-llm-actions {

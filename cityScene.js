@@ -3,7 +3,31 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { config } from './config.js';
 import { cityData } from './cityData.js';
 
+// Add fadeOutAudio function at global level
+function fadeOutAudio(duration = 3000) {
+    const audio = document.querySelector('audio');
+    if (!audio) return;
+    
+    const startVolume = audio.volume;
+    const fadeSteps = 50;
+    const volumeStep = startVolume / fadeSteps;
+    const intervalTime = duration / fadeSteps;
+    
+    const fadeInterval = setInterval(() => {
+        if (audio.volume > volumeStep) {
+            audio.volume -= volumeStep;
+        } else {
+            audio.volume = 0;
+            audio.pause();
+            clearInterval(fadeInterval);
+        }
+    }, intervalTime);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Make fadeOutAudio globally accessible
+    window.fadeOutAudio = fadeOutAudio;
+    
     // Wait for game container to be visible
     const gameContainer = document.getElementById('game-container');
     const observer = new MutationObserver((mutations) => {
