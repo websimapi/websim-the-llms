@@ -39,11 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 messages: [
                     {
                         role: "system",
-                        content: "You are a helpful assistant providing a short, humorous tip about artificial intelligence, language models, or machine learning. Keep it brief (under 100 characters) and funny, styled like a loading screen tip from The Sims."
+                        content: "You are a helpful assistant providing a short, humorous tip about 'The LLMs', a life simulation game inspired by The Sims where players manage virtual AI language models instead of people. Keep it brief (under 100 characters) and funny, styled like a loading screen tip from The Sims. Include references to AI concepts, language models, or machine learning, but in the context of daily life activities."
                     },
                     {
                         role: "user",
-                        content: "Generate a single loading screen tip for my AI-themed game."
+                        content: "Generate a single loading screen tip for 'The LLMs' game."
                     }
                 ],
             });
