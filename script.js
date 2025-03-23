@@ -22,23 +22,5 @@ document.addEventListener('DOMContentLoaded', () => {
     const interval = 50; // Update every 50ms
     const increment = (interval / config.loadingTime) * 100;
     
-    const loadingInterval = setInterval(() => {
-        progress += increment;
-        
-        if (progress >= 100) {
-            progress = 100;
-            clearInterval(loadingInterval);
-            
-            // You could redirect to the main game here after a short delay
-            setTimeout(() => {
-                // Uncomment when you have a main game page
-                // window.location.href = 'game.html';
-                console.log('Loading complete! Ready to enter The LLMs world.');
-            }, 1000);
-        }
-        
-        loadingBar.style.width = `${progress}%`;
-        loadingPercentage.textContent = `${Math.round(progress)}%`;
-    }, interval);
+    /* ... existing code ... */
 });
-
