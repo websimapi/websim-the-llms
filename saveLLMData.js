@@ -5,11 +5,22 @@ import { attributeSystem } from './attributeSystem.js';
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
     // Get values from form
-    const name = document.getElementById('llm-name').value || `LLM-${Math.floor(Math.random() * 1000)}`;
-    const model = document.getElementById('llm-model').value;
-    const color = document.getElementById('llm-color').value;
-    const style = document.getElementById('llm-style').value;
-    const customPrompt = document.getElementById('llm-custom-prompt').value;
+    const nameInput = document.getElementById('llm-name');
+    const modelInput = document.getElementById('llm-model');
+    const colorInput = document.getElementById('llm-color');
+    const styleInput = document.getElementById('llm-style');
+    const customPromptInput = document.getElementById('llm-custom-prompt');
+    
+    if (!nameInput || !modelInput || !colorInput || !styleInput || !customPromptInput) {
+        console.error("Cannot find one or more form inputs");
+        return;
+    }
+    
+    const name = nameInput.value || `LLM-${Math.floor(Math.random() * 1000)}`;
+    const model = modelInput.value;
+    const color = colorInput.value;
+    const style = styleInput.value;
+    const customPrompt = customPromptInput.value;
     
     // Get attributes
     const attributes = attributeSystem.exportAttributes();

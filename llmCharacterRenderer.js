@@ -103,11 +103,13 @@ function createStandardModel(THREE, llm) {
     group.add(body);
     
     // Chest light
+    const chestLightMaterial = new THREE.MeshBasicMaterial({ 
+        color: color.clone().multiplyScalar(1.5) 
+    });
+    
     const chestLight = new THREE.Mesh(
         new THREE.CircleGeometry(0.1, 32),
-        new THREE.MeshBasicMaterial({ 
-            color: color.clone().multiplyScalar(1.5) 
-        })
+        chestLightMaterial
     );
     chestLight.position.set(0, 1.3, 0.16);
     chestLight.rotation.x = Math.PI / 2;
@@ -140,7 +142,7 @@ function createStandardModel(THREE, llm) {
     
     const leftHand = new THREE.Mesh(
         new THREE.SphereGeometry(0.08, 16, 16),
-        headMaterial
+        headMaterial.clone()
     );
     leftHand.position.set(-0.75, 0.8, 0);
     leftHand.castShadow = true;
@@ -161,7 +163,7 @@ function createStandardModel(THREE, llm) {
     
     const rightHand = new THREE.Mesh(
         new THREE.SphereGeometry(0.08, 16, 16),
-        headMaterial
+        headMaterial.clone()
     );
     rightHand.position.set(0.75, 0.8, 0);
     rightHand.castShadow = true;
@@ -170,7 +172,7 @@ function createStandardModel(THREE, llm) {
     // Hip
     const hip = new THREE.Mesh(
         new THREE.BoxGeometry(0.35, 0.2, 0.3),
-        bodyMaterial
+        bodyMaterial.clone()
     );
     hip.position.set(0, 0.8, 0);
     hip.castShadow = true;
@@ -220,4 +222,3 @@ function createStandardModel(THREE, llm) {
     
     return group;
 }
-
