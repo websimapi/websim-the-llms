@@ -1,5 +1,6 @@
 import { config } from './config.js';
 import { cityData } from './cityData.js';
+import { initCharacterCreator, saveCharacter, closeCharacterCreator } from './characterCreator.js';
 
 let bgAudio;
 let useLLMTips = true;
@@ -299,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
+            initCharacterCreator();
         });
         
         moveLLMButton.addEventListener('click', () => {
@@ -322,6 +324,10 @@ document.addEventListener('DOMContentLoaded', () => {
             moveLLMButton.style.setProperty('--x', `${x}%`);
             moveLLMButton.style.setProperty('--y', `${y}%`);
         });
+        
+        // Add event listeners for character creator buttons
+        document.getElementById('close-creator').addEventListener('click', closeCharacterCreator);
+        document.getElementById('save-character').addEventListener('click', saveCharacter);
     }
 
     setupConsolePanel();
