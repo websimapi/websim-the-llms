@@ -173,6 +173,12 @@ function initCollectionScene(viewport, llms) {
 }
 
 function viewLLMDetails(id) {
+    // Cancel any existing animation
+    if (collectionAnimationId) {
+        cancelAnimationFrame(collectionAnimationId);
+    }
+    
+    // Setup the details view
     setupLLMViewInterface(id);
 }
 
