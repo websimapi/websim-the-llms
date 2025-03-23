@@ -40,7 +40,9 @@ function initCityScene() {
         0.1, 
         1000
     );
-    camera.position.set(0, 20, 20);
+    
+    // Set initial camera position further out for cinematic intro
+    camera.position.set(50, 30, 50);
     camera.lookAt(0, 0, 0);
     
     // Create renderer
@@ -56,6 +58,7 @@ function initCityScene() {
     controls.minDistance = 10;
     controls.maxDistance = 50;
     controls.maxPolarAngle = Math.PI / 2.5;
+    controls.enabled = false; // Disable controls during intro animation
     
     // Add lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -88,6 +91,14 @@ function initCityScene() {
     // Setup console toggling
     setupConsoleToggle();
     
+    // Setup camera intro animation
+    let introDuration = 7000; // 7 seconds for intro
+    let introStartTime = Date.now();
+    let introComplete = false;
+    
+    // Setup UI event listeners
+    setupUIInteractions();
+    
     // Handle window resize
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -95,13 +106,33 @@ function initCityScene() {
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
     
-    // Setup UI event listeners
-    setupUIInteractions();
-    
     // Animation loop
     function animate() {
         requestAnimationFrame(animate);
-        controls.update();
+        
+        // Handle intro camera animation
+        if (!introComplete) {
+            const elapsed = Date.now() - introStartTime;
+            const progress = Math.min(elapsed / introDuration, 1);
+            
+            if (progress < 1) {
+                // Interpolate camera position for smooth pan
+                const targetX = 0;
+                const targetY = 20;
+                const targetZ = 20;
+                
+                camera.position.x = 50 * (1 - progress) + targetX * progress;
+                camera.position.y = 30 * (1 - progress) + targetY * progress;
+                camera.position.z = 50 * (1 - progress) + targetZ * progress;
+                camera.lookAt(0, 0, 0);
+            } else {
+                introComplete = true;
+                controls.enabled = true; // Enable controls after intro
+            }
+        } else {
+            controls.update();
+        }
+        
         renderer.render(scene, camera);
     }
     
