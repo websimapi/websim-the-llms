@@ -148,32 +148,88 @@ function createBuildingLots(scene) {
 }
 
 function addCityNameText(scene) {
+    // Create stone pillars
+    const pillarGeometry = new THREE.BoxGeometry(1, 10, 1);
+    const pillarMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x808080,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+    
+    // Left pillar
+    const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+    leftPillar.position.set(-8, 5, -30);
+    leftPillar.castShadow = true;
+    leftPillar.receiveShadow = true;
+    scene.add(leftPillar);
+    
+    // Right pillar
+    const rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+    rightPillar.position.set(8, 5, -30);
+    rightPillar.castShadow = true;
+    rightPillar.receiveShadow = true;
+    scene.add(rightPillar);
+    
+    // Create sign board
     const loader = new THREE.TextureLoader();
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 128;
     const context = canvas.getContext('2d');
     
-    context.fillStyle = '#3cb371';
+    // Wood texture background
+    context.fillStyle = '#8B4513';
     context.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add wood grain effect
+    context.strokeStyle = '#6B3100';
+    context.lineWidth = 2;
+    for (let i = 0; i < 10; i++) {
+        context.beginPath();
+        context.moveTo(0, i * 15);
+        context.bezierCurveTo(
+            canvas.width * 0.3, i * 15 + (Math.random() * 10 - 5),
+            canvas.width * 0.7, i * 15 + (Math.random() * 10 - 5),
+            canvas.width, i * 15
+        );
+        context.stroke();
+    }
+    
+    // Text with border
     context.fillStyle = 'white';
     context.font = 'bold 60px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
+    context.strokeStyle = 'black';
+    context.lineWidth = 4;
+    context.strokeText(cityData.name, canvas.width / 2, canvas.height / 2);
     context.fillText(cityData.name, canvas.width / 2, canvas.height / 2);
     
     const texture = new THREE.CanvasTexture(canvas);
     const material = new THREE.MeshBasicMaterial({
         map: texture,
-        transparent: true,
+        transparent: false,
         side: THREE.DoubleSide
     });
     
-    const geometry = new THREE.PlaneGeometry(20, 5);
+    const geometry = new THREE.BoxGeometry(20, 5, 0.5);
     const sign = new THREE.Mesh(geometry, material);
-    sign.position.set(0, 5, -30);
-    sign.rotation.x = -Math.PI / 10;
+    sign.position.set(0, 8.5, -30);
+    sign.castShadow = true;
     scene.add(sign);
+    
+    // Add decorative roof to the sign
+    const roofGeometry = new THREE.ConeGeometry(11, 2, 4);
+    const roofMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x8B0000,
+        roughness: 0.7,
+        metalness: 0.2
+    });
+    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+    roof.position.set(0, 12, -30);
+    roof.rotation.y = Math.PI / 4;
+    roof.castShadow = true;
+    scene.add(roof);
 }
 
 function setupConsoleToggle() {
