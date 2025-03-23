@@ -4,6 +4,8 @@ import { cityData } from './cityData.js';
 let bgAudio;
 let useLLMTips = true;
 let tipFetchInterval;
+let llmTips = []; // Array to store fetched LLM tips
+const minTipsCount = 3; // Minimum number of tips to have available
 
 document.addEventListener('DOMContentLoaded', () => {
     const startOverlay = document.getElementById('start-overlay');
@@ -104,28 +106,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 ]
             });
             
-            return completion.content.trim();
+            const tip = completion.content.trim();
+            if (!llmTips.includes(tip)) {
+                llmTips.push(tip);
+            }
+            return tip;
         } catch (error) {
             console.error("Error fetching LLM tip:", error);
             return "LLMs sometimes need a moment to think!";
         }
     }
     
-    // Set interval for fetching tips every 7 seconds
+    // Start the LLM tip fetching cycle
     function startLLMTipFetch() {
         // Fetch first tip immediately
         if (useLLMTips) {
             fetchLLMTip().then(tip => {
                 tipText.textContent = tip;
+                
+                // Pre-fetch additional tips to reach minimum count
+                const fetchMoreTips = async () => {
+                    while (llmTips.length < minTipsCount) {
+                        await fetchLLMTip();
+                    }
+                };
+                fetchMoreTips();
             });
         }
         
         // Set interval for fetching tips every 7 seconds
         tipFetchInterval = setInterval(() => {
             if (useLLMTips) {
-                fetchLLMTip().then(tip => {
-                    tipText.textContent = tip;
-                });
+                // Display next tip from our collection
+                if (llmTips.length > 0) {
+                    // Rotate through available tips
+                    const nextTip = llmTips.shift();
+                    tipText.textContent = nextTip;
+                    // Add it back to the end for rotation
+                    llmTips.push(nextTip);
+                    
+                    // Fetch a new tip to maintain our collection
+                    fetchLLMTip();
+                } else {
+                    // Fallback if somehow we have no tips
+                    fetchLLMTip().then(tip => {
+                        tipText.textContent = tip;
+                    });
+                }
             }
         }, 7000);
     }
