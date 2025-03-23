@@ -169,24 +169,21 @@ body {
 }
 
 .menu-button {
-    padding: 12px;
-    background-color: #28a745;
+    padding: 10px 18px;  
+    background-color: #333;
     color: white;
     border: none;
-    border-radius: 50%;
+    border-radius: 4px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    gap: 8px;
+    transition: all 0.3s ease;
 }
 
 .menu-button:hover {
-    background-color: #218838;
-    transform: scale(1.05);
+    background-color: #555;
 }
 
 .resources {
@@ -204,8 +201,8 @@ body {
 }
 
 .llm-icon {
-    width: 30px;
-    height: 30px;
+    width: 28px;   
+    height: 28px;  
 }
 
 /* Console Panel Styles */
@@ -347,6 +344,21 @@ body {
 #start-button:hover {
     background-color: #2a8c5a;
     transform: scale(1.05);
+}
+
+/* Rainbow hover effect for Create LLM button */
+.create-llm-btn:hover {
+    background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3);
+    background-size: 1800% 1800%;
+    animation: rainbow 8s ease infinite;
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes rainbow {
+    0% { background-position: 0% 80% }
+    50% { background-position: 100% 20% }
+    100% { background-position: 0% 80% }
 }
 
 @keyframes pulse {
