@@ -4,8 +4,6 @@ import { cityData } from './cityData.js';
 let bgAudio;
 let useLLMTips = true;
 let tipFetchInterval;
-let llmTips = []; // Array to store fetched LLM tips
-const minTipsCount = 3; // Minimum number of tips to have available
 
 document.addEventListener('DOMContentLoaded', () => {
     const startOverlay = document.getElementById('start-overlay');
@@ -101,16 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 messages: [
                     {
                         role: "system",
-                        content: "Generate a single sentence tip about AI, language models, or machine learning that would be helpful for beginners. Keep it concise and fun. Respond with just the tip text, no additional formatting or explanation."
+                        content: "You are a helpful AI assistant providing tips about AI, language models, and machine learning. Generate a single clear, concise, and insightful tip about AI, LLMs, or machine learning that would be helpful for beginners. The tip should be educational, interesting, and no more than one sentence long. Focus on concepts, best practices, or interesting facts. Respond with ONLY the tip text itself, with no additional formatting, quotes, or explanations."
                     }
                 ]
             });
             
-            const tip = completion.content.trim();
-            if (!llmTips.includes(tip)) {
-                llmTips.push(tip);
-            }
-            return tip;
+            return completion.content.trim();
         } catch (error) {
             console.error("Error fetching LLM tip:", error);
             return "LLMs sometimes need a moment to think!";
@@ -123,36 +117,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (useLLMTips) {
             fetchLLMTip().then(tip => {
                 tipText.textContent = tip;
-                
-                // Pre-fetch additional tips to reach minimum count
-                const fetchMoreTips = async () => {
-                    while (llmTips.length < minTipsCount) {
-                        await fetchLLMTip();
-                    }
-                };
-                fetchMoreTips();
             });
         }
         
         // Set interval for fetching tips every 7 seconds
         tipFetchInterval = setInterval(() => {
             if (useLLMTips) {
-                // Display next tip from our collection
-                if (llmTips.length > 0) {
-                    // Rotate through available tips
-                    const nextTip = llmTips.shift();
-                    tipText.textContent = nextTip;
-                    // Add it back to the end for rotation
-                    llmTips.push(nextTip);
-                    
-                    // Fetch a new tip to maintain our collection
-                    fetchLLMTip();
-                } else {
-                    // Fallback if somehow we have no tips
-                    fetchLLMTip().then(tip => {
-                        tipText.textContent = tip;
-                    });
-                }
+                fetchLLMTip().then(tip => {
+                    tipText.textContent = tip;
+                });
+            } else {
+                setRandomTip();
             }
         }, 7000);
     }
