@@ -192,15 +192,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup UI interactions for fireworks effect
     function setupUIInteractions() {
         const createLLMButton = document.querySelector('.create-llm-btn');
+        const moveLLMButton = document.querySelector('.move-llm-btn');
         
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
-            createLLMButton.classList.add('clicked');
-            
-            // Remove the class after animation completes
-            setTimeout(() => {
-                createLLMButton.classList.remove('clicked');
-            }, 3000);
+        });
+        
+        moveLLMButton.addEventListener('click', () => {
+            console.log('Move LLMs in clicked');
         });
         
         // Add mousemove event for fireworks effect
@@ -210,6 +209,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const y = ((e.clientY - rect.top) / rect.height) * 100;
             createLLMButton.style.setProperty('--x', `${x}%`);
             createLLMButton.style.setProperty('--y', `${y}%`);
+        });
+        
+        // Add mousemove event for fireworks effect on move button
+        moveLLMButton.addEventListener('mousemove', (e) => {
+            const rect = moveLLMButton.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            moveLLMButton.style.setProperty('--x', `${x}%`);
+            moveLLMButton.style.setProperty('--y', `${y}%`);
         });
     }
 

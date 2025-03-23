@@ -347,7 +347,8 @@ body {
 }
 
 /* Rainbow hover effect for Create LLM button */
-.create-llm-btn {
+.create-llm-btn,
+.move-llm-btn {
     background: none;
     position: relative;
     overflow: hidden;
@@ -359,12 +360,14 @@ body {
     align-items: center;
 }
 
-.create-llm-btn:hover {
+.create-llm-btn:hover,
+.move-llm-btn:hover {
     background: none;
     transform: scale(1.05);
 }
 
-.create-llm-btn:hover .llm-icon {
+.create-llm-btn:hover .llm-icon,
+.move-llm-btn:hover .llm-icon {
     filter: hue-rotate(calc(var(--hue, 0) * 1deg));
     animation: rainbow-icon 8s ease infinite;
     transform: perspective(500px) rotateY(10deg) rotateX(5deg); 
@@ -372,12 +375,8 @@ body {
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.7)); 
 }
 
-.create-llm-btn.clicked .llm-icon {
-    animation: rainbow-icon 3s ease-in-out infinite;
-    filter: hue-rotate(calc(var(--hue, 0) * 1deg)) drop-shadow(0 0 8px rgba(255,255,255,0.9));
-}
-
-.create-llm-btn::before {
+.create-llm-btn::before,
+.move-llm-btn::before {
     content: "";
     position: absolute;
     top: 0;
@@ -401,7 +400,8 @@ body {
     border-radius: 50%; 
 }
 
-.create-llm-btn:hover::before {
+.create-llm-btn:hover::before,
+.move-llm-btn:hover::before {
     opacity: 1;
 }
 
