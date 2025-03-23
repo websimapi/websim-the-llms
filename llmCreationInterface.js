@@ -732,36 +732,8 @@ function saveLLMData() {
         style,
         customPrompt,
         attributes,
-        customCharacterCode: null,
-        modelTransforms: []
+        customCharacterCode: null
     };
-    
-    // If we have a model, capture its transforms
-    if (robotModel || customCharacter) {
-        const modelToCapture = customCharacter || robotModel;
-        modelToCapture.traverse(child => {
-            if (child.isMesh) {
-                llmData.modelTransforms.push({
-                    id: child.id || Math.random().toString(36).substr(2, 9),
-                    position: { 
-                        x: child.position.x, 
-                        y: child.position.y, 
-                        z: child.position.z 
-                    },
-                    rotation: { 
-                        x: child.rotation.x, 
-                        y: child.rotation.y, 
-                        z: child.rotation.z 
-                    },
-                    scale: { 
-                        x: child.scale.x, 
-                        y: child.scale.y, 
-                        z: child.scale.z 
-                    }
-                });
-            }
-        });
-    }
     
     // If we have a custom character, save its code
     if (customCharacter) {
