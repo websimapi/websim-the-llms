@@ -49,28 +49,24 @@
     min-width: 80px;
 }
 
-/* Carousel navigation arrows */
 .carousel-arrow {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     width: 50px;
     height: 50px;
-    background-color: rgba(60, 179, 113, 0.7);
-    border: none;
+    background-color: rgba(0, 0, 0, 0.5);
     border-radius: 50%;
-    color: white;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-    z-index: 10;
+    z-index: 100;
+    transition: background-color 0.3s;
 }
 
 .carousel-arrow:hover {
-    background-color: rgba(60, 179, 113, 0.9);
-    transform: translateY(-50%) scale(1.1);
+    background-color: rgba(60, 179, 113, 0.8);
 }
 
 .left-arrow {
@@ -81,7 +77,35 @@
     right: 20px;
 }
 
-.carousel-arrow svg {
-    width: 30px;
-    height: 30px;
+.carousel-dots {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.carousel-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.carousel-dot.active {
+    background-color: #3cb371;
+    transform: scale(1.2);
+}
+
+.empty-carousel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1.5rem;
+    text-align: center;
 }

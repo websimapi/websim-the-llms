@@ -1,30 +1,103 @@
 import * as THREE from 'three';
+import { createCollectionModels } from './llmCollectionViewUtils.js';
 import { createCustomCharacter } from './characterGenerator.js';
+import { llmDataManager } from './llmDataManager.js';
 
-// State for carousel functionality
+let carouselScene, carouselCamera, carouselRenderer;
 let carouselModels = [];
-let currentModelIndex = 0;
-const visibleModels = 3;
-let carouselGroup;
+let currentIndex = 0;
+let animationId;
+let totalLLMs = 0;
 
-export function initLLMCarousel(llms, scene) {
-    // Clear any existing models
-    if (carouselGroup && carouselGroup.parent) {
-        carouselGroup.parent.remove(carouselGroup);
+export function setupLLMCarousel(viewport, llms) {
+    // Cancel any existing animation
+    if (animationId) {
+        cancelAnimationFrame(animationId);
     }
     
-    // Create a group to hold all carousel models
-    carouselGroup = new THREE.Group();
-    scene.add(carouselGroup);
+    totalLLMs = llms.length;
     
-    // Save reference to all models
+    // Clear existing content
+    viewport.innerHTML = '';
+    
+    if (llms.length === 0) {
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'empty-carousel';
+        emptyMessage.textContent = 'No LLMs to display';
+        viewport.appendChild(emptyMessage);
+        return;
+    }
+    
+    // Setup Three.js scene
+    carouselScene = new THREE.Scene();
+    carouselScene.background = new THREE.Color(0x111111);
+    
+    // Setup camera
+    carouselCamera = new THREE.PerspectiveCamera(
+        45, 
+        viewport.clientWidth / viewport.clientHeight, 
+        0.1, 
+        1000
+    );
+    carouselCamera.position.set(0, 3, 8);
+    carouselCamera.lookAt(0, 1, 0);
+    
+    // Setup renderer
+    carouselRenderer = new THREE.WebGLRenderer({ antialias: true });
+    carouselRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    carouselRenderer.shadowMap.enabled = true;
+    viewport.appendChild(carouselRenderer.domElement);
+    
+    // Setup lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    carouselScene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 7);
+    directionalLight.castShadow = true;
+    carouselScene.add(directionalLight);
+    
+    // Add ground plane
+    const groundGeometry = new THREE.PlaneGeometry(30, 30);
+    const groundMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x222222,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.position.y = -1;
+    carouselScene.add(ground);
+    
+    // Load all models but only display 3 at a time
+    loadCarouselModels(llms);
+    updateVisibleModels();
+    
+    // Create navigation arrows
+    createNavigationArrows(viewport);
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        if (carouselCamera && carouselRenderer && viewport) {
+            carouselCamera.aspect = viewport.clientWidth / viewport.clientHeight;
+            carouselCamera.updateProjectionMatrix();
+            carouselRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
+        }
+    });
+    
+    // Start animation loop
+    animateCarousel();
+}
+
+function loadCarouselModels(llms) {
     carouselModels = [];
     
-    // Create models for each LLM
-    llms.forEach(llm => {
+    llms.forEach((llm) => {
         let model;
         
         if (llm.customCharacterCode) {
+            // Create custom character from stored code
             try {
                 model = createCustomCharacter(THREE, llm.customCharacterCode);
             } catch (error) {
@@ -32,67 +105,17 @@ export function initLLMCarousel(llms, scene) {
                 model = createStandardModel(llm);
             }
         } else {
+            // Create standard model based on stored properties
             model = createStandardModel(llm);
         }
         
-        // Store the model's ID for reference
-        model.userData = { id: llm.id };
-        
-        // Hide all models initially
         model.visible = false;
+        model.userData = { id: llm.id };
+        model.scale.set(0.8, 0.8, 0.8);
         
-        // Add to group
-        carouselGroup.add(model);
+        carouselScene.add(model);
         carouselModels.push(model);
     });
-    
-    // Position visible models
-    updateCarouselView();
-    
-    return carouselGroup;
-}
-
-export function nextCarouselModel() {
-    if (carouselModels.length <= visibleModels) return;
-    
-    currentModelIndex = (currentModelIndex + 1) % carouselModels.length;
-    updateCarouselView();
-}
-
-export function prevCarouselModel() {
-    if (carouselModels.length <= visibleModels) return;
-    
-    currentModelIndex = (currentModelIndex - 1 + carouselModels.length) % carouselModels.length;
-    updateCarouselView();
-}
-
-function updateCarouselView() {
-    // Hide all models first
-    carouselModels.forEach(model => {
-        model.visible = false;
-    });
-    
-    // Show only visible models
-    const numModels = carouselModels.length;
-    const positions = [-4, 0, 4]; // Left, center, right positions
-    
-    for (let i = 0; i < Math.min(visibleModels, numModels); i++) {
-        const modelIndex = (currentModelIndex + i) % numModels;
-        const model = carouselModels[modelIndex];
-        
-        // Show model
-        model.visible = true;
-        
-        // Position model - center is the focus
-        model.position.set(positions[i], 0, 0);
-        
-        // Scale models - center is largest
-        const scale = i === 1 ? 1 : 0.8;
-        model.scale.set(scale, scale, scale);
-        
-        // Rotate models to face camera
-        model.rotation.y = positions[i] > 0 ? -Math.PI/6 : (positions[i] < 0 ? Math.PI/6 : 0);
-    }
 }
 
 function createStandardModel(llm) {
@@ -152,7 +175,45 @@ function createStandardModel(llm) {
     legs.position.y = 0.5;
     group.add(legs);
     
-    // Add a nameplate
+    return group;
+}
+
+function updateVisibleModels() {
+    // Hide all models first
+    carouselModels.forEach(model => {
+        model.visible = false;
+    });
+    
+    // Show only 3 models starting from currentIndex
+    for (let i = 0; i < 3; i++) {
+        const index = (currentIndex + i) % totalLLMs;
+        if (carouselModels[index]) {
+            carouselModels[index].visible = true;
+            
+            // Position the models in a row
+            const xPos = (i - 1) * 3; // -3, 0, 3
+            carouselModels[index].position.set(xPos, 0, 0);
+            
+            // Add nameplate to each model
+            updateNameplate(carouselModels[index], index);
+        }
+    }
+}
+
+function updateNameplate(model, index) {
+    // Remove existing nameplate if any
+    model.children.forEach(child => {
+        if (child.userData && child.userData.isNameplate) {
+            model.remove(child);
+        }
+    });
+    
+    // Get LLM data
+    const llmId = model.userData.id;
+    const llm = llmDataManager.getLLMById(llmId);
+    if (!llm) return;
+    
+    // Create a nameplate
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 64;
@@ -160,24 +221,116 @@ function createStandardModel(llm) {
     
     ctx.fillStyle = '#222';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.strokeStyle = '#3cb371';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    
     ctx.fillStyle = '#fff';
-    ctx.font = '24px Arial';
+    ctx.font = 'bold 24px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(llm.name, canvas.width / 2, canvas.height / 2 + 8);
     
     const texture = new THREE.CanvasTexture(canvas);
-    const nameMaterial = new THREE.MeshBasicMaterial({ 
+    const nameplateMaterial = new THREE.MeshBasicMaterial({ 
         map: texture,
         transparent: true
     });
     
     const nameplate = new THREE.Mesh(
-        new THREE.PlaneGeometry(1, 0.25),
-        nameMaterial
+        new THREE.PlaneGeometry(2, 0.5),
+        nameplateMaterial
     );
     nameplate.position.set(0, 2.5, 0);
-    nameplate.rotation.y = Math.PI;
-    group.add(nameplate);
+    nameplate.userData = { isNameplate: true };
+    model.add(nameplate);
+}
+
+function createNavigationArrows(viewport) {
+    // Create left arrow
+    const leftArrow = document.createElement('div');
+    leftArrow.className = 'carousel-arrow left-arrow';
+    leftArrow.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        </svg>
+    `;
+    viewport.appendChild(leftArrow);
     
-    return group;
+    // Create right arrow
+    const rightArrow = document.createElement('div');
+    rightArrow.className = 'carousel-arrow right-arrow';
+    rightArrow.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
+            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+        </svg>
+    `;
+    viewport.appendChild(rightArrow);
+    
+    // Create indicator dots
+    const dotsContainer = document.createElement('div');
+    dotsContainer.className = 'carousel-dots';
+    
+    for (let i = 0; i < Math.ceil(totalLLMs / 3); i++) {
+        const dot = document.createElement('div');
+        dot.className = 'carousel-dot';
+        if (i === 0) dot.classList.add('active');
+        dotsContainer.appendChild(dot);
+    }
+    
+    viewport.appendChild(dotsContainer);
+    
+    // Add event listeners
+    leftArrow.addEventListener('click', () => {
+        navigateCarousel(-1);
+    });
+    
+    rightArrow.addEventListener('click', () => {
+        navigateCarousel(1);
+    });
+}
+
+function navigateCarousel(direction) {
+    currentIndex = (currentIndex + direction + totalLLMs) % totalLLMs;
+    updateVisibleModels();
+    updateDotIndicators();
+}
+
+function updateDotIndicators() {
+    const dots = document.querySelectorAll('.carousel-dot');
+    const currentPage = Math.floor(currentIndex / 3);
+    
+    dots.forEach((dot, index) => {
+        if (index === currentPage) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+}
+
+function animateCarousel() {
+    if (!carouselScene || !carouselCamera || !carouselRenderer) return;
+    
+    animationId = requestAnimationFrame(animateCarousel);
+    
+    // Simple idle animation for models
+    carouselModels.forEach((model, index) => {
+        if (model.visible) {
+            const time = Date.now() * 0.001;
+            const offset = index * 0.5;
+            
+            // Simple hovering and rotation
+            model.position.y = Math.sin(time + offset) * 0.1;
+            model.rotation.y = Math.sin(time * 0.5 + offset) * 0.3;
+        }
+    });
+    
+    carouselRenderer.render(carouselScene, carouselCamera);
+}
+
+export function cleanupCarousel() {
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+    }
 }
