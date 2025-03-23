@@ -121,11 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Set interval for fetching tips every 7 seconds
-        tipFetchInterval = setInterval(() => {
+        tipFetchInterval = setInterval(async () => {
             if (useLLMTips) {
-                fetchLLMTip().then(tip => {
-                    tipText.textContent = tip;
-                });
+                const tip = await fetchLLMTip();
+                tipText.textContent = tip;
             } else {
                 setRandomTip();
             }
@@ -163,8 +162,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (useLLMTips) {
             startLLMTipFetch();
         } else {
-            // Change tip every 3 seconds if using preset tips
-            setInterval(setRandomTip, 3000);
+            // Set interval for changing tips
+            tipFetchInterval = setInterval(setRandomTip, 3000);
         }
     });
     
