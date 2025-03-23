@@ -1,0 +1,518 @@
+import * as THREE from 'three';
+
+// Variables for the humanoid preview scene
+let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
+let robotModel;
+let headMaterial, bodyMaterial, limbsMaterial;
+let customCharacter = null;
+let humanoidMixer = null;
+let selectedMesh = null; // Track the currently selected mesh
+
+// Initialize the humanoid preview scene
+export function initHumanoidPreview() {
+    const viewport = document.querySelector('.humanoid-viewport');
+    
+    // Clear existing content
+    viewport.innerHTML = '';
+    
+    // Setup Three.js scene
+    humanoidScene = new THREE.Scene();
+    humanoidScene.background = new THREE.Color(0x111111);
+    
+    // Setup camera
+    humanoidCamera = new THREE.PerspectiveCamera(
+        45, 
+        viewport.clientWidth / viewport.clientHeight, 
+        0.1, 
+        1000
+    );
+    humanoidCamera.position.set(0, 1.5, 4);
+    humanoidCamera.lookAt(0, 1, 0);
+    
+    // Setup renderer
+    humanoidRenderer = new THREE.WebGLRenderer({ antialias: true });
+    humanoidRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    humanoidRenderer.shadowMap.enabled = true;
+    viewport.appendChild(humanoidRenderer.domElement);
+    
+    // Add click event listener for mesh selection
+    humanoidRenderer.domElement.addEventListener('click', handleMeshSelection);
+    
+    // Setup lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    humanoidScene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(2, 5, 3);
+    directionalLight.castShadow = true;
+    humanoidScene.add(directionalLight);
+    
+    // Add ground plane
+    const groundGeometry = new THREE.PlaneGeometry(10, 10);
+    const groundMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x222222,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.position.y = -1;
+    humanoidScene.add(ground);
+    
+    // Create robot humanoid model
+    createRobotModel();
+    
+    // Setup animation clock
+    humanoidClock = new THREE.Clock();
+    
+    // Start animation loop
+    animateHumanoid();
+    
+    // Handle resize
+    window.addEventListener('resize', () => {
+        if (humanoidCamera && humanoidRenderer && viewport) {
+            humanoidCamera.aspect = viewport.clientWidth / viewport.clientHeight;
+            humanoidCamera.updateProjectionMatrix();
+            humanoidRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
+        }
+    });
+}
+
+// Create the default robot model
+export function createRobotModel() {
+    // Get current selected color
+    const color = document.getElementById('llm-color').value;
+    const style = document.getElementById('llm-style').value;
+    
+    // Create materials based on selected style
+    let emissiveIntensity = 0;
+    let metalness = 0.2;
+    let roughness = 0.7;
+    
+    switch(style) {
+        case 'modern':
+            metalness = 0.6;
+            roughness = 0.2;
+            break;
+        case 'classic':
+            metalness = 0.1;
+            roughness = 0.9;
+            break;
+        case 'retro':
+            metalness = 0.3;
+            roughness = 0.8;
+            break;
+        case 'futuristic':
+            metalness = 0.8;
+            roughness = 0.1;
+            emissiveIntensity = 0.5;
+            break;
+    }
+    
+    // Create materials
+    headMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(color),
+        emissive: new THREE.Color(color).multiplyScalar(0.3),
+        emissiveIntensity: emissiveIntensity,
+        metalness: metalness + 0.2,
+        roughness: roughness - 0.1
+    });
+    
+    bodyMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(color).multiplyScalar(0.8),
+        emissive: new THREE.Color(color).multiplyScalar(0.2),
+        emissiveIntensity: emissiveIntensity,
+        metalness: metalness,
+        roughness: roughness
+    });
+    
+    limbsMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(0x444444),
+        emissive: new THREE.Color(color).multiplyScalar(0.1),
+        emissiveIntensity: emissiveIntensity,
+        metalness: metalness + 0.3,
+        roughness: roughness + 0.1
+    });
+    
+    // Create robot parts
+    const robotGroup = new THREE.Group();
+    
+    // Head
+    const head = new THREE.Group();
+    const headMain = new THREE.Mesh(
+        new THREE.BoxGeometry(0.4, 0.4, 0.4),
+        headMaterial
+    );
+    head.add(headMain);
+    
+    // Eyes
+    const eyeGeometry = new THREE.SphereGeometry(0.06, 16, 16);
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+    
+    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    leftEye.position.set(-0.1, 0.05, 0.2);
+    head.add(leftEye);
+    
+    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    rightEye.position.set(0.1, 0.05, 0.2);
+    head.add(rightEye);
+    
+    // Antenna
+    const antenna = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.01, 0.01, 0.2),
+        limbsMaterial
+    );
+    antenna.position.set(0, 0.3, 0);
+    head.add(antenna);
+    
+    const antennaTip = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    );
+    antennaTip.position.set(0, 0.4, 0);
+    head.add(antennaTip);
+    
+    head.position.set(0, 1.8, 0);
+    head.castShadow = true;
+    robotGroup.add(head);
+    
+    // Neck
+    const neck = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 0.1),
+        limbsMaterial
+    );
+    neck.position.set(0, 1.6, 0);
+    neck.castShadow = true;
+    robotGroup.add(neck);
+    
+    // Torso
+    const torso = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 0.8, 0.3),
+        bodyMaterial
+    );
+    torso.position.set(0, 1.2, 0);
+    torso.castShadow = true;
+    robotGroup.add(torso);
+    
+    // Chest light
+    const chestLight = new THREE.Mesh(
+        new THREE.CircleGeometry(0.1, 32),
+        new THREE.MeshBasicMaterial({ 
+            color: new THREE.Color(color).multiplyScalar(1.5) 
+        })
+    );
+    chestLight.position.set(0, 1.3, 0.16);
+    chestLight.rotation.x = Math.PI / 2;
+    robotGroup.add(chestLight);
+    
+    // Arms
+    const upperArmGeometry = new THREE.CylinderGeometry(0.08, 0.07, 0.4);
+    const lowerArmGeometry = new THREE.CylinderGeometry(0.07, 0.06, 0.4);
+    
+    // Left arm
+    const leftUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
+    leftUpperArm.position.set(-0.4, 1.3, 0);
+    leftUpperArm.rotation.z = Math.PI / 6;
+    leftUpperArm.castShadow = true;
+    robotGroup.add(leftUpperArm);
+    
+    const leftLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
+    leftLowerArm.position.set(-0.55, 1.0, 0);
+    leftLowerArm.rotation.z = Math.PI / 4;
+    leftLowerArm.castShadow = true;
+    robotGroup.add(leftLowerArm);
+    
+    const leftHand = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 16, 16),
+        headMaterial
+    );
+    leftHand.position.set(-0.75, 0.8, 0);
+    leftHand.castShadow = true;
+    robotGroup.add(leftHand);
+    
+    // Right arm
+    const rightUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
+    rightUpperArm.position.set(0.4, 1.3, 0);
+    rightUpperArm.rotation.z = -Math.PI / 6;
+    rightUpperArm.castShadow = true;
+    robotGroup.add(rightUpperArm);
+    
+    const rightLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
+    rightLowerArm.position.set(0.55, 1.0, 0);
+    rightLowerArm.rotation.z = -Math.PI / 4;
+    rightLowerArm.castShadow = true;
+    robotGroup.add(rightLowerArm);
+    
+    const rightHand = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 16, 16),
+        headMaterial
+    );
+    rightHand.position.set(0.75, 0.8, 0);
+    rightHand.castShadow = true;
+    robotGroup.add(rightHand);
+    
+    // Hip
+    const hip = new THREE.Mesh(
+        new THREE.BoxGeometry(0.35, 0.2, 0.3),
+        bodyMaterial
+    );
+    hip.position.set(0, 0.8, 0);
+    hip.castShadow = true;
+    robotGroup.add(hip);
+    
+    // Legs
+    const upperLegGeometry = new THREE.CylinderGeometry(0.09, 0.08, 0.4);
+    const lowerLegGeometry = new THREE.CylinderGeometry(0.08, 0.07, 0.4);
+    
+    // Left leg
+    const leftUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
+    leftUpperLeg.position.set(-0.15, 0.5, 0);
+    leftUpperLeg.castShadow = true;
+    robotGroup.add(leftUpperLeg);
+    
+    const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
+    leftLowerLeg.position.set(-0.15, 0.1, 0);
+    leftLowerLeg.castShadow = true;
+    robotGroup.add(leftLowerLeg);
+    
+    const leftFoot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 0.05, 0.25),
+        limbsMaterial
+    );
+    leftFoot.position.set(-0.15, -0.1, 0.05);
+    leftFoot.castShadow = true;
+    robotGroup.add(leftFoot);
+    
+    // Right leg
+    const rightUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
+    rightUpperLeg.position.set(0.15, 0.5, 0);
+    rightUpperLeg.castShadow = true;
+    robotGroup.add(rightUpperLeg);
+    
+    const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
+    rightLowerLeg.position.set(0.15, 0.1, 0);
+    rightLowerLeg.castShadow = true;
+    robotGroup.add(rightLowerLeg);
+    
+    const rightFoot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.15, 0.05, 0.25),
+        limbsMaterial
+    );
+    rightFoot.position.set(0.15, -0.1, 0.05);
+    rightFoot.castShadow = true;
+    robotGroup.add(rightFoot);
+    
+    // Add robot to scene
+    robotModel = robotGroup;
+    humanoidScene.add(robotModel);
+}
+
+// Handle mesh selection for coloring
+function handleMeshSelection(event) {
+    const viewport = document.querySelector('.humanoid-viewport');
+    const rect = viewport.getBoundingClientRect();
+    
+    // Calculate mouse position in normalized device coordinates (-1 to +1)
+    const mouse = {
+        x: ((event.clientX - rect.left) / viewport.clientWidth) * 2 - 1,
+        y: -((event.clientY - rect.top) / viewport.clientHeight) * 2 + 1
+    };
+    
+    // Create a raycaster
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, humanoidCamera);
+    
+    // Get objects to test for intersection
+    const meshes = [];
+    if (robotModel) {
+        robotModel.traverse(child => {
+            if (child.isMesh) meshes.push(child);
+        });
+    }
+    if (customCharacter) {
+        customCharacter.traverse(child => {
+            if (child.isMesh) meshes.push(child);
+        });
+    }
+    
+    // Find intersections
+    const intersects = raycaster.intersectObjects(meshes);
+    
+    if (intersects.length > 0) {
+        // Unhighlight previous selection
+        if (selectedMesh && selectedMesh.userData.originalEmissive) {
+            selectedMesh.material.emissive.set(selectedMesh.userData.originalEmissive);
+            delete selectedMesh.userData.originalEmissive;
+        }
+        
+        // Select the new mesh
+        selectedMesh = intersects[0].object;
+        
+        // Store original emissive color and highlight the selection
+        if (!selectedMesh.userData.originalEmissive && selectedMesh.material.emissive) {
+            selectedMesh.userData.originalEmissive = selectedMesh.material.emissive.clone();
+            selectedMesh.material.emissive.set(0x333333);
+        }
+        
+        // Update color picker to match the selected mesh's color
+        if (selectedMesh.material.color) {
+            const hexColor = '#' + selectedMesh.material.color.getHexString();
+            document.getElementById('llm-color').value = hexColor;
+        }
+    } else {
+        // Unhighlight if clicked elsewhere
+        if (selectedMesh && selectedMesh.userData.originalEmissive) {
+            selectedMesh.material.emissive.set(selectedMesh.userData.originalEmissive);
+            delete selectedMesh.userData.originalEmissive;
+        }
+        selectedMesh = null;
+    }
+}
+
+// Update the color of the selected mesh
+export function updateSelectedMeshColor() {
+    const color = document.getElementById('llm-color').value;
+    
+    if (selectedMesh && selectedMesh.material) {
+        // Update just the selected mesh's color
+        selectedMesh.material.color.set(color);
+        
+        // Also update emissive with a toned down version of the color
+        if (selectedMesh.material.emissive) {
+            // Store the highlight for selection state
+            if (!selectedMesh.userData.originalEmissive) {
+                selectedMesh.userData.originalEmissive = new THREE.Color(color).multiplyScalar(0.2);
+            } else {
+                selectedMesh.userData.originalEmissive.set(new THREE.Color(color).multiplyScalar(0.2));
+            }
+            
+            // Keep the highlight if it's selected
+            selectedMesh.material.emissive.set(0x333333);
+        }
+    } else {
+        // If no mesh is selected, fall back to the original behavior
+        updateHumanoidPreview();
+    }
+}
+
+// Update the humanoid preview based on style changes
+export function updateHumanoidPreview() {
+    if (!robotModel) return;
+    
+    // If we have a custom character, don't update the default robot
+    if (customCharacter) return;
+    
+    // Get new color and style
+    const color = document.getElementById('llm-color').value;
+    const style = document.getElementById('llm-style').value;
+    
+    // Update materials based on style
+    let emissiveIntensity = 0;
+    let metalness = 0.2;
+    let roughness = 0.7;
+    
+    switch(style) {
+        case 'modern':
+            metalness = 0.6;
+            roughness = 0.2;
+            break;
+        case 'classic':
+            metalness = 0.1;
+            roughness = 0.9;
+            break;
+        case 'retro':
+            metalness = 0.3;
+            roughness = 0.8;
+            break;
+        case 'futuristic':
+            metalness = 0.8;
+            roughness = 0.1;
+            emissiveIntensity = 0.5;
+            break;
+    }
+    
+    // Update materials
+    if (headMaterial) {
+        headMaterial.color.set(color);
+        headMaterial.emissive.set(color).multiplyScalar(0.3);
+        headMaterial.emissiveIntensity = emissiveIntensity;
+        headMaterial.metalness = metalness + 0.2;
+        headMaterial.roughness = roughness - 0.1;
+    }
+    
+    if (bodyMaterial) {
+        bodyMaterial.color.set(new THREE.Color(color).multiplyScalar(0.8));
+        bodyMaterial.emissive.set(color).multiplyScalar(0.2);
+        bodyMaterial.emissiveIntensity = emissiveIntensity;
+        bodyMaterial.metalness = metalness;
+        bodyMaterial.roughness = roughness;
+    }
+    
+    if (limbsMaterial) {
+        limbsMaterial.emissive.set(color).multiplyScalar(0.1);
+        limbsMaterial.emissiveIntensity = emissiveIntensity;
+        limbsMaterial.metalness = metalness + 0.3;
+        limbsMaterial.roughness = roughness + 0.1;
+    }
+    
+    // Update chest light color
+    if (robotModel) {
+        const chestLight = robotModel.children.find(c => c.geometry && c.geometry.type === 'CircleGeometry');
+        if (chestLight && chestLight.material) {
+            chestLight.material.color.set(new THREE.Color(color).multiplyScalar(1.5));
+        }
+    }
+}
+
+// Animation loop for the humanoid preview
+function animateHumanoid() {
+    if (!humanoidScene || !humanoidCamera || !humanoidRenderer) return;
+    
+    requestAnimationFrame(animateHumanoid);
+    
+    // Simple idle animation
+    if (robotModel) {
+        const time = Date.now() * 0.001;
+        
+        // Gentle bobbing motion
+        robotModel.position.y = Math.sin(time) * 0.05;
+        
+        // Gentle rotation
+        robotModel.rotation.y = Math.sin(time * 0.5) * 0.5;
+    }
+    
+    // Apply similar animation to custom character if it exists
+    if (customCharacter) {
+        const time = Date.now() * 0.001;
+        customCharacter.position.y = Math.sin(time) * 0.05;
+        customCharacter.rotation.y = Math.sin(time * 0.5) * 0.5;
+    }
+    
+    // Update animation mixer if exists
+    if (humanoidMixer) {
+        humanoidMixer.update(humanoidClock.getDelta());
+    }
+    
+    humanoidRenderer.render(humanoidScene, humanoidCamera);
+}
+
+// Store custom character in the scene
+export function setCustomCharacter(character) {
+    // Remove previous custom character if it exists
+    if (customCharacter && customCharacter.parent) {
+        customCharacter.parent.remove(customCharacter);
+    }
+    
+    // Remove default robot if it exists
+    if (robotModel && robotModel.parent) {
+        robotModel.parent.remove(robotModel);
+        robotModel = null;
+    }
+    
+    // Set the new character
+    customCharacter = character;
+    if (customCharacter) {
+        humanoidScene.add(customCharacter);
+    }
+}
