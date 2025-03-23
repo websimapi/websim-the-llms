@@ -349,6 +349,8 @@ body {
 /* Rainbow hover effect for Create LLM button */
 .create-llm-btn {
     background: none;
+    position: relative;
+    overflow: hidden;
 }
 
 .create-llm-btn:hover {
@@ -356,12 +358,43 @@ body {
     transform: scale(1.05);
 }
 
-.create-llm-btn:hover .llm-icon path,
-.create-llm-btn:hover .llm-icon circle,
-.create-llm-btn:hover .llm-icon rect {
-    fill: currentColor;
+.create-llm-btn:hover .llm-icon {
     filter: hue-rotate(calc(var(--hue, 0) * 1deg));
     animation: rainbow-icon 8s ease infinite;
+}
+
+.create-llm-btn::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), 
+                transparent 0%, 
+                rgba(255, 0, 0, 0.4) 10%,
+                rgba(255, 165, 0, 0.4) 20%,
+                rgba(255, 255, 0, 0.4) 30%,
+                rgba(0, 128, 0, 0.4) 40%,
+                rgba(0, 0, 255, 0.4) 50%,
+                rgba(75, 0, 130, 0.4) 60%,
+                rgba(128, 0, 128, 0.4) 70%,
+                transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.create-llm-btn:hover::before {
+    opacity: 1;
+    animation: fireworks 2s infinite;
+}
+
+@keyframes fireworks {
+    0% { transform: scale(0.5); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(0.5); }
 }
 
 @keyframes rainbow-icon {

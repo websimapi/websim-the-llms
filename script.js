@@ -189,5 +189,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Setup UI interactions for fireworks effect
+    function setupUIInteractions() {
+        const createLLMButton = document.querySelector('.create-llm-btn');
+        
+        createLLMButton.addEventListener('click', () => {
+            console.log('Create new LLM clicked');
+        });
+        
+        // Add mousemove event for fireworks effect
+        createLLMButton.addEventListener('mousemove', (e) => {
+            const rect = createLLMButton.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            createLLMButton.style.setProperty('--x', `${x}%`);
+            createLLMButton.style.setProperty('--y', `${y}%`);
+        });
+    }
+
     setupConsolePanel();
+    setupUIInteractions();
 });
