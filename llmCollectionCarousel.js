@@ -27,30 +27,20 @@ export function setupLLMCarousel(viewportElement, llms) {
         return;
     }
     
-    try {
-        // Initialize Three.js scene
-        initCarouselScene(viewportElement);
-        
-        // Add navigation arrows
-        addNavigationArrows(viewportElement);
-        
-        // Load initial models
-        updateCarouselModels();
-        
-        // Start animation
-        animateCarousel();
-    } catch (error) {
-        console.error("Error setting up LLM carousel:", error);
-        displayEmptyState(viewportElement);
-    }
+    // Initialize Three.js scene
+    initCarouselScene(viewportElement);
+    
+    // Add navigation arrows
+    addNavigationArrows(viewportElement);
+    
+    // Load initial models
+    updateCarouselModels();
+    
+    // Start animation
+    animateCarousel();
 }
 
 function initCarouselScene(viewportElement) {
-    if (!viewportElement) {
-        console.error("Viewport element is null");
-        throw new Error("Viewport element is null");
-    }
-    
     // Setup Three.js scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x111111);
@@ -67,7 +57,7 @@ function initCarouselScene(viewportElement) {
     
     // Setup renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(viewportElement.clientWidth || 300, viewportElement.clientHeight || 200);
+    renderer.setSize(viewportElement.clientWidth, viewportElement.clientHeight);
     renderer.shadowMap.enabled = true;
     viewportElement.appendChild(renderer.domElement);
     

@@ -50,21 +50,3 @@
     width: 80%;
 }
 
-.empty-collection {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #aaa;
-    text-align: center;
-    padding: 20px;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 10px;
-    width: 80%;
-    margin: 0;
-}
-
-.collection-viewport {
-    position: relative;
-    min-height: 300px;
-}

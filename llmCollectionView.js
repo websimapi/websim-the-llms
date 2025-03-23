@@ -40,14 +40,6 @@ export function setupLLMCollectionView() {
                 <p>Create your first LLM by clicking the "Create New LLM" button below.</p>
             </div>
         `;
-        
-        // Show empty state in viewport too
-        collectionViewport.innerHTML = `
-            <div class="empty-collection">
-                <h3>No LLMs to Display</h3>
-                <p>Create your first LLM to see it here!</p>
-            </div>
-        `;
     } else {
         // Display LLM list
         llms.forEach((llm, index) => {
@@ -68,18 +60,8 @@ export function setupLLMCollectionView() {
             llmList.appendChild(llmItem);
         });
         
-        try {
-            // Setup carousel instead of the previous Three.js scene
-            setupLLMCarousel(collectionViewport, llms);
-        } catch (error) {
-            console.error("Error setting up LLM carousel:", error);
-            collectionViewport.innerHTML = `
-                <div class="empty-collection">
-                    <h3>Could not display LLMs</h3>
-                    <p>There was an error loading the 3D models. Please try again.</p>
-                </div>
-            `;
-        }
+        // Setup carousel instead of the previous Three.js scene
+        setupLLMCarousel(collectionViewport, llms);
         
         // Add event listeners for buttons
         document.querySelectorAll('.llm-edit-btn').forEach(btn => {
