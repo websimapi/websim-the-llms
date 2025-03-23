@@ -37,6 +37,7 @@ function createStandardModel(THREE, llm) {
         headMaterial
     );
     head.position.y = 1.8;
+    head.castShadow = true;
     group.add(head);
     
     // Eyes
@@ -44,16 +45,51 @@ function createStandardModel(THREE, llm) {
     const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.1, 1.85, 0.2);
-    group.add(leftEye);
+    leftEye.position.set(-0.1, 0.05, 0.2);
+    head.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.1, 1.85, 0.2);
-    group.add(rightEye);
+    rightEye.position.set(0.1, 0.05, 0.2);
+    head.add(rightEye);
+    
+    // Antenna
+    const antenna = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.01, 0.01, 0.2),
+        new THREE.MeshStandardMaterial({
+            color: 0x444444,
+            metalness: 0.8,
+            roughness: 0.2
+        })
+    );
+    antenna.position.set(0, 0.3, 0);
+    head.add(antenna);
+    
+    const antennaTip = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    );
+    antennaTip.position.set(0, 0.4, 0);
+    head.add(antennaTip);
+    
+    // Neck
+    const neckMaterial = new THREE.MeshStandardMaterial({
+        color: 0x444444,
+        metalness: 0.8,
+        roughness: 0.2
+    });
+    
+    const neck = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.1, 0.1, 0.1),
+        neckMaterial
+    );
+    neck.position.set(0, 1.6, 0);
+    neck.castShadow = true;
+    group.add(neck);
     
     // Create body
     const bodyMaterial = new THREE.MeshStandardMaterial({
         color: color.clone().multiplyScalar(0.8),
+        emissive: color.clone().multiplyScalar(0.2),
         metalness: 0.5,
         roughness: 0.5
     });
@@ -63,16 +99,29 @@ function createStandardModel(THREE, llm) {
         bodyMaterial
     );
     body.position.y = 1.2;
+    body.castShadow = true;
     group.add(body);
+    
+    // Chest light
+    const chestLight = new THREE.Mesh(
+        new THREE.CircleGeometry(0.1, 32),
+        new THREE.MeshBasicMaterial({ 
+            color: color.clone().multiplyScalar(1.5) 
+        })
+    );
+    chestLight.position.set(0, 1.3, 0.16);
+    chestLight.rotation.x = Math.PI / 2;
+    group.add(chestLight);
     
     // Create limbs
     const limbsMaterial = new THREE.MeshStandardMaterial({
         color: 0x444444,
+        emissive: color.clone().multiplyScalar(0.1),
         metalness: 0.8,
         roughness: 0.2
     });
     
-    // Upper arms
+    // Arms
     const upperArmGeometry = new THREE.CylinderGeometry(0.08, 0.07, 0.4);
     const lowerArmGeometry = new THREE.CylinderGeometry(0.07, 0.06, 0.4);
     
@@ -89,6 +138,14 @@ function createStandardModel(THREE, llm) {
     leftLowerArm.castShadow = true;
     group.add(leftLowerArm);
     
+    const leftHand = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 16, 16),
+        headMaterial
+    );
+    leftHand.position.set(-0.75, 0.8, 0);
+    leftHand.castShadow = true;
+    group.add(leftHand);
+    
     // Right arm
     const rightUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
     rightUpperArm.position.set(0.4, 1.3, 0);
@@ -101,6 +158,23 @@ function createStandardModel(THREE, llm) {
     rightLowerArm.rotation.z = -Math.PI / 4;
     rightLowerArm.castShadow = true;
     group.add(rightLowerArm);
+    
+    const rightHand = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 16, 16),
+        headMaterial
+    );
+    rightHand.position.set(0.75, 0.8, 0);
+    rightHand.castShadow = true;
+    group.add(rightHand);
+    
+    // Hip
+    const hip = new THREE.Mesh(
+        new THREE.BoxGeometry(0.35, 0.2, 0.3),
+        bodyMaterial
+    );
+    hip.position.set(0, 0.8, 0);
+    hip.castShadow = true;
+    group.add(hip);
     
     // Legs
     const upperLegGeometry = new THREE.CylinderGeometry(0.09, 0.08, 0.4);
