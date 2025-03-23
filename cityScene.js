@@ -117,13 +117,16 @@ function initCityScene() {
             
             if (progress < 1) {
                 // Interpolate camera position for smooth pan
+                // Stop at about 3/4 of the way through
+                const progressCapped = Math.min(progress * (4/3), 1); // Cap at 1 when progress reaches 0.75
+                
                 const targetX = 0;
                 const targetY = 20;
                 const targetZ = 20;
                 
-                camera.position.x = 50 * (1 - progress) + targetX * progress;
-                camera.position.y = 30 * (1 - progress) + targetY * progress;
-                camera.position.z = 50 * (1 - progress) + targetZ * progress;
+                camera.position.x = 50 * (1 - progressCapped) + targetX * progressCapped;
+                camera.position.y = 30 * (1 - progressCapped) + targetY * progressCapped;
+                camera.position.z = 50 * (1 - progressCapped) + targetZ * progressCapped;
                 camera.lookAt(0, 0, 0);
             } else {
                 introComplete = true;
