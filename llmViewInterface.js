@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { createCustomCharacter } from './characterGenerator.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
-import { renderLLMDetailView, cleanupDetailView } from './llmViewDetails.js';
 
 let viewScene, viewCamera, viewRenderer;
 let viewModel = null;
@@ -25,11 +24,11 @@ export function setupLLMViewInterface(llmId) {
         createViewport(detailsPanel);
     }
     
-    // Use the renderLLMDetailView function from the new file
-    const viewport = document.querySelector('.llm-detail-viewport');
-    if (viewport) {
-        renderLLMDetailView(llm, viewport);
-    }
+    // Initialize the 3D view
+    initViewScene();
+    
+    // Create the model
+    displayLLMModel(llm);
     
     // Show edit button and add event listener
     const editButton = document.querySelector('.edit-llm-btn');
@@ -40,15 +39,6 @@ export function setupLLMViewInterface(llmId) {
     
     // Show the panel
     detailsPanel.classList.add('active');
-    
-    // Add close button event listener
-    const closeButton = document.querySelector('.details-close');
-    if (closeButton) {
-        closeButton.addEventListener('click', () => {
-            detailsPanel.classList.remove('active');
-            cleanupDetailView();
-        });
-    }
 }
 
 function createViewport(detailsPanel) {

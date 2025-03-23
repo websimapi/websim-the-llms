@@ -52,7 +52,7 @@ export function setupLLMCollectionView() {
                     <p class="llm-created">Created: ${new Date(llm.createdAt).toLocaleDateString()}</p>
                 </div>
                 <div class="llm-actions">
-                    <button class="llm-view-btn" data-id="${llm.id}">View</button>
+                    <button class="llm-edit-btn" data-id="${llm.id}">Edit</button>
                     <button class="llm-delete-btn" data-id="${llm.id}">Delete</button>
                 </div>
             `;
@@ -63,10 +63,10 @@ export function setupLLMCollectionView() {
         initCollectionScene(collectionViewport, llms);
         
         // Add event listeners for buttons
-        document.querySelectorAll('.llm-view-btn').forEach(btn => {
+        document.querySelectorAll('.llm-edit-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = e.target.getAttribute('data-id');
-                viewLLMDetails(id);
+                handleEditLLM(id);
             });
         });
         
@@ -173,13 +173,29 @@ function initCollectionScene(viewport, llms) {
 }
 
 function viewLLMDetails(id) {
-    // Cancel any existing animation
+    setupLLMViewInterface(id);
+}
+
+function handleEditLLM(id) {
+    const llm = llmDataManager.getLLMById(id);
+    if (!llm) return;
+    
+    // Close the collection UI
+    document.getElementById('llm-collection-ui').classList.remove('active');
+    
+    // Open the creation UI in edit mode
+    const createUI = document.getElementById('create-llm-ui');
+    createUI.classList.add('active');
+    createUI.setAttribute('data-edit-mode', 'true');
+    createUI.setAttribute('data-edit-id', id);
+    
+    // Set up the creation interface with the LLM data
+    setupLLMCreationInterface(llm);
+    
+    // Cancel animation if active
     if (collectionAnimationId) {
         cancelAnimationFrame(collectionAnimationId);
     }
-    
-    // Setup the details view
-    setupLLMViewInterface(id);
 }
 
 function deleteLLM(id) {
