@@ -4,24 +4,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingBar = document.querySelector('.loading-bar');
     const loadingPercentage = document.querySelector('.loading-percentage');
     const tipText = document.querySelector('.tip-text');
-    const llmToggle = document.getElementById('llm-toggle');
+    const llmToggle = document.getElementById('llmToggle');
     
-    // Check if toggle state exists in localStorage
-    const llmEnabled = localStorage.getItem('llmEnabled') === 'true';
+    let usingLLM = false;
+    let generatingTip = false;
     
-    // Set initial toggle state
-    llmToggle.checked = llmEnabled;
-
-    // Toggle change event
+    // Toggle LLM tips generation
     llmToggle.addEventListener('change', () => {
-        const isEnabled = llmToggle.checked;
-        localStorage.setItem('llmEnabled', isEnabled.toString());
-        
-        if (isEnabled) {
-            // If we turn on LLM, immediately generate a tip
+        usingLLM = llmToggle.checked;
+        if (usingLLM) {
             generateLLMTip();
         } else {
-            // If we turn off LLM, immediately show a random predefined tip
             setRandomTip();
         }
     });
@@ -34,62 +27,41 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Generate a tip using LLM
     async function generateLLMTip() {
+        if (!usingLLM || generatingTip) return;
+        
+        generatingTip = true;
         try {
             const completion = await websim.chat.completions.create({
                 messages: [
                     {
                         role: "system",
-                        content: "You are a helpful assistant providing a short, humorous tip about 'The LLMs', a life simulation game inspired by The Sims where players manage virtual AI language models instead of people. Keep it brief (under 100 characters) and funny, styled like a loading screen tip from The Sims. Include references to AI concepts, language models, or machine learning, but in the context of daily life activities."
-                    },
-                    {
-                        role: "user",
-                        content: "Generate a single loading screen tip for 'The LLMs' game."
+                        content: "You are a helpful assistant providing short, amusing tips for a game called 'The LLMs' which is inspired by The Sims. Create a single tip about virtual life simulation, character management, or language model care. Keep it under 100 characters and make it sound like a loading screen tip from The Sims."
                     }
-                ],
+                ]
             });
             
-            tipText.textContent = completion.content;
+            if (usingLLM) { // Double check we're still using LLM
+                tipText.textContent = completion.content;
+            }
         } catch (error) {
             console.error("Error generating LLM tip:", error);
-            tipText.textContent = "LLM error: Using fallback tips instead.";
-            // Fall back to random tip if LLM fails
-            setTimeout(setRandomTip, 1000);
+            tipText.textContent = "Error generating tip. Please try again.";
+        } finally {
+            generatingTip = false;
         }
     }
     
-    // Timer variables for LLM tip generation
-    let tipTimer;
-    let lastTipTime = 0;
-    const tipCooldown = 7000; // Changed from 10000 to 7000 (7 seconds between LLM tips)
+    // Set initial random tip
+    setRandomTip();
     
-    // Function to update tips based on the toggle state
-    function updateTip() {
-        const currentTime = Date.now();
-        
-        if (llmToggle.checked) {
-            // If LLM is enabled and cooldown has passed
-            if (currentTime - lastTipTime >= tipCooldown) {
-                generateLLMTip();
-                lastTipTime = currentTime;
-            }
+    // Change tip every 3 seconds
+    setInterval(() => {
+        if (usingLLM) {
+            generateLLMTip();
         } else {
-            // Default behavior - show random tip
             setRandomTip();
         }
-    }
-    
-    // Set initial tip based on toggle state
-    if (llmEnabled) {
-        generateLLMTip();
-        lastTipTime = Date.now();
-    } else {
-        setRandomTip();
-    }
-    
-    // Update tips at regular intervals based on toggle state
-    setInterval(() => {
-        updateTip();
-    }, 7000); // Changed from conditional interval to fixed 7 second interval
+    }, 3000);
     
     // Simulate loading progress
     let progress = 0;
