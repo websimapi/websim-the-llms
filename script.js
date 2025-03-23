@@ -79,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Function to complete loading and show game
     function completeLoading() {
-        fadeOutAudio();
         loadingScreen.style.display = 'none';
         gameContainer.classList.remove('hidden');
     }
@@ -87,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Skip button click handler
     skipButton.addEventListener('click', () => {
         clearInterval(loadingInterval);
-        fadeOutAudio();
         completeLoading();
     });
     

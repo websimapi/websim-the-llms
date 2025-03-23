@@ -45,6 +45,9 @@ function initCityScene() {
     camera.position.set(50, 30, 50);
     camera.lookAt(0, 0, 0);
     
+    // Add audio fade out during cutscene
+    let audioFadeStarted = false;
+    
     // Create renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -114,6 +117,14 @@ function initCityScene() {
         if (!introComplete) {
             const elapsed = Date.now() - introStartTime;
             const progress = Math.min(elapsed / introDuration, 1);
+            
+            // Trigger audio fade at appropriate time during cutscene
+            if (progress > 0.75 && !audioFadeStarted) {
+                if (typeof bgAudio !== 'undefined' && bgAudio) {
+                    fadeOutAudio(bgAudio);
+                    audioFadeStarted = true;
+                }
+            }
             
             if (progress < 1) {
                 // Interpolate camera position for smooth pan
@@ -265,4 +276,21 @@ function toggleConsolePanel() {
     } else {
         consolePanel.classList.add('hidden');
     }
+}
+
+function fadeOutAudio(audio, duration = 7000) {
+    const startVolume = audio.volume;
+    const fadeSteps = 50; // More steps for smoother transition
+    const volumeStep = startVolume / fadeSteps;
+    const intervalTime = duration / fadeSteps;
+    
+    const fadeInterval = setInterval(() => {
+        if (audio.volume > volumeStep) {
+            audio.volume -= volumeStep;
+        } else {
+            audio.volume = 0;
+            audio.pause();
+            clearInterval(fadeInterval);
+        }
+    }, intervalTime);
 }
