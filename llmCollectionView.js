@@ -1,9 +1,17 @@
 import { llmDataManager } from './llmDataManager.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
+import { createCollectionModels } from './llmCollectionViewUtils.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
-import { setupLLMCarouselView, disposeCarouselView } from './llmCarouselView.js';
+import { initCarouselView } from './llmCollectionCarousel.js';
 
+let collectionScene, collectionCamera, collectionRenderer;
+let llmModels = [];
+const modelPositions = [];
 let collectionAnimationId;
+let carouselController;
 
 export function setupLLMCollectionView() {
     // Initialize the LLM data manager
@@ -16,11 +24,25 @@ export function setupLLMCollectionView() {
     
     // Clear existing content
     llmList.innerHTML = '';
-    collectionViewport.innerHTML = '';
+    collectionViewport.innerHTML = `
+        <div class="carousel-controls">
+            <button class="carousel-btn prev-btn">&lt;</button>
+            <button class="carousel-btn next-btn">&gt;</button>
+        </div>
+        <div class="model-info-overlay">
+            <div class="model-info-name"></div>
+            <div class="model-info-type"></div>
+        </div>
+    `;
     
     // Cancel any existing animation
     if (collectionAnimationId) {
         cancelAnimationFrame(collectionAnimationId);
+    }
+    
+    // Cleanup previous carousel if exists
+    if (carouselController && carouselController.cleanup) {
+        carouselController.cleanup();
     }
     
     // Get all LLMs 
@@ -34,6 +56,10 @@ export function setupLLMCollectionView() {
                 <p>Create your first LLM by clicking the "Create New LLM" button below.</p>
             </div>
         `;
+        
+        // Hide carousel controls when empty
+        document.querySelector('.carousel-controls').style.display = 'none';
+        document.querySelector('.model-info-overlay').style.display = 'none';
     } else {
         // Display LLM list
         llms.forEach((llm, index) => {
@@ -54,8 +80,22 @@ export function setupLLMCollectionView() {
             llmList.appendChild(llmItem);
         });
         
-        // Setup carousel view instead of 3D scene
-        setupLLMCarouselView(collectionViewport);
+        // Initialize carousel view instead of the regular 3D scene
+        carouselController = initCarouselView(collectionViewport, llms);
+        
+        // Update model info display
+        updateModelInfoDisplay(llms[0]);
+        
+        // Add carousel navigation button event listeners
+        document.querySelector('.prev-btn').addEventListener('click', () => {
+            carouselController.prevItem();
+            updateModelInfoDisplay(carouselController.getCurrentLLM());
+        });
+        
+        document.querySelector('.next-btn').addEventListener('click', () => {
+            carouselController.nextItem();
+            updateModelInfoDisplay(carouselController.getCurrentLLM());
+        });
         
         // Add event listeners for buttons
         document.querySelectorAll('.llm-edit-btn').forEach(btn => {
@@ -82,8 +122,10 @@ export function setupLLMCollectionView() {
     // Add close button event listener
     document.querySelector('.collection-close').addEventListener('click', () => {
         collectionUI.classList.remove('active');
-        // Dispose carousel
-        disposeCarouselView();
+        // Cleanup carousel
+        if (carouselController && carouselController.cleanup) {
+            carouselController.cleanup();
+        }
     });
     
     // Add create new button event listener
@@ -93,9 +135,21 @@ export function setupLLMCollectionView() {
         // Initialize the creation interface
         setupLLMCreationInterface();
         
-        // Dispose carousel
-        disposeCarouselView();
+        // Cleanup carousel
+        if (carouselController && carouselController.cleanup) {
+            carouselController.cleanup();
+        }
     });
+}
+
+function updateModelInfoDisplay(llm) {
+    if (!llm) return;
+    
+    const nameElement = document.querySelector('.model-info-name');
+    const typeElement = document.querySelector('.model-info-type');
+    
+    nameElement.textContent = llm.name;
+    typeElement.textContent = llm.model;
 }
 
 function viewLLMDetails(id) {
@@ -130,4 +184,29 @@ function deleteLLM(id) {
         // Refresh the UI
         setupLLMCollectionView();
     }
+}
+
+function animateCollection() {
+    if (!collectionScene || !collectionCamera || !collectionRenderer) return;
+    
+    collectionAnimationId = requestAnimationFrame(animateCollection);
+    
+    // Simple animations for models
+    llmModels.forEach((model, index) => {
+        if (!model || !modelPositions[index]) return;
+        
+        const time = Date.now() * 0.001;
+        const offset = index * 0.5;
+        
+        // Simple hovering animation
+        model.position.y = modelPositions[index].y + Math.sin(time + offset) * 0.1;
+        
+        // Subtle rotation
+        model.rotation.y = -Math.atan2(
+            modelPositions[index].z,
+            modelPositions[index].x
+        ) + Math.sin(time * 0.5 + offset) * 0.2;
+    });
+    
+    collectionRenderer.render(collectionScene, collectionCamera);
 }
