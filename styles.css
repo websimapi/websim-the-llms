@@ -161,7 +161,7 @@ body {
 
 .top-menu {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     padding: 15px;
     background-color: rgba(60, 179, 113, 0.8);
@@ -169,8 +169,9 @@ body {
 }
 
 .menu-button {
+    margin-right: 15px;
     padding: 10px 18px;  
-    background-color: #333;
+    background-color: transparent;
     color: white;
     border: none;
     border-radius: 4px;
@@ -403,6 +404,16 @@ body {
 .create-llm-btn:hover::before,
 .move-llm-btn:hover::before {
     opacity: 1;
+}
+
+.move-llm-btn:hover .propeller {
+    transform-origin: center;
+    animation: spin-propeller 0.5s linear infinite;
+}
+
+@keyframes spin-propeller {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 @keyframes fireworks {
