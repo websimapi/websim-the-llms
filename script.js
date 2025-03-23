@@ -1,4 +1,5 @@
 import { config } from './config.js';
+import { cityData } from './cityData.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const loadingBar = document.querySelector('.loading-bar');
@@ -51,4 +52,76 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingBar.style.width = `${progress}%`;
         loadingPercentage.textContent = `${Math.round(progress)}%`;
     }, interval);
+    
+    // Setup console panel functionality
+    setupConsolePanel();
 });
+
+function setupConsolePanel() {
+    const consolePanel = document.getElementById('console-panel');
+    const closeButton = document.querySelector('.console-close');
+    const exportButton = document.getElementById('export-data');
+    const importButton = document.getElementById('import-data');
+    const consoleContent = document.querySelector('.console-content');
+    const consoleIndicator = document.querySelector('.console-indicator');
+    
+    // Show console indicator briefly
+    setTimeout(() => {
+        consoleIndicator.classList.add('visible');
+        setTimeout(() => {
+            consoleIndicator.classList.remove('visible');
+        }, 3000);
+    }, 5000);
+    
+    closeButton.addEventListener('click', () => {
+        consolePanel.classList.add('hidden');
+    });
+    
+    exportButton.addEventListener('click', () => {
+        const gameData = cityData.saveGame();
+        
+        // Create a downloadable file
+        const blob = new Blob([gameData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        
+        a.href = url;
+        a.download = `promptopia_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Clean up
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 0);
+        
+        consoleContent.innerHTML += `<p>Exported city data: ${new Date().toLocaleTimeString()}</p>`;
+    });
+    
+    importButton.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        input.onchange = e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = event => {
+                const result = cityData.loadGame(event.target.result);
+                if (result) {
+                    consoleContent.innerHTML += `<p>Successfully imported city data</p>`;
+                    // Reload the scene to reflect changes
+                    location.reload();
+                } else {
+                    consoleContent.innerHTML += `<p>Error importing city data</p>`;
+                }
+            };
+            
+            reader.readAsText(file);
+        };
+        
+        input.click();
+    });
+}
