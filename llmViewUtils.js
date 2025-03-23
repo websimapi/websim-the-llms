@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// Create a standard robot model for an LLM with consistent styling across all views
+// Function to create a standard model moved from llmViewInterface.js
 export function createStandardModel(llm) {
     // Create a robot model based on the stored properties
     const group = new THREE.Group();

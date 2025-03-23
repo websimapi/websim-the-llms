@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createCustomCharacter } from './characterGenerator.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
-import { createStandardModel } from './sharedModelUtils.js';
+import { createStandardModel } from './llmViewUtils.js';
 
 let viewScene, viewCamera, viewRenderer;
 let viewModel = null;
@@ -18,40 +18,39 @@ export function setupLLMViewInterface(llmId) {
     // Update UI elements
     updateDetailsPanel(llm);
     
-    // Set up 3D view
-    const viewportContainer = document.querySelector('.llm-detail-viewport');
-    if (!viewportContainer) {
-        // Create viewport if it doesn't exist
-        createViewport(detailsPanel);
-    }
-    
-    // Initialize the 3D view
-    initViewScene();
-    
-    // Create the model
-    displayLLMModel(llm);
-    
-    // Show edit button and add event listener
-    const editButton = document.querySelector('.edit-llm-btn');
-    if (editButton) {
-        editButton.setAttribute('data-id', llm.id);
-        editButton.addEventListener('click', () => handleEditLLM(llm.id));
-    }
-    
-    // Show the panel
+    // Show the panel first to ensure DOM elements exist
     detailsPanel.classList.add('active');
+    
+    // Set up 3D view (delay slightly to ensure DOM is ready)
+    setTimeout(() => {
+        const viewportContainer = document.querySelector('.llm-detail-viewport');
+        
+        // Initialize the 3D view
+        initViewScene();
+        
+        // Create the model
+        displayLLMModel(llm);
+        
+        // Show edit button and add event listener
+        const editButton = document.querySelector('.edit-llm-btn');
+        if (editButton) {
+            editButton.setAttribute('data-id', llm.id);
+            editButton.addEventListener('click', () => handleEditLLM(llm.id));
+        }
+    }, 50);
 }
 
 function createViewport(detailsPanel) {
-    // Create viewport container
+    // Create viewport container if it doesn't exist
     const contentDiv = detailsPanel.querySelector('.details-content');
-    
-    const viewportContainer = document.createElement('div');
-    viewportContainer.className = 'llm-detail-viewport';
-    
-    // Insert the viewport before the attributes section
-    const attributesSection = detailsPanel.querySelector('.llm-detail-attributes');
-    contentDiv.insertBefore(viewportContainer, attributesSection);
+    if (!contentDiv.querySelector('.llm-detail-viewport')) {
+        const viewportContainer = document.createElement('div');
+        viewportContainer.className = 'llm-detail-viewport';
+        
+        // Insert the viewport before the attributes section
+        const attributesSection = detailsPanel.querySelector('.llm-detail-attributes');
+        contentDiv.insertBefore(viewportContainer, attributesSection);
+    }
 }
 
 function updateDetailsPanel(llm) {
