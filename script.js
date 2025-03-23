@@ -2,6 +2,7 @@ import { config } from './config.js';
 import { cityData } from './cityData.js';
 import * as THREE from 'three';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
+import { attributeSystem } from './attributeSystem.js';
 
 let bgAudio;
 let useLLMTips = localStorage.getItem('useLLMTips') !== null ? 
