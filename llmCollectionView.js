@@ -21,16 +21,23 @@ export function setupLLMCollectionView() {
     llmList.innerHTML = '';
     collectionViewport.innerHTML = '';
     
+    // Debug log
+    console.log('Setting up LLM Collection View');
+    console.log('Collection viewport element:', collectionViewport);
+    
     // Cancel any existing animation
     if (collectionAnimationId) {
         cancelAnimationFrame(collectionAnimationId);
+        console.log('Cancelled previous animation frame');
     }
     
     // Clean up any existing carousel
     cleanupCarousel();
+    console.log('Cleaned up previous carousel');
     
     // Get all LLMs 
     const llms = llmDataManager.getAllLLMs();
+    console.log('Retrieved LLMs:', llms);
     
     if (llms.length === 0) {
         // Show empty state
@@ -40,14 +47,7 @@ export function setupLLMCollectionView() {
                 <p>Create your first LLM by clicking the "Create New LLM" button below.</p>
             </div>
         `;
-        
-        // Show empty state in viewport too
-        collectionViewport.innerHTML = `
-            <div class="empty-collection">
-                <h3>No LLMs to Display</h3>
-                <p>Create your first LLM to see it here!</p>
-            </div>
-        `;
+        console.log('No LLMs found, showing empty state');
     } else {
         // Display LLM list
         llms.forEach((llm, index) => {
@@ -68,18 +68,9 @@ export function setupLLMCollectionView() {
             llmList.appendChild(llmItem);
         });
         
-        try {
-            // Setup carousel instead of the previous Three.js scene
-            setupLLMCarousel(collectionViewport, llms);
-        } catch (error) {
-            console.error("Error setting up LLM carousel:", error);
-            collectionViewport.innerHTML = `
-                <div class="empty-collection">
-                    <h3>Could not display LLMs</h3>
-                    <p>There was an error loading the 3D models. Please try again.</p>
-                </div>
-            `;
-        }
+        // Setup carousel instead of the previous Three.js scene
+        console.log('Setting up carousel with LLMs:', llms);
+        setupLLMCarousel(collectionViewport, llms);
         
         // Add event listeners for buttons
         document.querySelectorAll('.llm-edit-btn').forEach(btn => {
@@ -102,12 +93,14 @@ export function setupLLMCollectionView() {
     
     // Show the collection UI
     collectionUI.classList.add('active');
+    console.log('Collection UI is now active');
     
     // Add close button event listener
     document.querySelector('.collection-close').addEventListener('click', () => {
         collectionUI.classList.remove('active');
         // Clean up carousel
         cleanupCarousel();
+        console.log('Collection UI closed, carousel cleaned up');
     });
     
     // Add create new button event listener
@@ -119,6 +112,7 @@ export function setupLLMCollectionView() {
         
         // Clean up carousel
         cleanupCarousel();
+        console.log('Navigating to Create LLM UI, carousel cleaned up');
     });
 }
 
