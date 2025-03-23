@@ -2,7 +2,8 @@ import { config } from './config.js';
 import { cityData } from './cityData.js';
 
 let bgAudio;
-let useLLMTips = true;
+let useLLMTips = localStorage.getItem('useLLMTips') !== null ? 
+    localStorage.getItem('useLLMTips') === 'true' : true;
 let tipFetchInterval;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Toggle event listeners
     loadingLLMToggle.addEventListener('change', (e) => {
         useLLMTips = e.target.checked;
+        localStorage.setItem('useLLMTips', useLLMTips);
         startLLMToggle.checked = useLLMTips;
         if (tipFetchInterval) {
             clearInterval(tipFetchInterval);
@@ -41,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     startLLMToggle.addEventListener('change', (e) => {
         useLLMTips = e.target.checked;
+        localStorage.setItem('useLLMTips', useLLMTips);
         loadingLLMToggle.checked = useLLMTips;
     });
     
