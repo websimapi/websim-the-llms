@@ -25,23 +25,16 @@ export function setupLLMCollectionView() {
         llmList.innerHTML = '';
         collectionViewport.innerHTML = '';
         
-        // Debug log
-        console.log('Setting up LLM Collection View');
-        console.log('Collection viewport element:', collectionViewport);
-        
         // Cancel any existing animation
         if (collectionAnimationId) {
             cancelAnimationFrame(collectionAnimationId);
-            console.log('Cancelled previous animation frame');
         }
         
         // Clean up any existing carousel
         cleanupCarousel();
-        console.log('Cleaned up previous carousel');
         
         // Get all LLMs 
         const llms = llmDataManager.getAllLLMs();
-        console.log('Retrieved LLMs:', llms);
         
         if (llms.length === 0) {
             // Show empty state
@@ -51,7 +44,6 @@ export function setupLLMCollectionView() {
                     <p>Create your first LLM by clicking the "Create New LLM" button below.</p>
                 </div>
             `;
-            console.log('No LLMs found, showing empty state');
         } else {
             // Display LLM list
             llms.forEach((llm, index) => {
@@ -72,8 +64,7 @@ export function setupLLMCollectionView() {
                 llmList.appendChild(llmItem);
             });
             
-            // Setup carousel instead of the previous Three.js scene
-            console.log('Setting up carousel with LLMs:', llms);
+            // Setup carousel
             setupLLMCarousel(collectionViewport, llms);
             
             // Add event listeners for buttons
@@ -94,8 +85,6 @@ export function setupLLMCollectionView() {
                 });
             });
         }
-        
-        console.log('Collection UI is now active');
     }, 100);
     
     // Add close button event listener
@@ -103,7 +92,6 @@ export function setupLLMCollectionView() {
         collectionUI.classList.remove('active');
         // Clean up carousel
         cleanupCarousel();
-        console.log('Collection UI closed, carousel cleaned up');
     });
     
     // Add create new button event listener
@@ -115,7 +103,6 @@ export function setupLLMCollectionView() {
         
         // Clean up carousel
         cleanupCarousel();
-        console.log('Navigating to Create LLM UI, carousel cleaned up');
     });
 }
 
@@ -137,7 +124,7 @@ function handleEditLLM(id) {
     createUI.setAttribute('data-edit-id', id);
     
     // Set up the creation interface with the LLM data
-    setupLLMCreationInterface();
+    setupLLMCreationInterface(llm);
     
     // Cancel animation if active
     if (collectionAnimationId) {

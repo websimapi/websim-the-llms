@@ -341,26 +341,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         moveLLMButton.addEventListener('click', () => {
             console.log('Move LLMs button clicked');
-            // Add debug log for My LLMs UI rendering
-            console.log('Navigating to My LLMs UI');
-            
-            // Access debug functions if available
-            import('./llmCollectionDebugger.js').then(debugModule => {
-                setupLLMCollectionView();
-                document.getElementById('llm-collection-ui').classList.add('active');
-                
-                // Run debug checks after a short delay to ensure DOM is updated
-                setTimeout(() => {
-                    console.log('Running collection view debug checks');
-                    debugModule.debugCollectionRendering();
-                    debugModule.applyDebugStyling();
-                }, 500);
-            }).catch(err => {
-                console.error('Could not load debugger module:', err);
-                // Still set up the collection view even if debug fails
-                setupLLMCollectionView();
-                document.getElementById('llm-collection-ui').classList.add('active');
-            });
+            setupLLMCollectionView();
+            document.getElementById('llm-collection-ui').classList.add('active');
         });
         
         // Add mousemove event for fireworks effect
