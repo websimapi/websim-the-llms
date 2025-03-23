@@ -19,19 +19,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup audio
     bgAudio = new Audio('LLMs Morning Oasis - Sonauto.wav');
     bgAudio.loop = true;
+    bgAudio.volume = 0; // Start with volume at 0
     
     // Start experience button
     startButton.addEventListener('click', () => {
         startOverlay.style.display = 'none';
         loadingScreen.style.display = 'flex';
         bgAudio.play();
+        fadeInAudio(); // Start fade in effect
         startLoading();
     });
+    
+    // Fade in audio function
+    function fadeInAudio(duration = 5000) {
+        const targetVolume = 1.0;
+        const fadeSteps = 50; // More steps for smoother transition
+        const volumeStep = targetVolume / fadeSteps;
+        const intervalTime = duration / fadeSteps;
+        
+        const fadeInterval = setInterval(() => {
+            if (bgAudio.volume < (targetVolume - volumeStep)) {
+                bgAudio.volume += volumeStep;
+            } else {
+                bgAudio.volume = targetVolume;
+                clearInterval(fadeInterval);
+            }
+        }, intervalTime);
+    }
     
     // Fade out audio function
     function fadeOutAudio(duration = 7000) {
         const startVolume = bgAudio.volume;
-        const fadeSteps = 20;
+        const fadeSteps = 50; // More steps for smoother transition
         const volumeStep = startVolume / fadeSteps;
         const intervalTime = duration / fadeSteps;
         
