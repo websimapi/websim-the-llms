@@ -4,18 +4,92 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingBar = document.querySelector('.loading-bar');
     const loadingPercentage = document.querySelector('.loading-percentage');
     const tipText = document.querySelector('.tip-text');
+    const llmToggle = document.getElementById('llm-toggle');
     
-    // Randomly select a tip
+    // Check if toggle state exists in localStorage
+    const llmEnabled = localStorage.getItem('llmEnabled') === 'true';
+    
+    // Set initial toggle state
+    llmToggle.checked = llmEnabled;
+
+    // Toggle change event
+    llmToggle.addEventListener('change', () => {
+        const isEnabled = llmToggle.checked;
+        localStorage.setItem('llmEnabled', isEnabled.toString());
+        
+        if (isEnabled) {
+            // If we turn on LLM, immediately generate a tip
+            generateLLMTip();
+        } else {
+            // If we turn off LLM, immediately show a random predefined tip
+            setRandomTip();
+        }
+    });
+    
+    // Randomly select a tip from config
     function setRandomTip() {
         const randomIndex = Math.floor(Math.random() * config.loadingTips.length);
         tipText.textContent = config.loadingTips[randomIndex];
     }
     
-    // Set initial random tip
-    setRandomTip();
+    // Generate a tip using LLM
+    async function generateLLMTip() {
+        try {
+            const completion = await websim.chat.completions.create({
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are a helpful assistant providing a short, humorous tip about artificial intelligence, language models, or machine learning. Keep it brief (under 100 characters) and funny, styled like a loading screen tip from The Sims."
+                    },
+                    {
+                        role: "user",
+                        content: "Generate a single loading screen tip for my AI-themed game."
+                    }
+                ],
+            });
+            
+            tipText.textContent = completion.content;
+        } catch (error) {
+            console.error("Error generating LLM tip:", error);
+            tipText.textContent = "LLM error: Using fallback tips instead.";
+            // Fall back to random tip if LLM fails
+            setTimeout(setRandomTip, 1000);
+        }
+    }
     
-    // Change tip every 3 seconds
-    setInterval(setRandomTip, 3000);
+    // Timer variables for LLM tip generation
+    let tipTimer;
+    let lastTipTime = 0;
+    const tipCooldown = 10000; // 10 seconds between LLM tips
+    
+    // Function to update tips based on the toggle state
+    function updateTip() {
+        const currentTime = Date.now();
+        
+        if (llmToggle.checked) {
+            // If LLM is enabled and cooldown has passed
+            if (currentTime - lastTipTime >= tipCooldown) {
+                generateLLMTip();
+                lastTipTime = currentTime;
+            }
+        } else {
+            // Default behavior - show random tip
+            setRandomTip();
+        }
+    }
+    
+    // Set initial tip based on toggle state
+    if (llmEnabled) {
+        generateLLMTip();
+        lastTipTime = Date.now();
+    } else {
+        setRandomTip();
+    }
+    
+    // Update tips at regular intervals based on toggle state
+    setInterval(() => {
+        updateTip();
+    }, llmEnabled ? tipCooldown : 3000);
     
     // Simulate loading progress
     let progress = 0;
@@ -41,4 +115,3 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingPercentage.textContent = `${Math.round(progress)}%`;
     }, interval);
 });
-
