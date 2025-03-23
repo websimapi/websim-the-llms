@@ -95,11 +95,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch a random tip from LLM API
     async function fetchLLMTip() {
         try {
+            const topics = [
+                "virtual pets", "AI companions", "language models", "digital cities",
+                "model training", "AI personalities", "token economics", "context windows",
+                "prompt engineering", "fine-tuning", "hallucinations", "AI creativity",
+                "neural networks", "LLM lifecycle", "model parameters", "AI city building"
+            ];
+            
+            // Get 2-3 random topics to include in the prompt
+            const randomTopics = [];
+            const numTopics = Math.floor(Math.random() * 2) + 2; // 2-3 topics
+            
+            while (randomTopics.length < numTopics) {
+                const randomIndex = Math.floor(Math.random() * topics.length);
+                const topic = topics[randomIndex];
+                if (!randomTopics.includes(topic)) {
+                    randomTopics.push(topic);
+                }
+            }
+            
             const completion = await websim.chat.completions.create({
                 messages: [
                     {
                         role: "system",
-                        content: "You are a helpful AI assistant providing tips about AI, language models, and machine learning. Generate a single clear, concise, and insightful tip about AI, LLMs, or machine learning that would be helpful for beginners. The tip should be educational, interesting, and no more than one sentence long. Focus on concepts, best practices, or interesting facts. Respond with ONLY the tip text itself, with no additional formatting, quotes, or explanations."
+                        content: `Generate a single sentence tip about ${randomTopics.join(", ")} in the context of a simulation game called "The LLMs" where players manage AI entities in a virtual city. Keep it concise, fun and helpful for beginners. Respond with just the tip text, no additional formatting or explanation.`
                     }
                 ]
             });
@@ -121,10 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Set interval for fetching tips every 7 seconds
-        tipFetchInterval = setInterval(async () => {
+        tipFetchInterval = setInterval(() => {
             if (useLLMTips) {
-                const tip = await fetchLLMTip();
-                tipText.textContent = tip;
+                fetchLLMTip().then(tip => {
+                    tipText.textContent = tip;
+                });
             } else {
                 setRandomTip();
             }
@@ -162,8 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (useLLMTips) {
             startLLMTipFetch();
         } else {
-            // Set interval for changing tips
-            tipFetchInterval = setInterval(setRandomTip, 3000);
+            // Change tip every 3 seconds if using preset tips
+            setInterval(setRandomTip, 3000);
         }
     });
     
