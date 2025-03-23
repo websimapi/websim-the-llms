@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createStandardModel } from './sharedModelUtils.js';
 
 // Handles model creation for the collection view
 export function createCollectionModels(llms, llmDataManager, createCustomCharacter) {
