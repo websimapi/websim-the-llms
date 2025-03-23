@@ -1,5 +1,6 @@
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
+import { attributeSystem } from './attributeSystem.js';
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
@@ -11,7 +12,7 @@ export function saveLLMData() {
     const customPrompt = document.getElementById('llm-custom-prompt').value;
     
     // Get attributes
-    const attributes = window.attributeSystem.exportAttributes();
+    const attributes = attributeSystem.exportAttributes();
     
     // Create LLM data object
     const llmData = {
