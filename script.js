@@ -1,9 +1,9 @@
 import { config } from './config.js';
 import { cityData } from './cityData.js';
-import { llmService } from './llmService.js';
 
 let bgAudio;
-let tipUpdateInterval;
+let useLLMTips = true;
+let tipFetchInterval;
 
 document.addEventListener('DOMContentLoaded', () => {
     const startOverlay = document.getElementById('start-overlay');
@@ -14,23 +14,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const skipButton = document.getElementById('skip-button');
     const loadingScreen = document.getElementById('loading-screen');
     const gameContainer = document.getElementById('game-container');
-    const llmToggle = document.getElementById('llm-toggle');
-    
-    // Initialize LLM toggle based on stored preference
-    llmToggle.checked = llmService.isEnabled();
-    
-    // Add event listener for toggle
-    llmToggle.addEventListener('change', () => {
-        llmService.toggleLLM(llmToggle.checked);
-        
-        // Reset tip interval when toggle changes
-        clearInterval(tipUpdateInterval);
-        setRandomTip();
-        startTipInterval();
-    });
+    const loadingLLMToggle = document.getElementById('loading-llm-toggle');
+    const startLLMToggle = document.getElementById('start-llm-toggle');
     
     // Hide loading screen initially
     loadingScreen.style.display = 'none';
+    
+    // Sync the toggle states
+    loadingLLMToggle.checked = useLLMTips;
+    startLLMToggle.checked = useLLMTips;
+    
+    // Toggle event listeners
+    loadingLLMToggle.addEventListener('change', (e) => {
+        useLLMTips = e.target.checked;
+        startLLMToggle.checked = useLLMTips;
+        if (tipFetchInterval) {
+            clearInterval(tipFetchInterval);
+            if (useLLMTips) {
+                startLLMTipFetch();
+            } else {
+                setRandomTip();
+            }
+        }
+    });
+    
+    startLLMToggle.addEventListener('change', (e) => {
+        useLLMTips = e.target.checked;
+        loadingLLMToggle.checked = useLLMTips;
+    });
     
     // Setup audio
     bgAudio = new Audio('LLMs Morning Oasis - Sonauto.wav');
@@ -75,50 +86,67 @@ document.addEventListener('DOMContentLoaded', () => {
     // Make fadeOutAudio globally accessible
     window.fadeOutAudio = fadeOutAudio;
     
-    // Randomly select a tip
-    async function setRandomTip() {
-        if (llmService.isEnabled()) {
-            // Generate tip with LLM
-            const generatedTip = await llmService.generateTip();
-            if (generatedTip) {
-                tipText.textContent = generatedTip;
-                return;
-            }
-        }
-        
-        // Fallback to predefined tips
+    // Randomly select a tip from config
+    function setRandomTip() {
         const randomIndex = Math.floor(Math.random() * config.loadingTips.length);
         tipText.textContent = config.loadingTips[randomIndex];
     }
     
-    // Start tip interval function
-    function startTipInterval() {
-        // Clear existing interval if any
-        if (tipUpdateInterval) {
-            clearInterval(tipUpdateInterval);
+    // Fetch a random tip from LLM API
+    async function fetchLLMTip() {
+        try {
+            const completion = await websim.chat.completions.create({
+                messages: [
+                    {
+                        role: "system",
+                        content: "Generate a single sentence tip about AI, language models, or machine learning that would be helpful for beginners. Keep it concise and fun. Respond with just the tip text, no additional formatting or explanation."
+                    }
+                ]
+            });
+            
+            return completion.content.trim();
+        } catch (error) {
+            console.error("Error fetching LLM tip:", error);
+            return "LLMs sometimes need a moment to think!";
         }
-        
-        // Set interval time based on whether LLM is enabled
-        const intervalTime = llmService.isEnabled() ? 7000 : 3000;
-        
-        // Set initial random tip
-        setRandomTip();
-        
-        // Change tip on interval
-        tipUpdateInterval = setInterval(setRandomTip, intervalTime);
     }
     
-    // Set initial tip and start interval
-    startTipInterval();
+    // Start the LLM tip fetching cycle
+    function startLLMTipFetch() {
+        // Fetch first tip immediately
+        if (useLLMTips) {
+            fetchLLMTip().then(tip => {
+                tipText.textContent = tip;
+            });
+        }
+        
+        // Set interval for fetching tips every 7 seconds
+        tipFetchInterval = setInterval(() => {
+            if (useLLMTips) {
+                fetchLLMTip().then(tip => {
+                    tipText.textContent = tip;
+                });
+            }
+        }, 7000);
+    }
+    
+    // Set initial tip based on toggle state
+    if (useLLMTips) {
+        // Don't start fetching until loading begins
+    } else {
+        setRandomTip();
+    }
     
     // Function to complete loading and show game
     function completeLoading() {
+        // Clear the tip fetch interval when loading completes
+        if (tipFetchInterval) {
+            clearInterval(tipFetchInterval);
+        }
+        
         fadeOutAudio();
         loadingScreen.style.display = 'none';
         gameContainer.classList.remove('hidden');
-        
-        // Clear tip interval when loading completes
-        clearInterval(tipUpdateInterval);
     }
     
     // Start experience button
@@ -128,11 +156,22 @@ document.addEventListener('DOMContentLoaded', () => {
         bgAudio.play();
         fadeInAudio(); // Start fade in effect
         startLoading();
+        
+        // Start the tip fetching based on toggle state
+        if (useLLMTips) {
+            startLLMTipFetch();
+        } else {
+            // Change tip every 3 seconds if using preset tips
+            setInterval(setRandomTip, 3000);
+        }
     });
     
     // Skip button click handler
     skipButton.addEventListener('click', () => {
         clearInterval(loadingInterval);
+        if (tipFetchInterval) {
+            clearInterval(tipFetchInterval);
+        }
         fadeOutAudio();
         completeLoading();
     });
