@@ -29,9 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Fade out audio function
-    function fadeOutAudio(duration = 7000) {
+    function fadeOutAudio(duration = 30000) {
         const startVolume = bgAudio.volume;
-        const fadeSteps = 20;
+        const fadeSteps = 100;
         const volumeStep = startVolume / fadeSteps;
         const intervalTime = duration / fadeSteps;
         
