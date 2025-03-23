@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { generateCharacterCode, createCustomCharacter } from './characterGenerator.js';
 import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
-import { renderLLMList } from './llmListUI.js';
+import { setupLLMCollectionView } from './llmCollectionView.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -33,11 +33,11 @@ export function setupLLMCreationInterface() {
     initHumanoidPreview();
     
     // Add event listener for create button
-    const createButton = document.querySelector('.create-llm-button:not(.secondary)');
-    createButton.addEventListener('click', saveLLMData);
+    const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
+    createLLMButton.addEventListener('click', saveLLMData);
     
     // Add event listener for reset button
-    const resetButton = document.querySelector('.create-llm-button.secondary');
+    const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
     resetButton.addEventListener('click', resetForm);
 }
 
@@ -152,6 +152,9 @@ async function handleGenerateCharacter() {
     
     try {
         const generatedCode = await generateCharacterCode(userPrompt);
+        
+        // Store the generated code for later use
+        statusElement.dataset.generatedCode = generatedCode;
         
         // Remove previous custom character if it exists
         if (customCharacter && customCharacter.parent) {
@@ -663,70 +666,68 @@ function animateHumanoid() {
 
 // Function to save LLM data
 function saveLLMData() {
-    // Collect all data from the form
+    // Get values from form
+    const name = document.getElementById('llm-name').value || `LLM-${Math.floor(Math.random() * 1000)}`;
+    const model = document.getElementById('llm-model').value;
+    const color = document.getElementById('llm-color').value;
+    const style = document.getElementById('llm-style').value;
+    const customPrompt = document.getElementById('llm-custom-prompt').value;
+    
+    // Get attributes
+    const attributes = attributeSystem.exportAttributes();
+    
+    // Create LLM data object
     const llmData = {
-        name: document.getElementById('llm-name').value || `LLM-${Math.floor(Math.random() * 1000)}`,
-        modelType: document.getElementById('llm-model').value,
-        attributes: attributeSystem.exportAttributes(),
-        color: document.getElementById('llm-color').value,
-        style: document.getElementById('llm-style').value,
-        customPrompt: document.getElementById('llm-custom-prompt').value,
-        hasCustomCharacter: customCharacter !== null
+        name,
+        model,
+        color,
+        style,
+        customPrompt,
+        attributes,
+        customCharacterCode: null
     };
     
-    // Check if we're editing an existing LLM
-    const editId = document.getElementById('create-llm-ui').dataset.editId;
-    if (editId) {
-        llmData.id = editId;
-        document.getElementById('create-llm-ui').removeAttribute('data-edit-id');
+    // If we have a custom character, save its code
+    if (customCharacter) {
+        // Store the generated code
+        const generatedCodeElement = document.getElementById('generation-status');
+        if (generatedCodeElement && generatedCodeElement.dataset.generatedCode) {
+            llmData.customCharacterCode = generatedCodeElement.dataset.generatedCode;
+        }
     }
     
     // Save the LLM data
-    llmDataManager.saveLLM(llmData);
+    llmDataManager.addLLM(llmData);
     
-    // Close the create UI
+    // Close creation UI and show collection
     document.getElementById('create-llm-ui').classList.remove('active');
-    
-    // Show the LLM list UI with the updated list
-    document.getElementById('llm-list-ui').classList.add('active');
-    renderLLMList();
-    
-    // Reset the form for next use
-    resetForm();
+    setupLLMCollectionView();
 }
 
 function resetForm() {
-    // Reset name to random default
+    // Reset name with random number
     document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
     
-    // Reset model type to first option
+    // Reset other form values
     document.getElementById('llm-model').selectedIndex = 0;
+    document.getElementById('llm-color').value = '#3cb371';
+    document.getElementById('llm-style').selectedIndex = 0;
+    document.getElementById('llm-custom-prompt').value = '';
     
     // Reset attributes
     attributeSystem.initializeAttributes();
     renderAttributeGrid();
     updatePointsDisplay();
     
-    // Reset appearance
-    document.getElementById('llm-color').value = '#3cb371';
-    document.getElementById('llm-style').selectedIndex = 0;
-    document.getElementById('llm-custom-prompt').value = '';
-    
-    // Reset custom character
+    // Reset humanoid
     if (customCharacter && customCharacter.parent) {
         customCharacter.parent.remove(customCharacter);
         customCharacter = null;
     }
     
-    // Reset robot model with default appearance
-    if (robotModel && robotModel.parent) {
-        robotModel.parent.remove(robotModel);
+    if (!robotModel) {
+        createRobotModel();
+    } else {
+        updateHumanoidPreview();
     }
-    createRobotModel();
-    
-    // Remove edit ID if present
-    document.getElementById('create-llm-ui').removeAttribute('data-edit-id');
-    
-    // Reset selected mesh
-    selectedMesh = null;
 }

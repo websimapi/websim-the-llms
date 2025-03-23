@@ -154,18 +154,41 @@
             </div>
         </div>
         
-        <div id="llm-list-ui">
-            <div class="llm-list-header">
-                <div class="llm-list-title">Your LLMs</div>
-                <button class="llm-list-close">&times;</button>
+        <div id="llm-collection-ui">
+            <div class="collection-header">
+                <div class="collection-title">My LLMs</div>
+                <button class="collection-close">&times;</button>
             </div>
             
-            <div id="llm-list-container" class="llm-list-container">
-                <!-- LLM cards will be populated here -->
+            <div class="collection-container">
+                <div class="collection-viewport">
+                    <!-- LLM models will be rendered here -->
+                </div>
+                
+                <div class="llm-list" id="llm-list">
+                    <!-- LLM list items will be generated here -->
+                </div>
             </div>
             
-            <div class="llm-list-footer">
-                <button id="new-llm-button" class="llm-list-new-button">Create New LLM</button>
+            <div class="collection-footer">
+                <button id="create-new-llm-btn" class="collection-button">Create New LLM</button>
+            </div>
+        </div>
+        
+        <div id="llm-details-panel">
+            <div class="details-header">
+                <div class="details-title">LLM Details</div>
+                <button class="details-close">&times;</button>
+            </div>
+            
+            <div class="details-content">
+                <h2 class="llm-detail-name">LLM Name</h2>
+                <p class="llm-detail-model">Model Type</p>
+                <p class="llm-detail-created">Created Date</p>
+                
+                <div class="llm-detail-attributes">
+                    <!-- Attribute details will be populated here -->
+                </div>
             </div>
         </div>
     </div>
@@ -239,8 +262,6 @@
     <script type="module" src="cityScene.js"></script>
     <script type="module" src="characterGenerator.js"></script>
     <script type="module" src="llmCreationInterface.js"></script>
-    <script type="module" src="llmDataManager.js"></script>
-    <script type="module" src="llmListUI.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

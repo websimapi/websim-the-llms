@@ -811,8 +811,8 @@ input:checked + .llm-toggle-slider:before {
     border-radius: 3px;
 }
 
-/* LLM List UI Styles */
-#llm-list-ui {
+/* LLM Collection UI Styles */
+#llm-collection-ui {
     position: fixed;
     top: 0;
     left: 0;
@@ -822,29 +822,28 @@ input:checked + .llm-toggle-slider:before {
     z-index: 200;
     display: none;
     flex-direction: column;
-    padding: 20px;
 }
 
-#llm-list-ui.active {
+#llm-collection-ui.active {
     display: flex;
 }
 
-.llm-list-header {
+.collection-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #3cb371;
+    padding: 20px;
+    background-color: #1a1a1a;
+    border-bottom: 2px solid #3cb371;
 }
 
-.llm-list-title {
+.collection-title {
     color: #3cb371;
     font-size: 1.8rem;
     font-weight: bold;
 }
 
-.llm-list-close {
+.collection-close {
     background: none;
     border: none;
     color: white;
@@ -852,128 +851,91 @@ input:checked + .llm-toggle-slider:before {
     cursor: pointer;
 }
 
-.llm-list-container {
+.collection-container {
+    display: flex;
     flex: 1;
-    overflow-y: auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    grid-gap: 20px;
-    padding: 10px;
-}
-
-.llm-card {
-    background-color: #222;
-    border-radius: 8px;
-    padding: 15px;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    display: flex;
-    flex-direction: column;
-    border: 2px solid transparent;
-}
-
-.llm-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(60, 179, 113, 0.3);
-    border-color: rgba(60, 179, 113, 0.5);
-}
-
-.llm-card-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-}
-
-.llm-card-name {
-    font-size: 1.2rem;
-    color: #fff;
-    margin: 0;
-}
-
-.llm-card-model {
-    font-size: 0.8rem;
-    padding: 3px 8px;
-    background-color: #3cb371;
-    color: #000;
-    border-radius: 12px;
-    align-self: flex-start;
-}
-
-.llm-card-attributes {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.llm-card-attribute {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.attribute-name {
-    font-size: 0.8rem;
-    color: #ccc;
-    text-transform: capitalize;
-}
-
-.attribute-bar {
-    height: 8px;
-    background-color: #333;
-    border-radius: 4px;
     overflow: hidden;
 }
 
-.attribute-fill {
-    height: 100%;
-    background-color: #3cb371;
-    border-radius: 4px;
+.collection-viewport {
+    flex: 2;
+    background-color: #111;
+    position: relative;
 }
 
-.llm-card-footer {
+.llm-list {
+    flex: 1;
+    background-color: #222;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.llm-list-item {
+    background-color: #333;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.llm-info h3 {
+    color: #3cb371;
+    margin: 0 0 5px 0;
+}
+
+.llm-type {
+    color: #aaa;
+    margin: 0 0 5px 0;
+    font-size: 0.9rem;
+}
+
+.llm-created {
+    color: #888;
+    margin: 0;
     font-size: 0.8rem;
 }
 
-.llm-card-date {
-    color: #aaa;
-}
-
-.llm-card-actions {
+.llm-actions {
     display: flex;
-    gap: 8px;
+    flex-direction: column;
+    gap: 5px;
 }
 
-.llm-card-edit, .llm-card-delete {
-    padding: 4px 8px;
+.llm-view-btn, .llm-delete-btn {
+    padding: 5px 10px;
     border: none;
-    border-radius: 4px;
-    color: white;
+    border-radius: 3px;
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: 0.9rem;
 }
 
-.llm-card-edit {
+.llm-view-btn {
     background-color: #3cb371;
+    color: white;
 }
 
-.llm-card-delete {
-    background-color: #ff4d4d;
+.llm-delete-btn {
+    background-color: #ff4444;
+    color: white;
 }
 
-.llm-list-footer {
+.empty-collection {
+    color: #aaa;
+    text-align: center;
+    padding: 50px 0;
+}
+
+.collection-footer {
+    padding: 15px;
+    background-color: #1a1a1a;
+    border-top: 1px solid #333;
     display: flex;
-    justify-content: flex-end;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #3cb371;
+    justify-content: center;
 }
 
-.llm-list-new-button {
+.collection-button {
     padding: 10px 20px;
     background-color: #3cb371;
     color: white;
@@ -983,21 +945,84 @@ input:checked + .llm-toggle-slider:before {
     font-weight: bold;
 }
 
-.llm-empty-state {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 50px;
-    color: #aaa;
-    text-align: center;
+/* LLM Details Panel Styles */
+#llm-details-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    background-color: #333;
+    border-radius: 5px;
+    z-index: 300;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    display: none;
 }
 
-.empty-icon {
-    width: 64px;
-    height: 64px;
+#llm-details-panel.active {
+    display: block;
+}
+
+.details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: #3cb371;
+    border-radius: 5px 5px 0 0;
+}
+
+.details-title {
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.details-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.details-content {
+    padding: 20px;
+}
+
+.llm-detail-name {
     color: #3cb371;
-    opacity: 0.5;
-    margin-bottom: 20px;
+    margin: 0 0 10px 0;
+}
+
+.llm-detail-model, .llm-detail-created {
+    color: #aaa;
+    margin: 0 0 5px 0;
+}
+
+.llm-detail-attributes {
+    margin-top: 20px;
+}
+
+.detail-attribute-item {
+    margin-bottom: 10px;
+}
+
+.detail-attribute-name {
+    color: white;
+    margin-bottom: 5px;
+    text-transform: capitalize;
+}
+
+.detail-attribute-bar {
+    height: 15px;
+    background-color: #222;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.detail-attribute-fill {
+    height: 100%;
+    background-color: #3cb371;
+    width: 0%;
 }

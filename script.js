@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
 import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
-import { setupLLMListUI } from './llmListUI.js';
+import { setupLLMCollectionView } from './llmCollectionView.js';
 
 let bgAudio;
 let useLLMTips = localStorage.getItem('useLLMTips') !== null ? 
@@ -12,6 +12,11 @@ let useLLMTips = localStorage.getItem('useLLMTips') !== null ?
 let tipFetchInterval;
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize LLM data manager
+    if (typeof llmDataManager !== 'undefined') {
+        llmDataManager.init();
+    }
+
     const startOverlay = document.getElementById('start-overlay');
     const startButton = document.getElementById('start-button');
     const playButton = document.getElementById('play-button');
@@ -323,23 +328,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const moveLLMButton = document.querySelector('.move-llm-btn');
         const createLLMUI = document.getElementById('create-llm-ui');
         const closeCreateLLMButton = document.querySelector('.create-llm-close');
-        const llmListUI = document.getElementById('llm-list-ui');
-        
-        // Initialize LLM data manager
-        llmDataManager.initialize();
         
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
-            // Show the LLM list instead of directly opening create UI
-            llmListUI.classList.add('active');
-            setupLLMListUI();
+            createLLMUI.classList.add('active');
+            setupLLMCreationInterface();
         });
         
         closeCreateLLMButton.addEventListener('click', () => {
             createLLMUI.classList.remove('active');
-            // Show the LLM list when closing create UI
-            llmListUI.classList.add('active');
-            setupLLMListUI();
         });
         
         moveLLMButton.addEventListener('click', () => {
