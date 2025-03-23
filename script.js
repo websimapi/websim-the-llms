@@ -3,6 +3,8 @@ import { cityData } from './cityData.js';
 import * as THREE from 'three';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
 import { attributeSystem } from './attributeSystem.js';
+import { llmStorage } from './llmStorage.js';
+import { setupLLMListUI } from './llmListUI.js';
 
 let bgAudio;
 let useLLMTips = localStorage.getItem('useLLMTips') !== null ? 
@@ -322,6 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const createLLMUI = document.getElementById('create-llm-ui');
         const closeCreateLLMButton = document.querySelector('.create-llm-close');
         
+        // Initialize LLM storage when the app loads
+        llmStorage.initialize();
+        
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
             createLLMUI.classList.add('active');
@@ -330,6 +335,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         closeCreateLLMButton.addEventListener('click', () => {
             createLLMUI.classList.remove('active');
+            
+            // Show LLM list after creating/editing
+            const createdLLMs = llmStorage.getAllLLMs();
+            if (createdLLMs.length > 0) {
+                setupLLMListUI();
+            }
         });
         
         moveLLMButton.addEventListener('click', () => {

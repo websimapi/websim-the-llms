@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { generateCharacterCode, createCustomCharacter } from './characterGenerator.js';
 import { attributeSystem } from './attributeSystem.js';
+import { llmStorage } from './llmStorage.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -10,12 +11,43 @@ let generatingCharacter = false;
 let humanoidMixer = null;
 let selectedMesh = null; // Track the currently selected mesh
 
-export function setupLLMCreationInterface() {
-    // Setup default values for the form
-    document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
+export function setupLLMCreationInterface(editId = null) {
+    // Track if we're in edit mode
+    const editMode = editId !== null;
+    let currentLLM = null;
     
-    // Initialize attribute system
-    attributeSystem.initializeAttributes();
+    if (editMode) {
+        currentLLM = llmStorage.getLLMById(editId);
+        if (!currentLLM) {
+            console.error('LLM not found for editing:', editId);
+            editMode = false;
+        }
+    }
+    
+    // Setup default values for the form or load existing data
+    if (editMode && currentLLM) {
+        document.getElementById('llm-name').value = currentLLM.name;
+        document.getElementById('llm-model').value = currentLLM.model;
+        document.getElementById('llm-color').value = currentLLM.appearance.color;
+        document.getElementById('llm-style').value = currentLLM.appearance.style;
+        document.getElementById('llm-custom-prompt').value = currentLLM.appearance.customPrompt || '';
+        
+        // Load attributes
+        attributeSystem.attributes = { ...attributeSystem.attributes };
+        Object.keys(attributeSystem.attributes).forEach(key => {
+            if (currentLLM.attributes[key] !== undefined) {
+                attributeSystem.attributes[key].value = currentLLM.attributes[key];
+            }
+        });
+        attributeSystem.pointsSpent = Object.values(attributeSystem.attributes).reduce(
+            (total, attr) => total + attr.value, 0
+        );
+    } else {
+        document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
+        // Initialize attribute system with default values
+        attributeSystem.initializeAttributes();
+    }
+    
     renderAttributeGrid();
     updatePointsDisplay();
     
@@ -29,6 +61,31 @@ export function setupLLMCreationInterface() {
     
     // Initialize the humanoid preview
     initHumanoidPreview();
+    
+    // Setup save button event handler
+    const saveButton = document.querySelector('.create-llm-button:not(.secondary)');
+    saveButton.textContent = editMode ? 'Update LLM' : 'Create LLM';
+    saveButton.addEventListener('click', () => saveLLM(editId));
+    
+    // Setup reset button
+    const resetButton = document.querySelector('.create-llm-button.secondary');
+    resetButton.addEventListener('click', () => {
+        if (confirm('Are you sure you want to reset all fields?')) {
+            attributeSystem.initializeAttributes();
+            renderAttributeGrid();
+            updatePointsDisplay();
+            
+            if (!editMode) {
+                document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
+                document.getElementById('llm-model').value = 'assistant';
+                document.getElementById('llm-color').value = '#3cb371';
+                document.getElementById('llm-style').value = 'modern';
+                document.getElementById('llm-custom-prompt').value = '';
+            } else {
+                setupLLMCreationInterface(editId);
+            }
+        }
+    });
 }
 
 // Function to render the attribute grid
@@ -142,6 +199,9 @@ async function handleGenerateCharacter() {
     
     try {
         const generatedCode = await generateCharacterCode(userPrompt);
+        
+        // Store the generated code globally for saving with the LLM
+        window.generatedCharacterCode = generatedCode;
         
         // Remove previous custom character if it exists
         if (customCharacter && customCharacter.parent) {
@@ -650,3 +710,59 @@ function animateHumanoid() {
     
     humanoidRenderer.render(humanoidScene, humanoidCamera);
 }
+
+// Function to save LLM data
+function saveLLM(editId = null) {
+    // Validate form
+    const name = document.getElementById('llm-name').value.trim();
+    if (!name) {
+        alert('Please enter a name for your LLM');
+        return;
+    }
+    
+    // Get all form values
+    const model = document.getElementById('llm-model').value;
+    const color = document.getElementById('llm-color').value;
+    const style = document.getElementById('llm-style').value;
+    const customPrompt = document.getElementById('llm-custom-prompt').value.trim();
+    
+    // Prepare LLM data object
+    const llmData = {
+        id: editId || undefined, // If editId is provided, use it, otherwise undefined for new LLM
+        name,
+        model,
+        appearance: {
+            color,
+            style,
+            customPrompt: customPrompt || undefined
+        },
+        attributes: attributeSystem.exportAttributes(),
+        createdAt: editId ? llmStorage.getLLMById(editId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    // Store character representation if available
+    if (customCharacter) {
+        // We can't store the 3D object directly, but we can store the generating code
+        if (window.generatedCharacterCode) {
+            llmData.appearance.characterCode = window.generatedCharacterCode;
+        }
+    }
+    
+    // Save the LLM
+    llmStorage.saveLLM(llmData);
+    
+    // Show success message
+    alert(`LLM ${editId ? 'updated' : 'created'} successfully!`);
+    
+    // Close the creation UI
+    document.getElementById('create-llm-ui').classList.remove('active');
+    
+    // Show the LLM list
+    import('./llmListUI.js').then(module => {
+        module.setupLLMListUI();
+    });
+}
+
+// Keep track of the generated character code
+window.generatedCharacterCode = null;

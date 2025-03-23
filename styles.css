@@ -810,3 +810,149 @@ input:checked + .llm-toggle-slider:before {
     padding: 2px 6px;
     border-radius: 3px;
 }
+
+/* LLM List UI Styles */
+#llm-list-ui {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 201;
+    display: none;
+    flex-direction: column;
+    padding: 20px;
+}
+
+#llm-list-ui.active {
+    display: flex;
+}
+
+.llm-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #3cb371;
+    margin-bottom: 20px;
+}
+
+.llm-list-title {
+    color: #3cb371;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.llm-list-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.llm-list-container {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.llm-empty-state {
+    color: #888;
+    font-size: 1.2rem;
+    text-align: center;
+    margin-top: 50px;
+}
+
+.llm-list-item {
+    display: flex;
+    align-items: center;
+    background-color: #222;
+    border-radius: 5px;
+    padding: 15px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border-left: 5px solid #3cb371;
+}
+
+.llm-list-item:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.llm-color-indicator {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 15px;
+    border: 2px solid #555;
+}
+
+.llm-info {
+    flex: 1;
+}
+
+.llm-name {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.llm-type {
+    color: #3cb371;
+    font-size: 0.9rem;
+    text-transform: capitalize;
+    margin-bottom: 8px;
+}
+
+.llm-stats {
+    display: flex;
+    gap: 12px;
+}
+
+.llm-stat-item {
+    background-color: rgba(60, 179, 113, 0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    color: #aaa;
+}
+
+.llm-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.llm-action-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.llm-action-btn:hover {
+    background-color: #444;
+    color: #fff;
+}
+
+.llm-action-btn.view:hover {
+    color: #3cb371;
+}
+
+.llm-action-btn.edit:hover {
+    color: #ffeb3b;
+}
+
+.llm-action-btn.delete:hover {
+    color: #ff5252;
+}
