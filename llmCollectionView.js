@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
 import { createCollectionModels } from './llmCollectionViewUtils.js';
+import { setupLLMCreationInterface } from './llmCreationInterface.js';
 
 let collectionScene, collectionCamera, collectionRenderer;
 let llmModels = [];
@@ -98,12 +99,7 @@ export function setupLLMCollectionView() {
         collectionUI.classList.remove('active');
         document.getElementById('create-llm-ui').classList.add('active');
         // Initialize the creation interface
-        const setupLLMCreationInterface = window.setupLLMCreationInterface || 
-            (typeof setupLLMCreationInterface === 'function' ? setupLLMCreationInterface : null);
-        
-        if (setupLLMCreationInterface) {
-            setupLLMCreationInterface();
-        }
+        setupLLMCreationInterface();
         
         // Cancel animation loop
         if (collectionAnimationId) {
@@ -190,7 +186,7 @@ function handleEditLLM(id) {
     createUI.setAttribute('data-edit-id', id);
     
     // Set up the creation interface with the LLM data
-    setupLLMCreationInterface(llm);
+    setupLLMCreationInterface();
     
     // Cancel animation if active
     if (collectionAnimationId) {
