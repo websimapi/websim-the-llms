@@ -361,32 +361,36 @@ body {
     align-items: center;
 }
 
+.create-llm-btn .waving-arm {
+    transform-origin: 18px 12px;
+    transition: transform 0.2s ease;
+}
+
+.create-llm-btn:hover .waving-arm {
+    animation: wave-arm 1s ease-in-out infinite;
+}
+
+@keyframes wave-arm {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-15deg); }
+    50% { transform: rotate(0deg); }
+    75% { transform: rotate(-15deg); }
+    100% { transform: rotate(0deg); }
+}
+
 .create-llm-btn:hover,
 .move-llm-btn:hover {
     background: none;
     transform: scale(1.05);
 }
 
-.create-llm-btn:hover .llm-icon {
+.create-llm-btn:hover .llm-icon,
+.move-llm-btn:hover .llm-icon {
     filter: hue-rotate(calc(var(--hue, 0) * 1deg));
     animation: rainbow-icon 8s ease infinite;
     transform: perspective(500px) rotateY(10deg) rotateX(5deg); 
     transition: transform 0.3s ease;
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.7)); 
-}
-
-.create-llm-btn:hover .wave-hand {
-    animation: wave-animation 1.5s ease-in-out infinite;
-    transform-origin: 75% 50%;
-}
-
-@keyframes wave-animation {
-    0% { transform: rotate(0deg); }
-    20% { transform: rotate(-20deg); }
-    40% { transform: rotate(10deg); }
-    60% { transform: rotate(-10deg); }
-    80% { transform: rotate(5deg); }
-    100% { transform: rotate(0deg); }
 }
 
 .create-llm-btn::before,
