@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { generateCharacterCode, createCustomCharacter } from './characterGenerator.js';
 import { attributeSystem } from './attributeSystem.js';
-import { llmStorage } from './llmStorage.js';
+import { llmDataManager } from './llmDataManager.js';
+import { renderLLMList } from './llmListUI.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -31,28 +32,13 @@ export function setupLLMCreationInterface() {
     // Initialize the humanoid preview
     initHumanoidPreview();
     
-    // Add event listener for form submission/creation
-    const createLLMBtn = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
-    const resetBtn = document.querySelector('.create-llm-button.secondary');
+    // Add event listener for create button
+    const createButton = document.querySelector('.create-llm-button:not(.secondary)');
+    createButton.addEventListener('click', saveLLMData);
     
-    createLLMBtn.addEventListener('click', saveLLM);
-    resetBtn.addEventListener('click', resetForm);
-    
-    // If we're in edit mode, load existing data
-    const createUI = document.getElementById('create-llm-ui');
-    if (createUI.dataset.editMode === 'true' && createUI.dataset.editId) {
-        const llmId = parseInt(createUI.dataset.editId);
-        const llm = llmStorage.getLLM(llmId);
-        if (llm && llm.attributes) {
-            // Load attributes
-            Object.keys(llm.attributes).forEach(attr => {
-                attributeSystem.attributes[attr].value = llm.attributes[attr];
-            });
-            attributeSystem.pointsSpent = Object.values(llm.attributes).reduce((a, b) => a + b, 0);
-            renderAttributeGrid();
-            updatePointsDisplay();
-        }
-    }
+    // Add event listener for reset button
+    const resetButton = document.querySelector('.create-llm-button.secondary');
+    resetButton.addEventListener('click', resetForm);
 }
 
 // Function to render the attribute grid
@@ -180,8 +166,6 @@ async function handleGenerateCharacter() {
         
         // Create the new character
         customCharacter = createCustomCharacter(THREE, generatedCode);
-        // Store the generated code in the userData for later retrieval
-        customCharacter.userData.generatedCode = generatedCode;
         humanoidScene.add(customCharacter);
         
         statusElement.textContent = "Character generated successfully!";
@@ -677,97 +661,72 @@ function animateHumanoid() {
     humanoidRenderer.render(humanoidScene, humanoidCamera);
 }
 
-// Add new functions for saving/resetting LLM data
-function saveLLM() {
-    const createUI = document.getElementById('create-llm-ui');
-    const isEditMode = createUI.dataset.editMode === 'true';
-    const editId = isEditMode ? parseInt(createUI.dataset.editId) : null;
-    
-    // Get form data
+// Function to save LLM data
+function saveLLMData() {
+    // Collect all data from the form
     const llmData = {
-        name: document.getElementById('llm-name').value,
-        model: document.getElementById('llm-model').value,
+        name: document.getElementById('llm-name').value || `LLM-${Math.floor(Math.random() * 1000)}`,
+        modelType: document.getElementById('llm-model').value,
+        attributes: attributeSystem.exportAttributes(),
         color: document.getElementById('llm-color').value,
         style: document.getElementById('llm-style').value,
         customPrompt: document.getElementById('llm-custom-prompt').value,
-        customCharacterCode: customCharacter ? customCharacter.userData.generatedCode : null,
-        attributes: attributeSystem.exportAttributes()
+        hasCustomCharacter: customCharacter !== null
     };
     
-    // Validate data
-    if (!llmData.name.trim()) {
-        alert('Please enter a name for your LLM');
-        return;
+    // Check if we're editing an existing LLM
+    const editId = document.getElementById('create-llm-ui').dataset.editId;
+    if (editId) {
+        llmData.id = editId;
+        document.getElementById('create-llm-ui').removeAttribute('data-edit-id');
     }
     
-    // Save to storage
-    if (isEditMode && editId) {
-        llmStorage.updateLLM(editId, llmData);
-    } else {
-        llmStorage.addLLM(llmData);
-    }
+    // Save the LLM data
+    llmDataManager.saveLLM(llmData);
     
-    // Reset form and close UI
+    // Close the create UI
+    document.getElementById('create-llm-ui').classList.remove('active');
+    
+    // Show the LLM list UI with the updated list
+    document.getElementById('llm-list-ui').classList.add('active');
+    renderLLMList();
+    
+    // Reset the form for next use
     resetForm();
-    createUI.classList.remove('active');
-    
-    // Reset edit mode
-    createUI.dataset.editMode = 'false';
-    createUI.dataset.editId = '';
-    
-    // Show success notification
-    const message = isEditMode ? 'LLM updated successfully!' : 'New LLM created successfully!';
-    showNotification(message);
 }
 
 function resetForm() {
+    // Reset name to random default
     document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
-    document.getElementById('llm-model').value = 'assistant';
-    document.getElementById('llm-color').value = '#3cb371';
-    document.getElementById('llm-style').value = 'modern';
-    document.getElementById('llm-custom-prompt').value = '';
+    
+    // Reset model type to first option
+    document.getElementById('llm-model').selectedIndex = 0;
     
     // Reset attributes
     attributeSystem.initializeAttributes();
     renderAttributeGrid();
     updatePointsDisplay();
     
-    // Reset preview
+    // Reset appearance
+    document.getElementById('llm-color').value = '#3cb371';
+    document.getElementById('llm-style').selectedIndex = 0;
+    document.getElementById('llm-custom-prompt').value = '';
+    
+    // Reset custom character
     if (customCharacter && customCharacter.parent) {
         customCharacter.parent.remove(customCharacter);
         customCharacter = null;
     }
     
-    // Recreate default robot
-    if (!robotModel) {
-        createRobotModel();
+    // Reset robot model with default appearance
+    if (robotModel && robotModel.parent) {
+        robotModel.parent.remove(robotModel);
     }
-}
-
-function showNotification(message) {
-    // Create notification element if it doesn't exist
-    let notification = document.getElementById('notification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'notification';
-        notification.style.position = 'fixed';
-        notification.style.bottom = '20px';
-        notification.style.right = '20px';
-        notification.style.padding = '15px 20px';
-        notification.style.backgroundColor = '#3cb371';
-        notification.style.color = 'white';
-        notification.style.borderRadius = '5px';
-        notification.style.zIndex = '9999';
-        notification.style.transition = 'opacity 0.3s ease';
-        document.body.appendChild(notification);
-    }
+    createRobotModel();
     
-    // Update message and show
-    notification.textContent = message;
-    notification.style.opacity = '1';
+    // Remove edit ID if present
+    document.getElementById('create-llm-ui').removeAttribute('data-edit-id');
     
-    // Hide after 3 seconds
-    setTimeout(() => {
-        notification.style.opacity = '0';
-    }, 3000);
+    // Reset selected mesh
+    selectedMesh = null;
 }

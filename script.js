@@ -3,8 +3,8 @@ import { cityData } from './cityData.js';
 import * as THREE from 'three';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
 import { attributeSystem } from './attributeSystem.js';
-import { setupLLMListInterface } from './llmListInterface.js';
-import { llmStorage } from './llmStorage.js';
+import { llmDataManager } from './llmDataManager.js';
+import { setupLLMListUI } from './llmListUI.js';
 
 let bgAudio;
 let useLLMTips = localStorage.getItem('useLLMTips') !== null ? 
@@ -322,20 +322,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const createLLMButton = document.querySelector('.create-llm-btn');
         const moveLLMButton = document.querySelector('.move-llm-btn');
         const createLLMUI = document.getElementById('create-llm-ui');
-        const llmListUI = document.getElementById('llm-list-ui');
         const closeCreateLLMButton = document.querySelector('.create-llm-close');
+        const llmListUI = document.getElementById('llm-list-ui');
+        
+        // Initialize LLM data manager
+        llmDataManager.initialize();
         
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
+            // Show the LLM list instead of directly opening create UI
             llmListUI.classList.add('active');
-            setupLLMListInterface();
+            setupLLMListUI();
         });
         
         closeCreateLLMButton.addEventListener('click', () => {
             createLLMUI.classList.remove('active');
-            // Reset the edit mode
-            createLLMUI.dataset.editMode = 'false';
-            createLLMUI.dataset.editId = '';
+            // Show the LLM list when closing create UI
+            llmListUI.classList.add('active');
+            setupLLMListUI();
         });
         
         moveLLMButton.addEventListener('click', () => {

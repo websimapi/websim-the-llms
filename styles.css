@@ -822,7 +822,7 @@ input:checked + .llm-toggle-slider:before {
     z-index: 200;
     display: none;
     flex-direction: column;
-    padding: 30px;
+    padding: 20px;
 }
 
 #llm-list-ui.active {
@@ -852,139 +852,152 @@ input:checked + .llm-toggle-slider:before {
     cursor: pointer;
 }
 
-.llm-list-controls {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-
-.llm-list-button {
-    padding: 10px 20px;
-    background-color: #444;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.llm-list-button.primary {
-    background-color: #3cb371;
-}
-
-.llm-list-button:hover {
-    opacity: 0.9;
-}
-
-.llm-list-search {
-    display: flex;
-    align-items: center;
-}
-
-.llm-list-search input {
-    padding: 8px 12px;
-    border: 1px solid #3cb371;
-    background-color: #333;
-    color: white;
-    border-radius: 4px;
-    width: 250px;
-}
-
 .llm-list-container {
     flex: 1;
     overflow-y: auto;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    grid-gap: 20px;
     padding: 10px;
 }
 
 .llm-card {
     background-color: #222;
     border-radius: 8px;
-    border: 1px solid #444;
-    overflow: hidden;
-    display: flex;
-    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 15px;
     cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    border: 2px solid transparent;
 }
 
 .llm-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(60, 179, 113, 0.3);
-    border-color: #3cb371;
+    border-color: rgba(60, 179, 113, 0.5);
 }
 
-.llm-card-avatar {
-    width: 80px;
-    height: 100%;
+.llm-card-header {
     display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.llm-avatar-placeholder {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: #fff;
-    color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.llm-card-info {
-    flex: 1;
-    padding: 15px;
+    justify-content: space-between;
+    margin-bottom: 15px;
 }
 
 .llm-card-name {
-    font-weight: bold;
     font-size: 1.2rem;
-    margin-bottom: 5px;
+    color: #fff;
+    margin: 0;
 }
 
-.llm-card-model, .llm-card-date {
+.llm-card-model {
     font-size: 0.8rem;
-    color: #aaa;
-    margin-bottom: 5px;
+    padding: 3px 8px;
+    background-color: #3cb371;
+    color: #000;
+    border-radius: 12px;
+    align-self: flex-start;
 }
 
-.llm-card-actions {
-    padding: 10px;
+.llm-card-attributes {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 10px;
+    margin-bottom: 15px;
 }
 
-.llm-card-btn {
-    background: none;
-    border: none;
-    color: #3cb371;
-    cursor: pointer;
-    padding: 5px;
+.llm-card-attribute {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.attribute-name {
+    font-size: 0.8rem;
+    color: #ccc;
+    text-transform: capitalize;
+}
+
+.attribute-bar {
+    height: 8px;
+    background-color: #333;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.attribute-fill {
+    height: 100%;
+    background-color: #3cb371;
     border-radius: 4px;
 }
 
-.llm-card-btn:hover {
-    background-color: rgba(60, 179, 113, 0.2);
+.llm-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
 }
 
-.llm-card-btn.delete {
-    color: #ff6b6b;
+.llm-card-date {
+    color: #aaa;
 }
 
-.llm-card-btn.delete:hover {
-    background-color: rgba(255, 107, 107, 0.2);
+.llm-card-actions {
+    display: flex;
+    gap: 8px;
 }
 
-.empty-llm-message {
+.llm-card-edit, .llm-card-delete {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.7rem;
+}
+
+.llm-card-edit {
+    background-color: #3cb371;
+}
+
+.llm-card-delete {
+    background-color: #ff4d4d;
+}
+
+.llm-list-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #3cb371;
+}
+
+.llm-list-new-button {
+    padding: 10px 20px;
+    background-color: #3cb371;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.llm-empty-state {
     grid-column: 1 / -1;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     padding: 50px;
     color: #aaa;
-    font-style: italic;
+    text-align: center;
+}
+
+.empty-icon {
+    width: 64px;
+    height: 64px;
+    color: #3cb371;
+    opacity: 0.5;
+    margin-bottom: 20px;
 }
