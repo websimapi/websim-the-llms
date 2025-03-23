@@ -217,19 +217,6 @@ function addCityNameText(scene) {
     sign.position.set(0, 8.5, -30);
     sign.castShadow = true;
     scene.add(sign);
-    
-    // Add decorative roof to the sign
-    const roofGeometry = new THREE.ConeGeometry(11, 2, 4);
-    const roofMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x8B0000,
-        roughness: 0.7,
-        metalness: 0.2
-    });
-    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-    roof.position.set(0, 12, -30);
-    roof.rotation.y = Math.PI / 4;
-    roof.castShadow = true;
-    scene.add(roof);
 }
 
 function setupConsoleToggle() {
