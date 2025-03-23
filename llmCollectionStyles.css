@@ -49,3 +49,20 @@
     min-width: 80px;
 }
 
+/* Fix for viewport rendering */
+.collection-viewport {
+    position: relative;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 400px !important;
+    background-color: #111;
+    overflow: hidden;
+    flex: 2;
+}
+
+.collection-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100% - 120px);
+}

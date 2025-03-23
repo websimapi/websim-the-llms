@@ -32,29 +32,32 @@ export function setupLLMCarousel(viewportElement, llms) {
         return;
     }
     
-    // Check if viewport is properly sized
-    console.log('Viewport dimensions:', viewportElement.clientWidth, 'x', viewportElement.clientHeight);
-    if (viewportElement.clientWidth === 0 || viewportElement.clientHeight === 0) {
-        console.error('Viewport has zero dimensions. Check CSS and DOM structure.');
-        // Force a minimum size to debug rendering issues
-        viewportElement.style.minWidth = '400px';
-        viewportElement.style.minHeight = '300px';
-        console.log('Applied minimum dimensions to viewport for debugging');
-    }
+    // Force viewport to be visible and have proper dimensions first
+    viewportElement.style.width = '100%';
+    viewportElement.style.height = '100%';
+    viewportElement.style.minWidth = '400px';
+    viewportElement.style.minHeight = '300px';
+    viewportElement.style.display = 'block';
     
-    // Initialize Three.js scene
-    console.log('Initializing carousel Three.js scene');
-    initCarouselScene(viewportElement);
-    
-    // Add navigation arrows
-    addNavigationArrows(viewportElement);
-    
-    // Load initial models
-    updateCarouselModels();
-    
-    // Start animation
-    animateCarousel();
-    console.log('Carousel animation started');
+    // Delay initialization to allow dimensions to be applied
+    setTimeout(() => {
+        // Check if viewport is properly sized now
+        console.log('Viewport dimensions after sizing:', viewportElement.clientWidth, 'x', viewportElement.clientHeight);
+        
+        // Initialize Three.js scene
+        console.log('Initializing carousel Three.js scene');
+        initCarouselScene(viewportElement);
+        
+        // Add navigation arrows
+        addNavigationArrows(viewportElement);
+        
+        // Load initial models
+        updateCarouselModels();
+        
+        // Start animation
+        animateCarousel();
+        console.log('Carousel animation started');
+    }, 50);
 }
 
 function initCarouselScene(viewportElement) {
@@ -81,6 +84,10 @@ function initCarouselScene(viewportElement) {
         renderer.shadowMap.enabled = true;
         viewportElement.appendChild(renderer.domElement);
         console.log('Renderer created and added to viewport', renderer.domElement);
+        
+        // Explicitly set renderer size based on parent
+        renderer.domElement.style.width = '100%';
+        renderer.domElement.style.height = '100%';
         
         // Add debugging info to renderer
         renderer.domElement.style.border = '1px solid red';

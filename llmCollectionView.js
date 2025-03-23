@@ -14,86 +14,89 @@ export function setupLLMCollectionView() {
     
     // Setup the collection UI
     const collectionUI = document.getElementById('llm-collection-ui');
-    const collectionViewport = document.querySelector('.collection-viewport');
-    const llmList = document.getElementById('llm-list');
+    collectionUI.classList.add('active');
     
-    // Clear existing content
-    llmList.innerHTML = '';
-    collectionViewport.innerHTML = '';
-    
-    // Debug log
-    console.log('Setting up LLM Collection View');
-    console.log('Collection viewport element:', collectionViewport);
-    
-    // Cancel any existing animation
-    if (collectionAnimationId) {
-        cancelAnimationFrame(collectionAnimationId);
-        console.log('Cancelled previous animation frame');
-    }
-    
-    // Clean up any existing carousel
-    cleanupCarousel();
-    console.log('Cleaned up previous carousel');
-    
-    // Get all LLMs 
-    const llms = llmDataManager.getAllLLMs();
-    console.log('Retrieved LLMs:', llms);
-    
-    if (llms.length === 0) {
-        // Show empty state
-        llmList.innerHTML = `
-            <div class="empty-collection">
-                <h3>No LLMs Created Yet</h3>
-                <p>Create your first LLM by clicking the "Create New LLM" button below.</p>
-            </div>
-        `;
-        console.log('No LLMs found, showing empty state');
-    } else {
-        // Display LLM list
-        llms.forEach((llm, index) => {
-            // Create list item
-            const llmItem = document.createElement('div');
-            llmItem.className = 'llm-list-item';
-            llmItem.innerHTML = `
-                <div class="llm-info">
-                    <h3>${llm.name}</h3>
-                    <p class="llm-type">${llm.model}</p>
-                    <p class="llm-created">Created: ${new Date(llm.createdAt).toLocaleDateString()}</p>
-                </div>
-                <div class="llm-actions">
-                    <button class="llm-edit-btn" data-id="${llm.id}">Edit</button>
-                    <button class="llm-delete-btn" data-id="${llm.id}">Delete</button>
+    // Wait a moment for the UI to be visible before initializing the viewport
+    setTimeout(() => {
+        const collectionViewport = document.querySelector('.collection-viewport');
+        const llmList = document.getElementById('llm-list');
+        
+        // Clear existing content
+        llmList.innerHTML = '';
+        collectionViewport.innerHTML = '';
+        
+        // Debug log
+        console.log('Setting up LLM Collection View');
+        console.log('Collection viewport element:', collectionViewport);
+        
+        // Cancel any existing animation
+        if (collectionAnimationId) {
+            cancelAnimationFrame(collectionAnimationId);
+            console.log('Cancelled previous animation frame');
+        }
+        
+        // Clean up any existing carousel
+        cleanupCarousel();
+        console.log('Cleaned up previous carousel');
+        
+        // Get all LLMs 
+        const llms = llmDataManager.getAllLLMs();
+        console.log('Retrieved LLMs:', llms);
+        
+        if (llms.length === 0) {
+            // Show empty state
+            llmList.innerHTML = `
+                <div class="empty-collection">
+                    <h3>No LLMs Created Yet</h3>
+                    <p>Create your first LLM by clicking the "Create New LLM" button below.</p>
                 </div>
             `;
-            llmList.appendChild(llmItem);
-        });
-        
-        // Setup carousel instead of the previous Three.js scene
-        console.log('Setting up carousel with LLMs:', llms);
-        setupLLMCarousel(collectionViewport, llms);
-        
-        // Add event listeners for buttons
-        document.querySelectorAll('.llm-edit-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.target.getAttribute('data-id');
-                handleEditLLM(id);
+            console.log('No LLMs found, showing empty state');
+        } else {
+            // Display LLM list
+            llms.forEach((llm, index) => {
+                // Create list item
+                const llmItem = document.createElement('div');
+                llmItem.className = 'llm-list-item';
+                llmItem.innerHTML = `
+                    <div class="llm-info">
+                        <h3>${llm.name}</h3>
+                        <p class="llm-type">${llm.model}</p>
+                        <p class="llm-created">Created: ${new Date(llm.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <div class="llm-actions">
+                        <button class="llm-edit-btn" data-id="${llm.id}">Edit</button>
+                        <button class="llm-delete-btn" data-id="${llm.id}">Delete</button>
+                    </div>
+                `;
+                llmList.appendChild(llmItem);
             });
-        });
-        
-        document.querySelectorAll('.llm-delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = e.target.getAttribute('data-id');
-                const confirmed = confirm('Are you sure you want to delete this LLM?');
-                if (confirmed) {
-                    deleteLLM(id);
-                }
+            
+            // Setup carousel instead of the previous Three.js scene
+            console.log('Setting up carousel with LLMs:', llms);
+            setupLLMCarousel(collectionViewport, llms);
+            
+            // Add event listeners for buttons
+            document.querySelectorAll('.llm-edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    handleEditLLM(id);
+                });
             });
-        });
-    }
-    
-    // Show the collection UI
-    collectionUI.classList.add('active');
-    console.log('Collection UI is now active');
+            
+            document.querySelectorAll('.llm-delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const confirmed = confirm('Are you sure you want to delete this LLM?');
+                    if (confirmed) {
+                        deleteLLM(id);
+                    }
+                });
+            });
+        }
+        
+        console.log('Collection UI is now active');
+    }, 100);
     
     // Add close button event listener
     document.querySelector('.collection-close').addEventListener('click', () => {
