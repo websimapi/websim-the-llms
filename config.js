@@ -10,5 +10,15 @@ export const config = {
         "Low on GPU? Try reducing your context window.",
         "Different models have different personalities.",
         "Overtraining can lead to model burnout."
-    ]
+    ],
+    
+    // Game settings
+    startingResources: {
+        money: 1000,
+        energy: 500
+    },
+    
+    // City scene settings
+    citySize: 100,
+    groundColor: 0x7cfc00
 };

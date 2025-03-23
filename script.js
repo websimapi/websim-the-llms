@@ -4,64 +4,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingBar = document.querySelector('.loading-bar');
     const loadingPercentage = document.querySelector('.loading-percentage');
     const tipText = document.querySelector('.tip-text');
-    const llmToggle = document.getElementById('llmToggle');
+    const skipButton = document.getElementById('skip-button');
+    const loadingScreen = document.getElementById('loading-screen');
+    const gameContainer = document.getElementById('game-container');
     
-    let usingLLM = false;
-    let generatingTip = false;
-    
-    // Toggle LLM tips generation
-    llmToggle.addEventListener('change', () => {
-        usingLLM = llmToggle.checked;
-        if (usingLLM) {
-            generateLLMTip();
-        } else {
-            setRandomTip();
-        }
-    });
-    
-    // Randomly select a tip from config
+    // Randomly select a tip
     function setRandomTip() {
         const randomIndex = Math.floor(Math.random() * config.loadingTips.length);
         tipText.textContent = config.loadingTips[randomIndex];
     }
     
-    // Generate a tip using LLM
-    async function generateLLMTip() {
-        if (!usingLLM || generatingTip) return;
-        
-        generatingTip = true;
-        try {
-            const completion = await websim.chat.completions.create({
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are a helpful assistant providing short, amusing tips for a game called 'The LLMs' which is inspired by The Sims. Create a single tip about virtual life simulation, character management, or language model care. Keep it under 100 characters and make it sound like a loading screen tip from The Sims."
-                    }
-                ]
-            });
-            
-            if (usingLLM) { // Double check we're still using LLM
-                tipText.textContent = completion.content;
-            }
-        } catch (error) {
-            console.error("Error generating LLM tip:", error);
-            tipText.textContent = "Error generating tip. Please try again.";
-        } finally {
-            generatingTip = false;
-        }
-    }
-    
     // Set initial random tip
     setRandomTip();
     
-    // Change tip every 7 seconds
-    setInterval(() => {
-        if (usingLLM) {
-            generateLLMTip();
-        } else {
-            setRandomTip();
-        }
-    }, 7000);
+    // Change tip every 3 seconds
+    setInterval(setRandomTip, 3000);
+    
+    // Function to complete loading and show game
+    function completeLoading() {
+        loadingScreen.style.display = 'none';
+        gameContainer.classList.remove('hidden');
+    }
+    
+    // Skip button click handler
+    skipButton.addEventListener('click', () => {
+        clearInterval(loadingInterval);
+        completeLoading();
+    });
     
     // Simulate loading progress
     let progress = 0;
@@ -75,12 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
             progress = 100;
             clearInterval(loadingInterval);
             
-            // You could redirect to the main game here after a short delay
-            setTimeout(() => {
-                // Uncomment when you have a main game page
-                // window.location.href = 'game.html';
-                console.log('Loading complete! Ready to enter The LLMs world.');
-            }, 1000);
+            // Show the game after a short delay
+            setTimeout(completeLoading, 1000);
         }
         
         loadingBar.style.width = `${progress}%`;

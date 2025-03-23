@@ -4,39 +4,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The LLMs - Loading Screen</title>
     <link rel="stylesheet" href="styles.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/"
+      }
+    }
+    </script>
 </head>
 <body>
-    <div class="llm-toggle-container">
-        <span>AI Tips:</span>
-        <label class="switch">
-            <input type="checkbox" id="llmToggle">
-            <span class="slider round"></span>
-        </label>
+    <div id="game-container" class="hidden">
+        <div id="city-view"></div>
+        <div id="ui-overlay">
+            <div class="top-menu">
+                <button class="menu-button create-llm-btn">Create New LLM</button>
+                <div class="resources">
+                    <div class="resource">
+                        <span class="resource-icon">💰</span>
+                        <span class="resource-value">1000</span>
+                    </div>
+                    <div class="resource">
+                        <span class="resource-icon">⚡</span>
+                        <span class="resource-value">500</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <div class="loading-container">
-        <div class="logo-container">
-            <div class="logo">
-                <h1>The LLMs</h1>
-                <div class="logo-subtitle">Life Learning Models</div>
+
+    <div id="loading-screen">
+        <div class="loading-container">
+            <div class="logo-container">
+                <div class="logo">
+                    <h1>The LLMs</h1>
+                    <div class="logo-subtitle">Life Learning Models</div>
+                </div>
             </div>
-        </div>
-        
-        <div class="loading-bar-container">
-            <div class="loading-bar"></div>
-            <div class="loading-percentage">0%</div>
-        </div>
-        
-        <div class="loading-tip-container">
-            <div class="loading-tip">
-                <span class="tip-label">TIP:</span>
-                <span class="tip-text">LLMs need regular prompting to stay happy.</span>
+            
+            <div class="loading-bar-container">
+                <div class="loading-bar"></div>
+                <div class="loading-percentage">0%</div>
             </div>
+            
+            <div class="loading-tip-container">
+                <div class="loading-tip">
+                    <span class="tip-label">TIP:</span>
+                    <span class="tip-text">LLMs need regular prompting to stay happy.</span>
+                </div>
+            </div>
+            
+            <button id="skip-button">Skip Loading</button>
         </div>
     </div>
     
     <script type="module" src="config.js"></script>
     <script type="module" src="script.js"></script>
+    <script type="module" src="cityScene.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
