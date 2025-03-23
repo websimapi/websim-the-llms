@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Start the LLM tip fetching cycle
+    // Set interval for fetching tips every 7 seconds
     function startLLMTipFetch() {
         // Fetch first tip immediately
         if (useLLMTips) {
