@@ -54,14 +54,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set initial random tip
     setRandomTip();
     
-    // Change tip every 3 seconds
+    // Change tip every 7 seconds
     setInterval(() => {
         if (usingLLM) {
             generateLLMTip();
         } else {
             setRandomTip();
         }
-    }, 3000);
+    }, 7000);
     
     // Simulate loading progress
     let progress = 0;
