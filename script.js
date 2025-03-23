@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Timer variables for LLM tip generation
     let tipTimer;
     let lastTipTime = 0;
-    const tipCooldown = 10000; // 10 seconds between LLM tips
+    const tipCooldown = 7000; // Changed from 10000 to 7000 (7 seconds between LLM tips)
     
     // Function to update tips based on the toggle state
     function updateTip() {
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update tips at regular intervals based on toggle state
     setInterval(() => {
         updateTip();
-    }, llmEnabled ? tipCooldown : 3000);
+    }, 7000); // Changed from conditional interval to fixed 7 second interval
     
     // Simulate loading progress
     let progress = 0;
