@@ -549,3 +549,154 @@ input:checked + .llm-toggle-slider:before {
         transform: scale(1.05);
     }
 }
+
+/* Create LLM UI Styles */
+#create-llm-ui {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 200;
+    display: none;
+    flex-direction: row;
+}
+
+#create-llm-ui.active {
+    display: flex;
+}
+
+.create-llm-sidebar {
+    width: 30%;
+    height: 100%;
+    background-color: #1a1a1a;
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 2px solid #3cb371;
+}
+
+.create-llm-main {
+    width: 70%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.create-llm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #3cb371;
+}
+
+.create-llm-title {
+    color: #3cb371;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.create-llm-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.settings-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #222;
+    border-radius: 5px;
+}
+
+.settings-group-title {
+    color: #3cb371;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.setting-item {
+    margin-bottom: 15px;
+}
+
+.setting-label {
+    display: block;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.setting-input, .setting-select {
+    width: 100%;
+    padding: 8px;
+    background-color: #333;
+    border: 1px solid #555;
+    color: white;
+    border-radius: 4px;
+}
+
+.setting-slider {
+    width: 100%;
+    height: 6px;
+    background: #555;
+    outline: none;
+    -webkit-appearance: none;
+    border-radius: 3px;
+}
+
+.setting-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3cb371;
+    cursor: pointer;
+}
+
+.setting-value {
+    display: inline-block;
+    color: #3cb371;
+    margin-left: 10px;
+}
+
+.humanoid-viewport {
+    width: 90%;
+    height: 90%;
+    background-color: #111;
+    border-radius: 5px;
+    position: relative;
+}
+
+.create-llm-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.create-llm-button {
+    padding: 10px 20px;
+    background-color: #3cb371;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.create-llm-button:hover {
+    background-color: #2a8c5a;
+}
+
+.create-llm-button.secondary {
+    background-color: #444;
+}
+
+.create-llm-button.secondary:hover {
+    background-color: #555;
+}

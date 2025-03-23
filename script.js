@@ -313,13 +313,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Setup UI interactions for fireworks effect
     function setupUIInteractions() {
         const createLLMButton = document.querySelector('.create-llm-btn');
         const moveLLMButton = document.querySelector('.move-llm-btn');
+        const createLLMUI = document.getElementById('create-llm-ui');
+        const closeCreateLLMButton = document.querySelector('.create-llm-close');
         
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
+            createLLMUI.classList.add('active');
+            setupLLMCreationInterface();
+        });
+        
+        closeCreateLLMButton.addEventListener('click', () => {
+            createLLMUI.classList.remove('active');
         });
         
         moveLLMButton.addEventListener('click', () => {
@@ -343,6 +350,49 @@ document.addEventListener('DOMContentLoaded', () => {
             moveLLMButton.style.setProperty('--x', `${x}%`);
             moveLLMButton.style.setProperty('--y', `${y}%`);
         });
+        
+        // Setup attribute slider displays
+        const sliders = document.querySelectorAll('.setting-slider');
+        sliders.forEach(slider => {
+            const valueDisplay = document.getElementById(`${slider.id.split('-')[1]}-value`);
+            slider.addEventListener('input', () => {
+                valueDisplay.textContent = slider.value;
+            });
+        });
+    }
+
+    function setupLLMCreationInterface() {
+        // Setup default values for the form
+        document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
+        
+        // Add event listeners for form elements that should update the humanoid preview
+        document.getElementById('llm-color').addEventListener('input', updateHumanoidPreview);
+        document.getElementById('llm-style').addEventListener('change', updateHumanoidPreview);
+        
+        // Initialize the humanoid preview
+        initHumanoidPreview();
+    }
+
+    function initHumanoidPreview() {
+        // This function will later be expanded to initialize a Three.js scene
+        // with a humanoid figure in the humanoid-viewport element
+        console.log('Initializing humanoid preview');
+        
+        // For now, just add a placeholder message
+        const viewport = document.querySelector('.humanoid-viewport');
+        viewport.innerHTML = '<div style="color: white; text-align: center; padding-top: 45%;">Humanoid Preview<br>(Coming Soon)</div>';
+    }
+
+    function updateHumanoidPreview() {
+        // This function will be called when attributes change to update the humanoid preview
+        console.log('Updating humanoid preview with new settings');
+        
+        // Get current settings values
+        const color = document.getElementById('llm-color').value;
+        const style = document.getElementById('llm-style').value;
+        
+        console.log(`New settings: Color: ${color}, Style: ${style}`);
+        // Later, this will update the Three.js model
     }
 
     setupConsolePanel();

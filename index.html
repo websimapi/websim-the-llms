@@ -84,6 +84,79 @@
                 Press ~ to open console
             </div>
         </div>
+        
+        <div id="create-llm-ui">
+            <div class="create-llm-sidebar">
+                <div class="create-llm-header">
+                    <div class="create-llm-title">Create New LLM</div>
+                    <button class="create-llm-close">&times;</button>
+                </div>
+                
+                <div class="settings-group">
+                    <div class="settings-group-title">Basic Information</div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-name">Name</label>
+                        <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-model">Model Type</label>
+                        <select id="llm-model" class="setting-select">
+                            <option value="assistant">Assistant</option>
+                            <option value="creator">Creator</option>
+                            <option value="researcher">Researcher</option>
+                            <option value="companion">Companion</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <div class="settings-group-title">Attributes</div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-intelligence">Intelligence</label>
+                        <input type="range" id="llm-intelligence" class="setting-slider" min="1" max="10" value="5">
+                        <span class="setting-value" id="intelligence-value">5</span>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-creativity">Creativity</label>
+                        <input type="range" id="llm-creativity" class="setting-slider" min="1" max="10" value="5">
+                        <span class="setting-value" id="creativity-value">5</span>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-reliability">Reliability</label>
+                        <input type="range" id="llm-reliability" class="setting-slider" min="1" max="10" value="5">
+                        <span class="setting-value" id="reliability-value">5</span>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
+                    <div class="settings-group-title">Appearance</div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-color">Primary Color</label>
+                        <input type="color" id="llm-color" class="setting-input" value="#3cb371">
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-style">Visual Style</label>
+                        <select id="llm-style" class="setting-select">
+                            <option value="modern">Modern</option>
+                            <option value="classic">Classic</option>
+                            <option value="retro">Retro</option>
+                            <option value="futuristic">Futuristic</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="create-llm-actions">
+                    <button class="create-llm-button secondary">Reset</button>
+                    <button class="create-llm-button">Create LLM</button>
+                </div>
+            </div>
+            
+            <div class="create-llm-main">
+                <div class="humanoid-viewport">
+                    <!-- Humanoid figure will be rendered here with Three.js -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="loading-screen">
