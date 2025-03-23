@@ -84,70 +84,6 @@
                 Press ~ to open console
             </div>
         </div>
-        
-        <div id="character-creator" class="hidden">
-            <div class="character-creator-container">
-                <div class="character-creator-header">
-                    <h2>Create New LLM</h2>
-                    <button id="close-creator" class="close-button">&times;</button>
-                </div>
-                <div class="character-creator-content">
-                    <div class="character-options">
-                        <div class="character-option-section">
-                            <h3>LLM Name</h3>
-                            <input type="text" id="character-name" placeholder="Enter a name for your LLM">
-                        </div>
-                        
-                        <div class="character-option-section">
-                            <h3>Appearance</h3>
-                            <div class="color-picker-group">
-                                <label>Head:</label>
-                                <input type="color" id="head-color" value="#f5d0c5">
-                            </div>
-                            <div class="color-picker-group">
-                                <label>Body:</label>
-                                <input type="color" id="body-color" value="#3498db">
-                            </div>
-                            <div class="color-picker-group">
-                                <label>Left Arm:</label>
-                                <input type="color" id="leftArm-color" value="#3498db">
-                            </div>
-                            <div class="color-picker-group">
-                                <label>Right Arm:</label>
-                                <input type="color" id="rightArm-color" value="#3498db">
-                            </div>
-                            <div class="color-picker-group">
-                                <label>Left Leg:</label>
-                                <input type="color" id="leftLeg-color" value="#2c3e50">
-                            </div>
-                            <div class="color-picker-group">
-                                <label>Right Leg:</label>
-                                <input type="color" id="rightLeg-color" value="#2c3e50">
-                            </div>
-                        </div>
-                        
-                        <div class="character-option-section">
-                            <h3>Voice</h3>
-                            <select id="voice-selector">
-                                <!-- Options will be populated by JavaScript -->
-                            </select>
-                            <div class="voice-sample-container">
-                                <p id="voice-sample">Hello, I am your LLM assistant</p>
-                                <button id="play-sample" class="play-sample-btn">Play Sample</button>
-                            </div>
-                        </div>
-                        
-                        <div class="character-option-section">
-                            <button id="save-character" class="save-character-btn">Create LLM</button>
-                        </div>
-                    </div>
-                    
-                    <div id="character-preview" class="character-preview">
-                        <!-- Three.js character will render here -->
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div id="loading-screen">
@@ -185,8 +121,23 @@
 
     <div id="start-overlay">
         <div class="start-container">
-            <h1>The LLMs</h1>
-            <div class="subtitle">Life Learning Models</div>
+            <div class="start-title">
+                <h1>The LLMs</h1>
+                <div class="subtitle">Life Learning Models</div>
+            </div>
+            
+            <div class="button-arc">
+                <button class="circle-button main-button" id="play-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="white">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
+                <button class="circle-button arc-button-1"></button>
+                <button class="circle-button arc-button-2"></button>
+                <button class="circle-button arc-button-3"></button>
+                <button class="circle-button arc-button-4"></button>
+            </div>
+            
             <button id="start-button">Click Here to Start Experience</button>
         </div>
         

@@ -374,22 +374,89 @@ input:checked + .llm-toggle-slider:before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 30px;
+    width: 100%;
+    height: 100%;
+    position: relative;
 }
 
-.start-container h1 {
-    font-size: 5rem;
+.start-title {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.start-title h1 {
+    font-size: 6rem;
     font-weight: bold;
     color: #3cb371;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     letter-spacing: 2px;
+    margin: 0;
+    line-height: 1;
 }
 
-.start-container .subtitle {
+.start-title .subtitle {
     font-size: 1.5rem;
     color: #000;
-    margin-top: -20px;
     letter-spacing: 3px;
+}
+
+.button-arc {
+    position: relative;
+    width: 400px;
+    height: 400px;
+}
+
+.circle-button {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background-color: #3cb371;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.circle-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(60, 179, 113, 0.7);
+}
+
+.main-button {
+    top: 160px;
+    left: 160px;
+    width: 80px;
+    height: 80px;
+    background-color: #3cb371;
+    z-index: 10;
+}
+
+.arc-button-1 {
+    top: 260px;
+    left: 160px;
+}
+
+.arc-button-2 {
+    top: 220px;
+    left: 60px;
+}
+
+.arc-button-3 {
+    top: 100px;
+    left: 60px;
+}
+
+.arc-button-4 {
+    top: 60px;
+    left: 160px;
 }
 
 #start-button {
@@ -402,11 +469,7 @@ input:checked + .llm-toggle-slider:before {
     font-weight: bold;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s;
-}
-
-#start-button:hover {
-    background-color: #2a8c5a;
-    transform: scale(1.05);
+    display: none;
 }
 
 /* Rainbow hover effect for Create LLM button */
@@ -500,170 +563,4 @@ input:checked + .llm-toggle-slider:before {
     100% {
         transform: scale(1.05);
     }
-}
-
-/* Character Creator Styles */
-#character-creator {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-#character-creator.hidden {
-    display: none;
-}
-
-.character-creator-container {
-    width: 90%;
-    max-width: 1200px;
-    height: 80%;
-    background-color: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.character-creator-header {
-    background-color: #3cb371;
-    color: white;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.character-creator-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-}
-
-.close-button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.8rem;
-    cursor: pointer;
-}
-
-.character-creator-content {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-}
-
-.character-options {
-    width: 40%;
-    padding: 20px;
-    overflow-y: auto;
-    background-color: #f5f5f5;
-    color: #333;
-}
-
-.character-option-section {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #ddd;
-}
-
-.character-option-section:last-child {
-    border-bottom: none;
-}
-
-.character-option-section h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #3cb371;
-}
-
-.color-picker-group {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.color-picker-group label {
-    width: 80px;
-    font-weight: bold;
-}
-
-.color-picker-group input[type="color"] {
-    width: 40px;
-    height: 40px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-#character-name {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-}
-
-#voice-selector {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-}
-
-.voice-sample-container {
-    background-color: #e0f5e0;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-
-#voice-sample {
-    margin: 0 0 10px 0;
-    font-style: italic;
-    color: #333;
-}
-
-.play-sample-btn {
-    padding: 8px 15px;
-    background-color: #3cb371;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.play-sample-btn:hover {
-    background-color: #2a8c5a;
-}
-
-.save-character-btn {
-    width: 100%;
-    padding: 12px;
-    background-color: #3cb371;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.save-character-btn:hover {
-    background-color: #2a8c5a;
-}
-
-.character-preview {
-    flex: 1;
-    background-color: #e0f5e0;
-    position: relative;
 }

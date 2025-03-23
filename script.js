@@ -1,6 +1,5 @@
 import { config } from './config.js';
 import { cityData } from './cityData.js';
-import { initCharacterCreator, saveCharacter, closeCharacterCreator } from './characterCreator.js';
 
 let bgAudio;
 let useLLMTips = true;
@@ -9,6 +8,7 @@ let tipFetchInterval;
 document.addEventListener('DOMContentLoaded', () => {
     const startOverlay = document.getElementById('start-overlay');
     const startButton = document.getElementById('start-button');
+    const playButton = document.getElementById('play-button');
     const loadingBar = document.querySelector('.loading-bar');
     const loadingPercentage = document.querySelector('.loading-percentage');
     const tipText = document.querySelector('.tip-text');
@@ -188,6 +188,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Add play button click handler
+    playButton.addEventListener('click', () => {
+        startOverlay.style.display = 'none';
+        loadingScreen.style.display = 'flex';
+        bgAudio.play();
+        fadeInAudio(); // Start fade in effect
+        startLoading();
+        
+        // Start the tip fetching based on toggle state
+        if (useLLMTips) {
+            startLLMTipFetch();
+        } else {
+            // Change tip every 3 seconds if using preset tips
+            setInterval(setRandomTip, 3000);
+        }
+    });
+    
     // Skip button click handler
     skipButton.addEventListener('click', () => {
         clearInterval(loadingInterval);
@@ -300,7 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
-            initCharacterCreator();
         });
         
         moveLLMButton.addEventListener('click', () => {
@@ -324,10 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
             moveLLMButton.style.setProperty('--x', `${x}%`);
             moveLLMButton.style.setProperty('--y', `${y}%`);
         });
-        
-        // Add event listeners for character creator buttons
-        document.getElementById('close-creator').addEventListener('click', closeCharacterCreator);
-        document.getElementById('save-character').addEventListener('click', saveCharacter);
     }
 
     setupConsolePanel();
