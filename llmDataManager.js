@@ -22,6 +22,11 @@ export const llmDataManager = {
         llmData.id = Date.now() + Math.random().toString(36).substr(2, 9);
         llmData.createdAt = new Date().toISOString();
         
+        // Process model data to preserve orientations
+        if (llmData.modelData) {
+            this.processModelOrientationData(llmData);
+        }
+        
         // Add to array
         this.createdLLMs.push(llmData);
         
@@ -29,6 +34,21 @@ export const llmDataManager = {
         this.saveToLocalStorage();
         
         return llmData.id;
+    },
+    
+    // Process model data to preserve object orientations
+    processModelOrientationData(llmData) {
+        // If there's model transformation data, ensure it's properly formatted
+        if (llmData.modelTransforms && Array.isArray(llmData.modelTransforms)) {
+            llmData.modelTransforms = llmData.modelTransforms.map(transform => {
+                return {
+                    id: transform.id || Math.random().toString(36).substr(2, 9),
+                    position: transform.position || { x: 0, y: 0, z: 0 },
+                    rotation: transform.rotation || { x: 0, y: 0, z: 0 },
+                    scale: transform.scale || { x: 1, y: 1, z: 1 }
+                };
+            });
+        }
     },
     
     // Get all LLMs

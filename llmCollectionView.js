@@ -27,7 +27,22 @@ export function setupLLMCollectionView() {
     if (collectionAnimationId) {
         cancelAnimationFrame(collectionAnimationId);
     }
-    
+
+    // Preload the view interface scene
+    document.addEventListener('DOMContentLoaded', () => {
+        // Preload the LLM view interface scene
+        const preloadViewport = document.createElement('div');
+        preloadViewport.style.position = 'absolute';
+        preloadViewport.style.visibility = 'hidden';
+        preloadViewport.className = 'llm-detail-viewport';
+        document.body.appendChild(preloadViewport);
+        
+        setTimeout(() => {
+            setupLLMViewInterface('preload');
+            document.body.removeChild(preloadViewport);
+        }, 1000);
+    });
+
     // Get all LLMs 
     const llms = llmDataManager.getAllLLMs();
     

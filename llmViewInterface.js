@@ -8,11 +8,18 @@ let viewModel = null;
 let viewAnimation;
 
 export function setupLLMViewInterface(llmId) {
-    const llm = llmDataManager.getLLMById(llmId);
-    if (!llm) return;
+    const llm = llmId === 'preload' ? null : llmDataManager.getLLMById(llmId);
+    if (llmId !== 'preload' && !llm) return;
     
     // Get the details panel
     const detailsPanel = document.getElementById('llm-details-panel');
+    
+    // If this is a preload call, don't show the panel
+    if (llmId === 'preload') {
+        // Just initialize the view scene in the background
+        initViewScene(true);
+        return;
+    }
     
     // Update UI elements
     updateDetailsPanel(llm);
@@ -100,7 +107,7 @@ function updateDetailsPanel(llm) {
     }
 }
 
-function initViewScene() {
+function initViewScene(isPreload = false) {
     const viewport = document.querySelector('.llm-detail-viewport');
     if (!viewport) return;
     
