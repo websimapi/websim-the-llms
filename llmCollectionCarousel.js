@@ -370,28 +370,22 @@ function animateCarousel() {
     
     animationId = requestAnimationFrame(animateCarousel);
     
-    try {
-        // Animate models
-        llmModels.forEach((model, index) => {
-            if (!model) return;
-            
-            const time = Date.now() * 0.001;
-            const offset = index * 0.5;
-            
-            // Simple hover effect
-            const originY = calculatePosition(model.userData.index - currentIndex).y;
-            model.position.y = originY + Math.sin(time + offset) * 0.1;
-            
-            // Subtle rotation
-            const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
-            model.rotation.y = baseRotation + Math.sin(time * 0.5 + offset) * 0.1;
-        });
+    llmModels.forEach((model, index) => {
+        if (!model) return;
         
-        renderer.render(scene, camera);
-    } catch (error) {
-        console.error('Error in carousel animation:', error);
-        cancelAnimationFrame(animationId);
-    }
+        const time = Date.now() * 0.001;
+        const offset = index * 0.5;
+        
+        // Simple hover effect
+        const originY = calculatePosition(model.userData.index - currentIndex).y;
+        model.position.y = originY + Math.sin(time + offset) * 0.1;
+        
+        // Subtle rotation
+        const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
+        model.rotation.y = baseRotation + Math.sin(time * 0.5 + offset) * 0.1;
+    });
+    
+    renderer.render(scene, camera);
 }
 
 export function cleanupCarousel() {
