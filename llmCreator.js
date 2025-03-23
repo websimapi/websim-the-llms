@@ -534,6 +534,9 @@ function buildCustomModel(robotGroup) {
 }
 
 function buildDefaultModel(robotGroup) {
+    // Get current selected color
+    const color = document.getElementById('llm-color').value;
+    
     // Head
     const head = new THREE.Group();
     const headMain = new THREE.Mesh(
