@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createCustomCharacter } from './characterGenerator.js';
 import { llmDataManager } from './llmDataManager.js';
+import { setupLLMViewInterface } from './llmViewInterface.js';
 
 let carouselScene, carouselCamera, carouselRenderer;
 let carouselModels = [];
