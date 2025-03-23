@@ -45,9 +45,6 @@ function initCityScene() {
     camera.position.set(50, 30, 50);
     camera.lookAt(0, 0, 0);
     
-    // Add audio fade out during cutscene
-    let audioFadeStarted = false;
-    
     // Create renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -95,9 +92,10 @@ function initCityScene() {
     setupConsoleToggle();
     
     // Setup camera intro animation
-    let introDuration = 7000; // 7 seconds for intro
+    let introDuration = 4000; // 4 seconds for intro
     let introStartTime = Date.now();
     let introComplete = false;
+    let audioFadeStarted = false;
     
     // Setup UI event listeners
     setupUIInteractions();
@@ -118,14 +116,6 @@ function initCityScene() {
             const elapsed = Date.now() - introStartTime;
             const progress = Math.min(elapsed / introDuration, 1);
             
-            // Trigger audio fade at appropriate time during cutscene
-            if (progress > 0.75 && !audioFadeStarted) {
-                if (typeof bgAudio !== 'undefined' && bgAudio) {
-                    fadeOutAudio(bgAudio);
-                    audioFadeStarted = true;
-                }
-            }
-            
             if (progress < 1) {
                 // Interpolate camera position for smooth pan
                 const targetX = 15; // Increased from 0 to stay further out
@@ -136,6 +126,21 @@ function initCityScene() {
                 camera.position.y = 30 * (1 - progress) + targetY * progress;
                 camera.position.z = 50 * (1 - progress) + targetZ * progress;
                 camera.lookAt(0, 0, 0);
+                
+                // Start fading audio halfway through the animation
+                if (progress > 0.3 && !audioFadeStarted) {
+                    audioFadeStarted = true;
+                    const audio = document.querySelector('audio');
+                    if (audio) {
+                        // Access the fadeOutAudio function from the window object
+                        if (typeof window.fadeOutAudio === 'function') {
+                            window.fadeOutAudio(3000);
+                        } else {
+                            // Fallback if function isn't available
+                            audio.volume = 0;
+                        }
+                    }
+                }
             } else {
                 introComplete = true;
                 controls.enabled = true; // Enable controls after intro
@@ -276,21 +281,4 @@ function toggleConsolePanel() {
     } else {
         consolePanel.classList.add('hidden');
     }
-}
-
-function fadeOutAudio(audio, duration = 7000) {
-    const startVolume = audio.volume;
-    const fadeSteps = 50; // More steps for smoother transition
-    const volumeStep = startVolume / fadeSteps;
-    const intervalTime = duration / fadeSteps;
-    
-    const fadeInterval = setInterval(() => {
-        if (audio.volume > volumeStep) {
-            audio.volume -= volumeStep;
-        } else {
-            audio.volume = 0;
-            audio.pause();
-            clearInterval(fadeInterval);
-        }
-    }, intervalTime);
 }

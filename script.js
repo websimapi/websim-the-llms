@@ -21,15 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     bgAudio.loop = true;
     bgAudio.volume = 0; // Start with volume at 0
     
-    // Start experience button
-    startButton.addEventListener('click', () => {
-        startOverlay.style.display = 'none';
-        loadingScreen.style.display = 'flex';
-        bgAudio.play();
-        fadeInAudio(); // Start fade in effect
-        startLoading();
-    });
-    
     // Fade in audio function
     function fadeInAudio(duration = 5000) {
         const targetVolume = 1.0;
@@ -48,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Fade out audio function
-    function fadeOutAudio(duration = 7000) {
+    function fadeOutAudio(duration = 3000) {
         const startVolume = bgAudio.volume;
         const fadeSteps = 50; // More steps for smoother transition
         const volumeStep = startVolume / fadeSteps;
@@ -65,6 +56,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }, intervalTime);
     }
     
+    // Make fadeOutAudio globally accessible
+    window.fadeOutAudio = fadeOutAudio;
+    
     // Randomly select a tip
     function setRandomTip() {
         const randomIndex = Math.floor(Math.random() * config.loadingTips.length);
@@ -79,13 +73,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Function to complete loading and show game
     function completeLoading() {
+        fadeOutAudio();
         loadingScreen.style.display = 'none';
         gameContainer.classList.remove('hidden');
     }
     
+    // Start experience button
+    startButton.addEventListener('click', () => {
+        startOverlay.style.display = 'none';
+        loadingScreen.style.display = 'flex';
+        bgAudio.play();
+        fadeInAudio(); // Start fade in effect
+        startLoading();
+    });
+    
     // Skip button click handler
     skipButton.addEventListener('click', () => {
         clearInterval(loadingInterval);
+        fadeOutAudio();
         completeLoading();
     });
     
