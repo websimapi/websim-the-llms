@@ -1,64 +1,43 @@
-// LLM Storage and Management System
+// LLM storage management system
 export const llmStorage = {
-    // Collection of created LLMs
-    llms: [],
-    
-    // Initialize by loading from localStorage
-    initialize() {
-        const storedData = localStorage.getItem('llms');
-        if (storedData) {
-            try {
-                this.llms = JSON.parse(storedData);
-            } catch (e) {
-                console.error('Error loading LLMs from localStorage:', e);
-                this.llms = [];
-            }
-        }
-        return this.llms;
+    // Get all stored LLMs
+    getAllLLMs() {
+        const llmsJSON = localStorage.getItem('llms');
+        return llmsJSON ? JSON.parse(llmsJSON) : [];
     },
     
-    // Save LLM to collection and localStorage
-    saveLLM(llmData) {
-        // Generate a unique ID if not provided
-        if (!llmData.id) {
-            llmData.id = Date.now().toString(36) + Math.random().toString(36).substring(2);
-        }
-        
-        // Check if LLM already exists (for updates)
-        const existingIndex = this.llms.findIndex(llm => llm.id === llmData.id);
-        
-        if (existingIndex >= 0) {
-            // Update existing
-            this.llms[existingIndex] = llmData;
-        } else {
-            // Add new
-            this.llms.push(llmData);
-        }
-        
-        // Save to localStorage
-        this.saveToLocalStorage();
-        
+    // Add new LLM to storage
+    addLLM(llmData) {
+        const llms = this.getAllLLMs();
+        llmData.id = Date.now(); // Add unique ID
+        llmData.createdDate = new Date().toISOString();
+        llms.push(llmData);
+        localStorage.setItem('llms', JSON.stringify(llms));
         return llmData;
+    },
+    
+    // Get LLM by ID
+    getLLM(id) {
+        const llms = this.getAllLLMs();
+        return llms.find(llm => llm.id === id);
+    },
+    
+    // Update existing LLM
+    updateLLM(id, newData) {
+        const llms = this.getAllLLMs();
+        const index = llms.findIndex(llm => llm.id === id);
+        if (index >= 0) {
+            llms[index] = { ...llms[index], ...newData };
+            localStorage.setItem('llms', JSON.stringify(llms));
+            return llms[index];
+        }
+        return null;
     },
     
     // Delete LLM by ID
     deleteLLM(id) {
-        this.llms = this.llms.filter(llm => llm.id !== id);
-        this.saveToLocalStorage();
-    },
-    
-    // Get all LLMs
-    getAllLLMs() {
-        return this.llms;
-    },
-    
-    // Get LLM by ID
-    getLLMById(id) {
-        return this.llms.find(llm => llm.id === id);
-    },
-    
-    // Save current llms array to localStorage
-    saveToLocalStorage() {
-        localStorage.setItem('llms', JSON.stringify(this.llms));
+        const llms = this.getAllLLMs();
+        const updatedLLMs = llms.filter(llm => llm.id !== id);
+        localStorage.setItem('llms', JSON.stringify(updatedLLMs));
     }
 };

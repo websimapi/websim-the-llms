@@ -819,10 +819,10 @@ input:checked + .llm-toggle-slider:before {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.9);
-    z-index: 201;
+    z-index: 200;
     display: none;
     flex-direction: column;
-    padding: 20px;
+    padding: 30px;
 }
 
 #llm-list-ui.active {
@@ -833,9 +833,9 @@ input:checked + .llm-toggle-slider:before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #3cb371;
     margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #3cb371;
 }
 
 .llm-list-title {
@@ -852,107 +852,139 @@ input:checked + .llm-toggle-slider:before {
     cursor: pointer;
 }
 
+.llm-list-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.llm-list-button {
+    padding: 10px 20px;
+    background-color: #444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.llm-list-button.primary {
+    background-color: #3cb371;
+}
+
+.llm-list-button:hover {
+    opacity: 0.9;
+}
+
+.llm-list-search {
+    display: flex;
+    align-items: center;
+}
+
+.llm-list-search input {
+    padding: 8px 12px;
+    border: 1px solid #3cb371;
+    background-color: #333;
+    color: white;
+    border-radius: 4px;
+    width: 250px;
+}
+
 .llm-list-container {
     flex: 1;
     overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 10px;
 }
 
-.llm-empty-state {
-    color: #888;
-    font-size: 1.2rem;
-    text-align: center;
-    margin-top: 50px;
-}
-
-.llm-list-item {
-    display: flex;
-    align-items: center;
+.llm-card {
     background-color: #222;
-    border-radius: 5px;
-    padding: 15px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    border-left: 5px solid #3cb371;
-}
-
-.llm-list-item:hover {
-    background-color: #333;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.llm-color-indicator {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    margin-right: 15px;
-    border: 2px solid #555;
-}
-
-.llm-info {
-    flex: 1;
-}
-
-.llm-name {
-    font-weight: bold;
-    font-size: 1.2rem;
-    color: #fff;
-    margin-bottom: 5px;
-}
-
-.llm-type {
-    color: #3cb371;
-    font-size: 0.9rem;
-    text-transform: capitalize;
-    margin-bottom: 8px;
-}
-
-.llm-stats {
+    border-radius: 8px;
+    border: 1px solid #444;
+    overflow: hidden;
     display: flex;
-    gap: 12px;
-}
-
-.llm-stat-item {
-    background-color: rgba(60, 179, 113, 0.2);
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 0.8rem;
-    color: #aaa;
-}
-
-.llm-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.llm-action-btn {
-    background: none;
-    border: none;
-    color: #ccc;
+    transition: transform 0.2s, box-shadow 0.2s;
     cursor: pointer;
-    padding: 5px;
-    border-radius: 4px;
+}
+
+.llm-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(60, 179, 113, 0.3);
+    border-color: #3cb371;
+}
+
+.llm-card-avatar {
+    width: 80px;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.llm-action-btn:hover {
-    background-color: #444;
-    color: #fff;
+.llm-avatar-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #fff;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
 }
 
-.llm-action-btn.view:hover {
+.llm-card-info {
+    flex: 1;
+    padding: 15px;
+}
+
+.llm-card-name {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+}
+
+.llm-card-model, .llm-card-date {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-bottom: 5px;
+}
+
+.llm-card-actions {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.llm-card-btn {
+    background: none;
+    border: none;
     color: #3cb371;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
 }
 
-.llm-action-btn.edit:hover {
-    color: #ffeb3b;
+.llm-card-btn:hover {
+    background-color: rgba(60, 179, 113, 0.2);
 }
 
-.llm-action-btn.delete:hover {
-    color: #ff5252;
+.llm-card-btn.delete {
+    color: #ff6b6b;
+}
+
+.llm-card-btn.delete:hover {
+    background-color: rgba(255, 107, 107, 0.2);
+}
+
+.empty-llm-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px;
+    color: #aaa;
+    font-style: italic;
 }
