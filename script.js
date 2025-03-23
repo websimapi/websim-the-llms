@@ -195,6 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
+            createLLMButton.classList.add('clicked');
+            
+            // Remove the class after animation completes
+            setTimeout(() => {
+                createLLMButton.classList.remove('clicked');
+            }, 3000);
         });
         
         // Add mousemove event for fireworks effect

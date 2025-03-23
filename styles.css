@@ -372,6 +372,11 @@ body {
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.7)); 
 }
 
+.create-llm-btn.clicked .llm-icon {
+    animation: rainbow-icon 3s ease-in-out infinite;
+    filter: hue-rotate(calc(var(--hue, 0) * 1deg)) drop-shadow(0 0 8px rgba(255,255,255,0.9));
+}
+
 .create-llm-btn::before {
     content: "";
     position: absolute;
