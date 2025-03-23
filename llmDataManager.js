@@ -57,6 +57,17 @@ export const llmDataManager = {
         localStorage.setItem('createdLLMs', JSON.stringify(this.createdLLMs));
     },
     
+    // Update an existing LLM
+    updateLLM(llmData) {
+        const index = this.createdLLMs.findIndex(llm => llm.id === llmData.id);
+        if (index !== -1) {
+            this.createdLLMs[index] = llmData;
+            this.saveToLocalStorage();
+            return true;
+        }
+        return false;
+    },
+    
     // Add to city data export
     addToCityData(cityData) {
         if (!cityData.llms) {

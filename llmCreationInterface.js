@@ -12,12 +12,24 @@ let generatingCharacter = false;
 let humanoidMixer = null;
 let selectedMesh = null; // Track the currently selected mesh
 
-export function setupLLMCreationInterface() {
+export function setupLLMCreationInterface(llmToEdit) {
     // Setup default values for the form
-    document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
+    document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
     
     // Initialize attribute system
     attributeSystem.initializeAttributes();
+    
+    // If editing an existing LLM, load its attributes
+    if (llmToEdit && llmToEdit.attributes) {
+        Object.entries(llmToEdit.attributes).forEach(([name, value]) => {
+            if (attributeSystem.attributes[name]) {
+                // Set the stored value
+                attributeSystem.attributes[name].value = value;
+                attributeSystem.pointsSpent += value;
+            }
+        });
+    }
+    
     renderAttributeGrid();
     updatePointsDisplay();
     
@@ -29,12 +41,31 @@ export function setupLLMCreationInterface() {
     const generateBtn = document.getElementById('generate-character-btn');
     generateBtn.addEventListener('click', handleGenerateCharacter);
     
+    // Set form values from existing LLM if editing
+    if (llmToEdit) {
+        document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
+        document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
+        document.getElementById('llm-style').value = llmToEdit.style || 'modern';
+        document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
+        
+        // Store the edit ID on the form
+        const createUI = document.getElementById('create-llm-ui');
+        createUI.setAttribute('data-edit-mode', 'true');
+        createUI.setAttribute('data-edit-id', llmToEdit.id);
+    } else {
+        // Clear edit mode flags if not editing
+        const createUI = document.getElementById('create-llm-ui');
+        createUI.removeAttribute('data-edit-mode');
+        createUI.removeAttribute('data-edit-id');
+    }
+    
     // Initialize the humanoid preview
-    initHumanoidPreview();
+    initHumanoidPreview(llmToEdit);
     
     // Add event listener for create button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
     createLLMButton.addEventListener('click', saveLLMData);
+    createLLMButton.textContent = llmToEdit ? 'Update LLM' : 'Create LLM';
     
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
@@ -181,7 +212,7 @@ async function handleGenerateCharacter() {
     }
 }
 
-function initHumanoidPreview() {
+function initHumanoidPreview(llmToEdit) {
     const viewport = document.querySelector('.humanoid-viewport');
     
     // Clear existing content
@@ -232,11 +263,28 @@ function initHumanoidPreview() {
     ground.position.y = -1;
     humanoidScene.add(ground);
     
-    // Create robot humanoid model
-    createRobotModel();
+    // If editing and has custom character code, use it
+    if (llmToEdit && llmToEdit.customCharacterCode) {
+        try {
+            customCharacter = createCustomCharacter(THREE, llmToEdit.customCharacterCode);
+            humanoidScene.add(customCharacter);
+            
+            // Store the generated code for later use
+            const statusElement = document.getElementById('generation-status');
+            statusElement.dataset.generatedCode = llmToEdit.customCharacterCode;
+            statusElement.textContent = "Character loaded successfully!";
+        } catch (error) {
+            console.error("Error loading custom character:", error);
+            createRobotModel();
+        }
+    } else {
+        // Create robot humanoid model
+        createRobotModel();
+    }
     
     // Setup animation clock
     humanoidClock = new THREE.Clock();
+    humanoidMixer = null; // Initialize mixer as null
     
     // Start animation loop
     animateHumanoid();
@@ -696,8 +744,20 @@ function saveLLMData() {
         }
     }
     
-    // Save the LLM data
-    llmDataManager.addLLM(llmData);
+    // Check if we're in edit mode
+    const createUI = document.getElementById('create-llm-ui');
+    const isEditMode = createUI.getAttribute('data-edit-mode') === 'true';
+    const editId = createUI.getAttribute('data-edit-id');
+    
+    if (isEditMode && editId) {
+        // Update existing LLM
+        llmData.id = editId;
+        llmData.createdAt = llmDataManager.getLLMById(editId).createdAt;
+        llmDataManager.updateLLM(llmData);
+    } else {
+        // Save as new LLM
+        llmDataManager.addLLM(llmData);
+    }
     
     // Close creation UI and show collection
     document.getElementById('create-llm-ui').classList.remove('active');

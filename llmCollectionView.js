@@ -2,6 +2,7 @@ import { llmDataManager } from './llmDataManager.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createCustomCharacter } from './characterGenerator.js';
+import { setupLLMViewInterface } from './llmViewInterface.js';
 
 let collectionScene, collectionCamera, collectionRenderer;
 let llmModels = [];
@@ -297,90 +298,7 @@ function createFallbackModel(llm) {
 }
 
 function viewLLMDetails(id) {
-    const llm = llmDataManager.getLLMById(id);
-    if (!llm) return;
-    
-    // Focus camera on the selected LLM
-    const model = llmModels.find(model => model.userData.id === id);
-    if (model) {
-        // Create a simple animation to focus on the selected model
-        const startPos = { 
-            x: collectionCamera.position.x, 
-            y: collectionCamera.position.y, 
-            z: collectionCamera.position.z 
-        };
-        const endPos = { 
-            x: model.position.x, 
-            y: model.position.y + 2, 
-            z: model.position.z + 3 
-        };
-        
-        const duration = 1000; // ms
-        const startTime = Date.now();
-        
-        function animateCamera() {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // Ease function
-            const easeProgress = 1 - Math.pow(1 - progress, 3);
-            
-            collectionCamera.position.x = startPos.x + (endPos.x - startPos.x) * easeProgress;
-            collectionCamera.position.y = startPos.y + (endPos.y - startPos.y) * easeProgress;
-            collectionCamera.position.z = startPos.z + (endPos.z - startPos.z) * easeProgress;
-            
-            collectionCamera.lookAt(model.position);
-            
-            if (progress < 1) {
-                requestAnimationFrame(animateCamera);
-            }
-        }
-        
-        animateCamera();
-        
-        // Display LLM details in a modal or info panel
-        const detailsPanel = document.getElementById('llm-details-panel');
-        const nameEl = document.querySelector('.llm-detail-name');
-        const modelEl = document.querySelector('.llm-detail-model');
-        const createdAtEl = document.querySelector('.llm-detail-created');
-        const attributesEl = document.querySelector('.llm-detail-attributes');
-        
-        nameEl.textContent = llm.name;
-        modelEl.textContent = llm.model;
-        createdAtEl.textContent = new Date(llm.createdAt).toLocaleDateString();
-        
-        // Display attributes
-        attributesEl.innerHTML = '';
-        if (llm.attributes) {
-            Object.entries(llm.attributes).forEach(([name, value]) => {
-                const attrItem = document.createElement('div');
-                attrItem.className = 'detail-attribute-item';
-                
-                const attrBar = document.createElement('div');
-                attrBar.className = 'detail-attribute-bar';
-                
-                const attrFill = document.createElement('div');
-                attrFill.className = 'detail-attribute-fill';
-                attrFill.style.width = `${(value / 20) * 100}%`;
-                
-                attrBar.appendChild(attrFill);
-                
-                attrItem.innerHTML = `
-                    <div class="detail-attribute-name">${name}: ${value}</div>
-                `;
-                attrItem.appendChild(attrBar);
-                
-                attributesEl.appendChild(attrItem);
-            });
-        }
-        
-        detailsPanel.classList.add('active');
-        
-        // Add close button functionality
-        document.querySelector('.details-close').addEventListener('click', () => {
-            detailsPanel.classList.remove('active');
-        });
-    }
+    setupLLMViewInterface(id);
 }
 
 function deleteLLM(id) {
