@@ -176,6 +176,9 @@ body {
     border-radius: 4px;
     font-weight: bold;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .menu-button:hover {
@@ -194,6 +197,11 @@ body {
     color: white;
     font-weight: bold;
     font-size: 1.2rem;
+}
+
+.llm-icon {
+    width: 24px;
+    height: 24px;
 }
 
 /* Console Panel Styles */
