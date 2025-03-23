@@ -347,18 +347,27 @@ body {
 }
 
 /* Rainbow hover effect for Create LLM button */
-.create-llm-btn:hover {
-    background: linear-gradient(124deg, #ff2400, #e81d1d, #e8b71d, #e3e81d, #1de840, #1ddde8, #2b1de8, #dd00f3, #dd00f3);
-    background-size: 1800% 1800%;
-    animation: rainbow 8s ease infinite;
-    transform: scale(1.05);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+.create-llm-btn {
+    background: none;
 }
 
-@keyframes rainbow {
-    0% { background-position: 0% 80% }
-    50% { background-position: 100% 20% }
-    100% { background-position: 0% 80% }
+.create-llm-btn:hover {
+    background: none;
+    transform: scale(1.05);
+}
+
+.create-llm-btn:hover .llm-icon {
+    filter: hue-rotate(calc(var(--hue, 0) * 1deg));
+    animation: rainbow-icon 8s ease infinite;
+}
+
+@keyframes rainbow-icon {
+    0% { --hue: 0; }
+    20% { --hue: 60; }
+    40% { --hue: 120; }
+    60% { --hue: 180; }
+    80% { --hue: 240; }
+    100% { --hue: 360; }
 }
 
 @keyframes pulse {
