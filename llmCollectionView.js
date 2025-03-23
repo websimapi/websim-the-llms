@@ -3,10 +3,12 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
+import { createCollectionModels } from './llmCollectionViewUtils.js';
 
 let collectionScene, collectionCamera, collectionRenderer;
 let llmModels = [];
 const modelPositions = [];
+let collectionAnimationId;
 
 export function setupLLMCollectionView() {
     // Initialize the LLM data manager
@@ -19,11 +21,14 @@ export function setupLLMCollectionView() {
     
     // Clear existing content
     llmList.innerHTML = '';
+    collectionViewport.innerHTML = '';
     
-    // Setup Three.js scene for collection view
-    initCollectionScene(collectionViewport);
+    // Cancel any existing animation
+    if (collectionAnimationId) {
+        cancelAnimationFrame(collectionAnimationId);
+    }
     
-    // Get all LLMs and display them
+    // Get all LLMs 
     const llms = llmDataManager.getAllLLMs();
     
     if (llms.length === 0) {
@@ -52,10 +57,10 @@ export function setupLLMCollectionView() {
                 </div>
             `;
             llmList.appendChild(llmItem);
-            
-            // Create 3D model for the LLM
-            createLLMModel(llm, index);
         });
+        
+        // Setup Three.js scene for collection view
+        initCollectionScene(collectionViewport, llms);
         
         // Add event listeners for buttons
         document.querySelectorAll('.llm-view-btn').forEach(btn => {
@@ -82,6 +87,10 @@ export function setupLLMCollectionView() {
     // Add close button event listener
     document.querySelector('.collection-close').addEventListener('click', () => {
         collectionUI.classList.remove('active');
+        // Cancel animation loop
+        if (collectionAnimationId) {
+            cancelAnimationFrame(collectionAnimationId);
+        }
     });
     
     // Add create new button event listener
@@ -95,13 +104,15 @@ export function setupLLMCollectionView() {
         if (setupLLMCreationInterface) {
             setupLLMCreationInterface();
         }
+        
+        // Cancel animation loop
+        if (collectionAnimationId) {
+            cancelAnimationFrame(collectionAnimationId);
+        }
     });
-    
-    // Start animation loop
-    animateCollection();
 }
 
-function initCollectionScene(viewport) {
+function initCollectionScene(viewport, llms) {
     // Setup Three.js scene
     collectionScene = new THREE.Scene();
     collectionScene.background = new THREE.Color(0x111111);
@@ -120,7 +131,6 @@ function initCollectionScene(viewport) {
     collectionRenderer = new THREE.WebGLRenderer({ antialias: true });
     collectionRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
     collectionRenderer.shadowMap.enabled = true;
-    viewport.innerHTML = '';
     viewport.appendChild(collectionRenderer.domElement);
     
     // Add orbit controls
@@ -137,17 +147,17 @@ function initCollectionScene(viewport) {
     directionalLight.castShadow = true;
     collectionScene.add(directionalLight);
     
-    // Add floor
-    const floorGeometry = new THREE.PlaneGeometry(50, 50);
-    const floorMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x222222,
-        roughness: 0.8,
-        metalness: 0.2
+    // Create models using the utility function
+    const { models, positions, scene: modelScene } = createCollectionModels(llms, llmDataManager, createCustomCharacter);
+    
+    // Add all model scene objects to our collection scene
+    modelScene.children.forEach(child => {
+        collectionScene.add(child);
     });
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    collectionScene.add(floor);
+    
+    llmModels = models;
+    modelPositions.length = 0;
+    positions.forEach(pos => modelPositions.push(pos));
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -157,144 +167,9 @@ function initCollectionScene(viewport) {
             collectionRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
         }
     });
-}
-
-function createLLMModel(llm, index) {
-    // Position models in a semi-circle
-    const numPositions = Math.max(10, llmDataManager.getAllLLMs().length);
-    const angle = (Math.PI) * (index / (numPositions - 1)) - Math.PI/2;
-    const radius = 5;
-    const x = Math.cos(angle) * radius;
-    const z = Math.sin(angle) * radius;
     
-    let llmModel;
-    
-    if (llm.customCharacterCode) {
-        // Create custom character from stored code
-        try {
-            llmModel = createCustomCharacter(THREE, llm.customCharacterCode);
-        } catch (error) {
-            console.error("Error creating custom character:", error);
-            // Create fallback model
-            llmModel = createFallbackModel(llm);
-        }
-    } else {
-        // Create standard model based on stored properties
-        llmModel = createStandardModel(llm);
-    }
-    
-    // Position the model
-    llmModel.position.set(x, 0, z);
-    llmModel.rotation.y = -angle;
-    llmModel.userData = { id: llm.id };
-    
-    collectionScene.add(llmModel);
-    llmModels.push(llmModel);
-    modelPositions.push({ x, y: 0, z });
-}
-
-function createStandardModel(llm) {
-    // Create a simple robot model based on the LLM properties
-    const group = new THREE.Group();
-    
-    const color = new THREE.Color(llm.color || 0x3cb371);
-    
-    // Create head
-    const headMaterial = new THREE.MeshStandardMaterial({
-        color: color,
-        emissive: color.clone().multiplyScalar(0.3),
-        metalness: 0.7,
-        roughness: 0.3
-    });
-    
-    const head = new THREE.Mesh(
-        new THREE.BoxGeometry(0.4, 0.4, 0.4),
-        headMaterial
-    );
-    head.position.y = 1.8;
-    group.add(head);
-    
-    // Create body
-    const bodyMaterial = new THREE.MeshStandardMaterial({
-        color: color.clone().multiplyScalar(0.8),
-        metalness: 0.5,
-        roughness: 0.5
-    });
-    
-    const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.6, 0.8, 0.3),
-        bodyMaterial
-    );
-    body.position.y = 1.2;
-    group.add(body);
-    
-    // Create simple limbs
-    const limbsMaterial = new THREE.MeshStandardMaterial({
-        color: 0x444444,
-        metalness: 0.8,
-        roughness: 0.2
-    });
-    
-    // Add simple arms and legs
-    const arms = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 0.2, 0.2),
-        limbsMaterial
-    );
-    arms.position.y = 1.3;
-    group.add(arms);
-    
-    const legs = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.15, 1),
-        limbsMaterial
-    );
-    legs.position.y = 0.5;
-    group.add(legs);
-    
-    return group;
-}
-
-function createFallbackModel(llm) {
-    // Very simple fallback model
-    const group = new THREE.Group();
-    
-    const color = new THREE.Color(llm.color || 0x3cb371);
-    
-    // Create body
-    const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.3, 0.3, 1.7),
-        new THREE.MeshStandardMaterial({ color })
-    );
-    body.position.y = 0.85;
-    group.add(body);
-    
-    // Add a nameplate
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    
-    ctx.fillStyle = '#222';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(llm.name, canvas.width / 2, canvas.height / 2 + 8);
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    const nameMaterial = new THREE.MeshBasicMaterial({ 
-        map: texture,
-        transparent: true
-    });
-    
-    const nameplate = new THREE.Mesh(
-        new THREE.PlaneGeometry(1, 0.25),
-        nameMaterial
-    );
-    nameplate.position.set(0, 2, 0);
-    nameplate.rotation.y = Math.PI;
-    group.add(nameplate);
-    
-    return group;
+    // Start animation loop
+    animateCollection();
 }
 
 function viewLLMDetails(id) {
@@ -304,13 +179,6 @@ function viewLLMDetails(id) {
 function deleteLLM(id) {
     // Remove from data manager
     if (llmDataManager.deleteLLM(id)) {
-        // Remove model from scene
-        const modelIndex = llmModels.findIndex(model => model.userData.id === id);
-        if (modelIndex !== -1) {
-            collectionScene.remove(llmModels[modelIndex]);
-            llmModels.splice(modelIndex, 1);
-        }
-        
         // Refresh the UI
         setupLLMCollectionView();
     }
@@ -319,10 +187,12 @@ function deleteLLM(id) {
 function animateCollection() {
     if (!collectionScene || !collectionCamera || !collectionRenderer) return;
     
-    requestAnimationFrame(animateCollection);
+    collectionAnimationId = requestAnimationFrame(animateCollection);
     
     // Simple animations for models
     llmModels.forEach((model, index) => {
+        if (!model || !modelPositions[index]) return;
+        
         const time = Date.now() * 0.001;
         const offset = index * 0.5;
         

@@ -341,6 +341,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         moveLLMButton.addEventListener('click', () => {
             console.log('Move LLMs in clicked');
+            setupLLMCollectionView();
+            document.getElementById('llm-collection-ui').classList.add('active');
         });
         
         // Add mousemove event for fireworks effect
