@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createCustomCharacter } from './characterGenerator.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
@@ -7,6 +8,7 @@ import { createStandardModel } from './llmViewUtils.js';
 let viewScene, viewCamera, viewRenderer;
 let viewModel = null;
 let viewAnimation;
+let viewControls;
 
 export function setupLLMViewInterface(llmId) {
     const llm = llmDataManager.getLLMById(llmId);
@@ -14,6 +16,17 @@ export function setupLLMViewInterface(llmId) {
     
     // Get the details panel
     const detailsPanel = document.getElementById('llm-details-panel');
+    
+    // Add close button event listener
+    const closeButton = detailsPanel.querySelector('.details-close');
+    closeButton.addEventListener('click', () => {
+        detailsPanel.classList.remove('active');
+        // Cancel animation loop when closing
+        if (viewAnimation) {
+            cancelAnimationFrame(viewAnimation);
+            viewAnimation = null;
+        }
+    });
     
     // Update UI elements
     updateDetailsPanel(llm);
@@ -23,14 +36,10 @@ export function setupLLMViewInterface(llmId) {
     
     // Set up 3D view (delay slightly to ensure DOM is ready)
     setTimeout(() => {
-        const viewportContainer = document.querySelector('.llm-detail-viewport');
-        
-        // Initialize the 3D view
         initViewScene();
         
         // Only display model after scene is initialized
         if (viewScene) {
-            // Create the model
             displayLLMModel(llm);
         }
         
@@ -41,19 +50,6 @@ export function setupLLMViewInterface(llmId) {
             editButton.addEventListener('click', () => handleEditLLM(llm.id));
         }
     }, 100); // Increase timeout to ensure DOM and Three.js scene are ready
-}
-
-function createViewport(detailsPanel) {
-    // Create viewport container if it doesn't exist
-    const contentDiv = detailsPanel.querySelector('.details-content');
-    if (!contentDiv.querySelector('.llm-detail-viewport')) {
-        const viewportContainer = document.createElement('div');
-        viewportContainer.className = 'llm-detail-viewport';
-        
-        // Insert the viewport before the attributes section
-        const attributesSection = detailsPanel.querySelector('.llm-detail-attributes');
-        contentDiv.insertBefore(viewportContainer, attributesSection);
-    }
 }
 
 function updateDetailsPanel(llm) {
@@ -105,10 +101,22 @@ function updateDetailsPanel(llm) {
 
 function initViewScene() {
     const viewport = document.querySelector('.llm-detail-viewport');
-    if (!viewport) return;
+    if (!viewport) {
+        console.error("LLM detail viewport not found");
+        return;
+    }
     
-    // Clear existing content
+    // Clear existing content and destroy previous scene
     viewport.innerHTML = '';
+    if (viewRenderer) {
+        viewport.removeChild(viewRenderer.domElement);
+        viewRenderer.dispose();
+    }
+    
+    if (viewAnimation) {
+        cancelAnimationFrame(viewAnimation);
+        viewAnimation = null;
+    }
     
     // Set up THREE.js scene
     viewScene = new THREE.Scene();
@@ -129,6 +137,13 @@ function initViewScene() {
     viewRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
     viewRenderer.shadowMap.enabled = true;
     viewport.appendChild(viewRenderer.domElement);
+    
+    // Add orbit controls
+    viewControls = new OrbitControls(viewCamera, viewRenderer.domElement);
+    viewControls.enableDamping = true;
+    viewControls.dampingFactor = 0.05;
+    viewControls.minDistance = 2;
+    viewControls.maxDistance = 10;
     
     // Add lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -160,54 +175,72 @@ function initViewScene() {
             viewRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
         }
     });
-    
-    // Start animation
-    animateViewModel();
 }
 
 function displayLLMModel(llm) {
-    // Remove existing model if any
-    if (viewModel && viewModel.parent) {
-        viewModel.parent.remove(viewModel);
-        viewModel = null;
-    }
-    
-    // Check if scene is initialized before trying to create model
     if (!viewScene) {
         console.error("View scene not initialized");
         return;
     }
     
-    if (llm.customCharacterCode) {
-        // Create from custom character code
-        try {
+    // Remove existing model if any
+    if (viewModel && viewScene.getObjectById(viewModel.id)) {
+        viewScene.remove(viewModel);
+    }
+    viewModel = null;
+    
+    try {
+        if (llm.customCharacterCode) {
+            // Create from custom character code
             viewModel = createCustomCharacter(THREE, llm.customCharacterCode);
-        } catch (error) {
-            console.error("Error creating custom character:", error);
+        } else {
+            // Create standard model
             viewModel = createStandardModel(llm);
         }
-    } else {
-        // Create standard model
-        viewModel = createStandardModel(llm);
+        
+        if (viewModel) {
+            viewScene.add(viewModel);
+            // Start animation now that we have a valid model
+            if (!viewAnimation) {
+                animateViewModel();
+            }
+        }
+    } catch (error) {
+        console.error("Error creating LLM model:", error);
+        // Create fallback model
+        viewModel = createStandardModel({
+            color: 0x3cb371,
+            name: llm.name || "Unknown LLM"
+        });
+        viewScene.add(viewModel);
+        animateViewModel();
     }
-    
-    viewScene.add(viewModel);
 }
 
 function animateViewModel() {
-    if (!viewScene || !viewCamera || !viewRenderer) return;
+    if (!viewScene || !viewCamera || !viewRenderer) {
+        console.error("Cannot animate: scene, camera or renderer is missing");
+        return;
+    }
     
     viewAnimation = requestAnimationFrame(animateViewModel);
     
-    // Simple idle animation
+    // Update controls if they exist
+    if (viewControls) {
+        viewControls.update();
+    }
+    
+    // Simple idle animation for the model
     if (viewModel) {
         const time = Date.now() * 0.001;
         
         // Gentle bobbing motion
         viewModel.position.y = Math.sin(time) * 0.05;
         
-        // Gentle rotation
-        viewModel.rotation.y = Math.sin(time * 0.5) * 0.5;
+        // Only add rotation if controls aren't being used
+        if (!viewControls || !viewControls.enabled) {
+            viewModel.rotation.y = Math.sin(time * 0.5) * 0.2;
+        }
     }
     
     viewRenderer.render(viewScene, viewCamera);
