@@ -1,26 +1,16 @@
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { attributeSystem } from './attributeSystem.js';
+import { avatarColorManager } from './avatarColorManager.js';
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
     // Get values from form
-    const nameInput = document.getElementById('llm-name');
-    const modelInput = document.getElementById('llm-model');
-    const colorInput = document.getElementById('llm-color');
-    const styleInput = document.getElementById('llm-style');
-    const customPromptInput = document.getElementById('llm-custom-prompt');
-    
-    if (!nameInput || !modelInput || !colorInput || !styleInput || !customPromptInput) {
-        console.error("Cannot find one or more form inputs");
-        return;
-    }
-    
-    const name = nameInput.value || `LLM-${Math.floor(Math.random() * 1000)}`;
-    const model = modelInput.value;
-    const color = colorInput.value;
-    const style = styleInput.value;
-    const customPrompt = customPromptInput.value;
+    const name = document.getElementById('llm-name').value || `LLM-${Math.floor(Math.random() * 1000)}`;
+    const model = document.getElementById('llm-model').value;
+    const color = document.getElementById('llm-color').value;
+    const style = document.getElementById('llm-style').value;
+    const customPrompt = document.getElementById('llm-custom-prompt').value;
     
     // Get attributes
     const attributes = attributeSystem.exportAttributes();
@@ -33,7 +23,8 @@ export function saveLLMData() {
         style,
         customPrompt,
         attributes,
-        customCharacterCode: null
+        customCharacterCode: null,
+        meshColors: []
     };
     
     // If we have a custom character, save its code
@@ -44,6 +35,12 @@ export function saveLLMData() {
     } else {
         console.log("No custom character code found to save");
     }
+    
+    // Get the currently selected mesh from the creation interface
+    const selectedMesh = window.selectedMesh || null;
+    
+    // Store color data for the selected mesh
+    avatarColorManager.storeColorData(llmData, selectedMesh);
     
     // Check if we're in edit mode
     const createUI = document.getElementById('create-llm-ui');
@@ -60,6 +57,16 @@ export function saveLLMData() {
             // If no new character was generated, keep the existing character code
             if (!llmData.customCharacterCode && existingLLM.customCharacterCode) {
                 llmData.customCharacterCode = existingLLM.customCharacterCode;
+            }
+            
+            // Preserve existing mesh colors if any, and merge with new ones
+            if (existingLLM.meshColors && Array.isArray(existingLLM.meshColors)) {
+                // Merge existing colors with new ones
+                existingLLM.meshColors.forEach(colorData => {
+                    if (!llmData.meshColors.some(m => m.meshType === colorData.meshType)) {
+                        llmData.meshColors.push(colorData);
+                    }
+                });
             }
             
             llmDataManager.updateLLM(llmData);

@@ -21,6 +21,8 @@ export function setupLLMCreationInterface(llmToEdit) {
         delete statusElement.dataset.generatedCode;
     }
     customCharacter = null;
+    selectedMesh = null; // Reset selected mesh
+    window.selectedMesh = null; // Reset global reference
     
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
@@ -575,6 +577,7 @@ function handleMeshSelection(event) {
         
         // Select the new mesh
         selectedMesh = intersects[0].object;
+        window.selectedMesh = selectedMesh; // Make it globally accessible
         
         // Store original emissive color and highlight the selection
         if (!selectedMesh.userData.originalEmissive && selectedMesh.material.emissive) {
