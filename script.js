@@ -337,11 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Initialize UI optimization
             setTimeout(() => {
                 optimizeUIHeight();
-                
-                // Add image generation UI
-                import('./llmImageGenerationUI.js').then(module => {
-                    module.addImageGenerationUI(createLLMUI);
-                });
             }, 100);
         });
         

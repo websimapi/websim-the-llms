@@ -96,12 +96,34 @@ export function updatePointsDisplay() {
     }
 }
 
-// New function to reset form elements - will be imported in llmCreationInterface.js
+// New function to reset form elements
 export function resetFormAttributes() {
     // Reset attributes
     attributeSystem.initializeAttributes();
     renderAttributeGrid();
     updatePointsDisplay();
+    
+    // Clear any stored profile image URL
+    const statusElement = document.getElementById('generation-status');
+    if (statusElement) {
+        delete statusElement.dataset.profileImageUrl;
+    }
+    
+    // Hide the preview if it's open
+    const previewContainer = document.getElementById('profile-image-preview-container');
+    if (previewContainer) {
+        previewContainer.classList.add('hidden');
+    }
+}
+
+// New function to initialize profile image UI
+export function setupProfileImageUI() {
+    // Import and setup the profile image capture functionality
+    import('./llmProfileImageUI.js').then(module => {
+        module.setupProfileImageCapture();
+    }).catch(error => {
+        console.error("Error setting up profile image capture:", error);
+    });
 }
 
 // Character generation handler - moved from llmCreationInterface.js

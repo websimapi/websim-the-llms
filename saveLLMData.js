@@ -38,11 +38,10 @@ export function saveLLMData() {
         console.log("No custom character code found to save");
     }
     
-    // Save portrait image URL if generated
-    const createUI = document.getElementById('create-llm-ui');
-    if (createUI.dataset.portraitUrl) {
-        llmData.portraitUrl = createUI.dataset.portraitUrl;
-        console.log("Saved portrait URL:", llmData.portraitUrl);
+    // Save profile image URL if available
+    if (statusElement && statusElement.dataset.profileImageUrl) {
+        llmData.profileImageUrl = statusElement.dataset.profileImageUrl;
+        console.log("Saved profile image URL");
     }
     
     // Store current model data - this handles colors and other properties

@@ -61,6 +61,11 @@ export const llmDataManager = {
     updateLLM(llmData) {
         const index = this.createdLLMs.findIndex(llm => llm.id === llmData.id);
         if (index !== -1) {
+            // Preserve profile image if not being updated
+            if (!llmData.profileImageUrl && this.createdLLMs[index].profileImageUrl) {
+                llmData.profileImageUrl = this.createdLLMs[index].profileImageUrl;
+            }
+            
             this.createdLLMs[index] = llmData;
             this.saveToLocalStorage();
             return true;

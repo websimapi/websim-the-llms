@@ -115,6 +115,11 @@ export function setupLLMCreationInterface(llmToEdit) {
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
     resetButton.addEventListener('click', resetForm);
     
+    // Setup profile image UI with camera button
+    import('./llmCreationInterfaceCompact.js').then(module => {
+        module.setupProfileImageUI();
+    });
+    
     // Wait a short moment for the UI to render before optimizing
     setTimeout(() => {
         // Set up tooltips and optimize height for desktop (now moved to the imported file)
