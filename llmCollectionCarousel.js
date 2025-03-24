@@ -233,7 +233,10 @@ function addSelectionIndicator(model) {
     ring.position.y = -0.99; // Just above the floor
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
-    model.add(ring);
+    // Add to scene directly instead of to the model to keep it fixed
+    scene.add(ring);
+    // Store position reference to follow the model in x and z only
+    ring.userData.followModel = model;
     
     // Add a highlight effect
     const highlight = new THREE.PointLight(0x3cb371, 1, 3);
@@ -287,9 +290,21 @@ function clearSelection() {
     llmModels.forEach(model => {
         if (model.userData.selectionIndicators) {
             model.userData.selectionIndicators.forEach(indicator => {
-                model.remove(indicator);
+                if (indicator.userData.isSelectionRing) {
+                    // Remove ring from scene instead of model
+                    scene.remove(indicator);
+                } else {
+                    model.remove(indicator);
+                }
             });
             delete model.userData.selectionIndicators;
+        }
+    });
+    
+    // Also check for any orphaned rings in the scene
+    scene.children.forEach(child => {
+        if (child.userData && child.userData.isSelectionRing) {
+            scene.remove(child);
         }
     });
     
@@ -341,28 +356,25 @@ function animateCarousel() {
         const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
         model.rotation.y = baseRotation + Math.sin(time * 0.5 + offset) * 0.1;
         
-        // Check if this model should be selected
-        if (model.userData.id === selectedModelId) {
-            // Ensure selection indicators exist
-            if (!model.userData.selectionIndicators) {
-                addSelectionIndicator(model);
-            }
-            
-            // Animate existing selection indicators
-            if (model.userData.selectionIndicators) {
-                model.userData.selectionIndicators.forEach(indicator => {
-                    if (indicator.userData.isSelectionRing) {
-                        // Pulse the ring size slightly
-                        const scale = 1 + Math.sin(time * 2) * 0.05;
-                        indicator.scale.set(scale, scale, scale);
-                    }
+        // Animate selection indicators if present
+        if (model.userData.selectionIndicators) {
+            // Find the ring and lights
+            model.userData.selectionIndicators.forEach(indicator => {
+                if (indicator.userData.isSelectionRing) {
+                    // Update ring position to follow model, but stay at the same Y
+                    indicator.position.x = model.position.x;
+                    indicator.position.z = model.position.z;
                     
-                    if (indicator.userData.isSelectionHighlight) {
-                        // Pulse the light intensity
-                        indicator.intensity = 1 + Math.sin(time * 2) * 0.3;
-                    }
-                });
-            }
+                    // Pulse the ring size slightly
+                    const scale = 1 + Math.sin(time * 2) * 0.05;
+                    indicator.scale.set(scale, scale, scale);
+                }
+                
+                if (indicator.userData.isSelectionHighlight) {
+                    // Pulse the light intensity
+                    indicator.intensity = 1 + Math.sin(time * 2) * 0.3;
+                }
+            });
         }
     });
 
