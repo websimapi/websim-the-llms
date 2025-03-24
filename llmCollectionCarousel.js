@@ -276,6 +276,44 @@ function addSelectionIndicator(model) {
     model.userData.selectionRing = ring; // Store direct reference to ring
 }
 
+export function getSelectedModelId() {
+    return selectedModelId;
+}
+
+export function selectModel(id) {
+    if (id === selectedModelId) return; // Already selected
+    
+    // Remove selection from previous model
+    clearSelection();
+    
+    // Set new selection
+    selectedModelId = id;
+    
+    // Find model with this ID
+    const selectedModel = llmModels.find(model => model.userData.id === id);
+    if (selectedModel) {
+        addSelectionIndicator(selectedModel);
+        
+        // Find the index of the selected LLM
+        const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
+        if (llmIndex !== -1 && llmIndex !== currentIndex) {
+            // Pan to the selected model if it's not the current one
+            currentIndex = llmIndex;
+            updateCarouselModels();
+            updateArrowVisibility();
+        }
+    }
+    
+    // Update list view highlighting
+    updateListSelection(id);
+    
+    // Update Edit Selected button state
+    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+    if (editSelectedBtn) {
+        editSelectedBtn.disabled = !id;
+    }
+}
+
 function clearSelection() {
     // First find and remove all existing selection rings in the scene
     const selectionRings = [];
@@ -312,42 +350,6 @@ function clearSelection() {
     }
 }
 
-// Function to select a model by ID
-export function selectModel(id) {
-    if (id === selectedModelId) return; // Already selected
-    
-    // Remove selection from previous model
-    clearSelection();
-    
-    // Set new selection
-    selectedModelId = id;
-    
-    // Find model with this ID
-    const selectedModel = llmModels.find(model => model.userData.id === id);
-    if (selectedModel) {
-        addSelectionIndicator(selectedModel);
-        
-        // Find the index of the selected LLM
-        const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
-        if (llmIndex !== -1 && llmIndex !== currentIndex) {
-            // Pan to the selected model if it's not the current one
-            currentIndex = llmIndex;
-            updateCarouselModels();
-            updateArrowVisibility();
-        }
-    }
-    
-    // Update list view highlighting
-    updateListSelection(id);
-    
-    // Update Edit Selected button state
-    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-    if (editSelectedBtn) {
-        editSelectedBtn.disabled = !id;
-    }
-}
-
-// Update the list view to highlight selected item
 function updateListSelection(id) {
     // Remove previous highlights
     document.querySelectorAll('.llm-list-item').forEach(item => {
@@ -359,11 +361,6 @@ function updateListSelection(id) {
     if (selectedItem) {
         selectedItem.classList.add('selected');
     }
-}
-
-// Get the ID of the currently selected model
-export function getSelectedModelId() {
-    return selectedModelId;
 }
 
 function animateCarousel() {
