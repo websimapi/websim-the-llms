@@ -132,6 +132,11 @@ function navigateLeft() {
         currentIndex--;
         updateCarouselModels();
         updateArrowVisibility();
+        
+        // Select the current model after navigation
+        if (carouselLLMs[currentIndex]) {
+            selectModel(carouselLLMs[currentIndex].id);
+        }
     }
 }
 
@@ -140,6 +145,11 @@ function navigateRight() {
         currentIndex++;
         updateCarouselModels();
         updateArrowVisibility();
+        
+        // Select the current model after navigation
+        if (carouselLLMs[currentIndex]) {
+            selectModel(carouselLLMs[currentIndex].id);
+        }
     }
 }
 
@@ -233,10 +243,7 @@ function addSelectionIndicator(model) {
     ring.position.y = -0.99; // Just above the floor
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
-    // Add to scene directly instead of to the model to keep it fixed
-    scene.add(ring);
-    // Store position reference to follow the model in x and z only
-    ring.userData.followModel = model;
+    model.add(ring);
     
     // Add a highlight effect
     const highlight = new THREE.PointLight(0x3cb371, 1, 3);
@@ -290,21 +297,9 @@ function clearSelection() {
     llmModels.forEach(model => {
         if (model.userData.selectionIndicators) {
             model.userData.selectionIndicators.forEach(indicator => {
-                if (indicator.userData.isSelectionRing) {
-                    // Remove ring from scene instead of model
-                    scene.remove(indicator);
-                } else {
-                    model.remove(indicator);
-                }
+                model.remove(indicator);
             });
             delete model.userData.selectionIndicators;
-        }
-    });
-    
-    // Also check for any orphaned rings in the scene
-    scene.children.forEach(child => {
-        if (child.userData && child.userData.isSelectionRing) {
-            scene.remove(child);
         }
     });
     
@@ -348,9 +343,16 @@ function animateCarousel() {
         const time = Date.now() * 0.001;
         const offset = index * 0.5;
         
-        // Simple hover effect
+        // Simple hover effect - now only applies to the model, not the selection ring
         const originY = calculatePosition(model.userData.index - currentIndex).y;
-        model.position.y = originY + Math.sin(time + offset) * 0.1;
+        
+        // Find the main model body to animate (excluding selection indicators)
+        model.children.forEach(child => {
+            // Skip selection indicators for the hover animation
+            if (!child.userData.isSelectionRing && !child.userData.isSelectionHighlight) {
+                child.position.y = originY + Math.sin(time + offset) * 0.1;
+            }
+        });
         
         // Subtle rotation
         const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
@@ -361,13 +363,11 @@ function animateCarousel() {
             // Find the ring and lights
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData.isSelectionRing) {
-                    // Update ring position to follow model, but stay at the same Y
-                    indicator.position.x = model.position.x;
-                    indicator.position.z = model.position.z;
-                    
                     // Pulse the ring size slightly
                     const scale = 1 + Math.sin(time * 2) * 0.05;
                     indicator.scale.set(scale, scale, scale);
+                    // Keep the ring at a fixed position on the floor
+                    indicator.position.y = -0.99; // Fixed position relative to the model
                 }
                 
                 if (indicator.userData.isSelectionHighlight) {
@@ -386,24 +386,10 @@ export function cleanupCarousel() {
         cancelAnimationFrame(animationId);
     }
     
-    // Clean up all models and selection indicators
+    // Clean up all models
     if (scene) {
-        // First remove all selection indicators
-        scene.children.forEach(child => {
-            if (child.userData && child.userData.isSelectionRing) {
-                scene.remove(child);
-            }
-        });
-        
-        // Then remove all models
         llmModels.forEach(model => {
             if (model && model.parent) {
-                // Remove any attached lights
-                model.traverse(child => {
-                    if (child.userData && child.userData.isSelectionHighlight) {
-                        model.remove(child);
-                    }
-                });
                 model.parent.remove(model);
             }
         });
