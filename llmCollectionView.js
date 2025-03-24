@@ -191,6 +191,12 @@ function handleViewportClick(event) {
         
         if (model && model.userData && model.userData.id) {
             selectModel(model.userData.id);
+            
+            // Update the selected button state
+            const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+            if (editSelectedBtn) {
+                editSelectedBtn.disabled = false;
+            }
         }
     }
 }
