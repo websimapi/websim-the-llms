@@ -231,8 +231,6 @@ function addSelectionIndicator(model) {
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.rotation.x = Math.PI / 2; // Flat on the ground
     ring.position.y = -0.99; // Just above the floor
-    ring.position.x = model.position.x; // Match model X position
-    ring.position.z = model.position.z; // Match model Z position
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
     // Add to scene directly instead of to the model to keep it fixed
@@ -363,7 +361,7 @@ function animateCarousel() {
             // Find the ring and lights
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData.isSelectionRing) {
-                    // Update ring position to follow model in X and Z only, keeping Y fixed
+                    // Update ring position to follow model, but stay at the same Y
                     indicator.position.x = model.position.x;
                     indicator.position.z = model.position.z;
                     
@@ -388,10 +386,24 @@ export function cleanupCarousel() {
         cancelAnimationFrame(animationId);
     }
     
-    // Clean up all models
+    // Clean up all models and selection indicators
     if (scene) {
+        // First remove all selection indicators
+        scene.children.forEach(child => {
+            if (child.userData && child.userData.isSelectionRing) {
+                scene.remove(child);
+            }
+        });
+        
+        // Then remove all models
         llmModels.forEach(model => {
             if (model && model.parent) {
+                // Remove any attached lights
+                model.traverse(child => {
+                    if (child.userData && child.userData.isSelectionHighlight) {
+                        model.remove(child);
+                    }
+                });
                 model.parent.remove(model);
             }
         });
