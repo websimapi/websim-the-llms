@@ -96,6 +96,16 @@ export function updatePointsDisplay() {
     }
 }
 
+// Add profile image to editor
+export function setupProfileImageUI() {
+    // Import and setup the profile image capture functionality
+    import('./llmProfileImageUI.js').then(module => {
+        module.setupProfileImageCapture();
+    }).catch(error => {
+        console.error("Error setting up profile image capture:", error);
+    });
+}
+
 // New function to reset form elements
 export function resetFormAttributes() {
     // Reset attributes
@@ -122,50 +132,6 @@ export function resetFormAttributes() {
         profileImage.classList.add('hidden');
         placeholder.classList.remove('hidden');
     }
-}
-
-// Add profile image to editor UI
-export function addProfileImageToEditor() {
-    const basicInfoGroup = document.querySelector('.settings-group:first-child');
-    if (!basicInfoGroup) return;
-    
-    // Create profile image container if it doesn't exist yet
-    if (!document.querySelector('.profile-image-display')) {
-        // Create profile image container
-        const profileImageContainer = document.createElement('div');
-        profileImageContainer.className = 'profile-image-display';
-        profileImageContainer.innerHTML = `
-            <div class="profile-image-placeholder">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#555"/>
-                </svg>
-            </div>
-            <img class="profile-image hidden" alt="LLM Profile">
-        `;
-        
-        // Insert before the name input
-        const firstSettingItem = basicInfoGroup.querySelector('.setting-item');
-        basicInfoGroup.insertBefore(profileImageContainer, firstSettingItem);
-    }
-    
-    // Check if we have a stored image URL
-    const statusElement = document.getElementById('generation-status');
-    if (statusElement && statusElement.dataset.profileImageUrl) {
-        updateProfileImageDisplay(statusElement.dataset.profileImageUrl);
-    }
-}
-
-// New function to initialize profile image UI
-export function setupProfileImageUI() {
-    // Add profile image to editor first
-    addProfileImageToEditor();
-    
-    // Import and setup the profile image capture functionality
-    import('./llmProfileImageUI.js').then(module => {
-        module.setupProfileImageCapture();
-    }).catch(error => {
-        console.error("Error setting up profile image capture:", error);
-    });
 }
 
 // Character generation handler - moved from llmCreationInterface.js

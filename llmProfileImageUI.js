@@ -185,11 +185,7 @@ function setupPreviewPanelHandlers(container) {
         }
         
         container.classList.add('saved');
-        setTimeout(() => {
-            container.classList.remove('saved');
-            // Close the preview panel after saving
-            container.classList.add('hidden');
-        }, 1000);
+        setTimeout(() => container.classList.remove('saved'), 1000);
     });
 }
 
