@@ -19,18 +19,7 @@ export function setupProfileImageCapture() {
         </svg>
     `;
     
-    // Create profile image container in the basic information section
-    const basicInfoSection = document.querySelector('.settings-group:first-child');
-    const nameInput = document.getElementById('llm-name').closest('.setting-item');
-    
-    const profileImageContainer = document.createElement('div');
-    profileImageContainer.id = 'profile-image-container';
-    profileImageContainer.className = 'profile-image-container';
-    
-    // Insert the container after the section title and before the name input
-    basicInfoSection.insertBefore(profileImageContainer, nameInput);
-    
-    // Create image preview container for the modal
+    // Create image preview container
     const previewContainer = document.createElement('div');
     previewContainer.id = 'profile-image-preview-container';
     previewContainer.className = 'profile-image-preview-container hidden';
@@ -105,9 +94,6 @@ async function handleCaptureButtonClick() {
             previewImage.style.display = 'block';
             lastGeneratedImageUrl = result.url;
             
-            // Update the profile image in the basic info section
-            updateProfileImageDisplay(result.url);
-            
             // Store the image URL on the form for later saving
             const statusElement = document.getElementById('generation-status');
             if (statusElement) {
@@ -127,24 +113,6 @@ async function handleCaptureButtonClick() {
     }
 }
 
-// Update the profile image in the Basic Information section
-function updateProfileImageDisplay(imageUrl) {
-    const container = document.getElementById('profile-image-container');
-    if (!container) return;
-    
-    // Clear existing content
-    container.innerHTML = '';
-    
-    // Create image element
-    const img = document.createElement('img');
-    img.id = 'profile-image-display';
-    img.className = 'profile-image-display';
-    img.src = imageUrl;
-    img.alt = "Character profile image";
-    
-    container.appendChild(img);
-}
-
 // Set up event handlers for the preview panel
 function setupPreviewPanelHandlers(container) {
     // Close button
@@ -160,11 +128,8 @@ function setupPreviewPanelHandlers(container) {
     // Save button updates the form data but doesn't close the panel
     const saveButton = document.getElementById('save-profile-image');
     saveButton.addEventListener('click', () => {
-        // Update the profile image in the basic info section
-        if (lastGeneratedImageUrl) {
-            updateProfileImageDisplay(lastGeneratedImageUrl);
-        }
-        
+        // Simply store the current image URL in the form data
+        // It will be saved with the LLM when the Create/Save button is clicked
         container.classList.add('saved');
         setTimeout(() => container.classList.remove('saved'), 1000);
     });

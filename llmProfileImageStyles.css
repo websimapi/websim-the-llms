@@ -186,28 +186,6 @@
     background-color: #2a8c5a;
 }
 
-/* Profile image display in the basic info section */
-.profile-image-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 15px;
-    max-height: 150px;
-    overflow: hidden;
-}
-
-.profile-image-display {
-    max-width: 100%;
-    height: auto;
-    max-height: 150px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    transition: transform 0.2s;
-}
-
-.profile-image-display:hover {
-    transform: scale(1.02);
-}
-
 /* Mobile responsiveness */
 @media screen and (max-width: 768px) {
     .profile-image-preview-container {
@@ -217,13 +195,5 @@
     .camera-button {
         bottom: 10px;
         right: 10px;
-    }
-    
-    .profile-image-container {
-        max-height: 120px;
-    }
-    
-    .profile-image-display {
-        max-height: 120px;
     }
 }
