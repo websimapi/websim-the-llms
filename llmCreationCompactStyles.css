@@ -23,8 +23,8 @@
     
     /* Compact attribute grid */
     .attribute-grid {
-        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
+        /* Removed fixed column count to allow dynamic resizing */
     }
     
     .attribute-item {
@@ -46,20 +46,31 @@
         border-radius: 4px;
         width: 200px;
         top: -5px;
-        left: 105%;
         z-index: 10;
         font-size: 0.8rem;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
     
-    /* Show tooltip to the left for the rightmost column */
-    .attribute-item:nth-child(3n) .attribute-tooltip {
-        left: auto;
-        right: 105%;
+    /* Modified tooltip positioning classes */
+    .attribute-tooltip.tooltip-right {
+        left: 105%;
     }
     
-    /* Tooltip arrow */
-    .attribute-tooltip::after {
+    .attribute-tooltip.tooltip-left {
+        right: 105%;
+        left: auto;
+    }
+    
+    .attribute-tooltip.tooltip-top {
+        bottom: 105%;
+        top: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 150px;
+    }
+    
+    /* Tooltip arrows based on position */
+    .attribute-tooltip.tooltip-right::after {
         content: "";
         position: absolute;
         top: 10px;
@@ -69,10 +80,25 @@
         border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
     }
     
-    .attribute-item:nth-child(3n) .attribute-tooltip::after {
-        right: auto;
+    .attribute-tooltip.tooltip-left::after {
+        content: "";
+        position: absolute;
+        top: 10px;
         left: 100%;
+        border-width: 5px;
+        border-style: solid;
         border-color: transparent transparent transparent rgba(0, 0, 0, 0.8);
+    }
+    
+    .attribute-tooltip.tooltip-top::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 5px;
+        border-style: solid;
+        border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
     }
     
     /* Compact attribute header */

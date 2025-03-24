@@ -89,8 +89,21 @@ export function setupLLMCreationInterface(llmToEdit) {
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
     resetButton.addEventListener('click', resetForm);
     
+    // Wait a short moment for the UI to render before optimizing
+    setTimeout(() => {
+        // Set up tooltips and optimize height for desktop (now moved to the imported file)
+        import('./llmAttributeTooltips.js').then(module => {
+            module.setupAttributeTooltips();
+            module.optimizeUIHeight();
+        });
+    }, 100);
+    
     // Handle window resize for optimizing UI height
-    window.addEventListener('resize', optimizeUIHeight);
+    window.addEventListener('resize', () => {
+        import('./llmAttributeTooltips.js').then(module => {
+            module.optimizeUIHeight();
+        });
+    });
 }
 
 // Function to render the attribute grid
@@ -168,9 +181,8 @@ function renderAttributeGrid() {
         gridContainer.appendChild(item);
     });
     
-    // Add tooltips and optimize height for desktop
-    setupAttributeTooltips();
-    optimizeUIHeight();
+    // Setup attribute tooltips - this is now handled after rendering
+    // by the optimizeUIHeight and setupAttributeTooltips functions imported above
 }
 
 // Function to update points display

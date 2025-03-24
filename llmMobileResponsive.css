@@ -27,8 +27,21 @@
         margin-bottom: 10px;
     }
     
+    /* Override grid layout for mobile */
     .attribute-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+    }
+    
+    /* Show tooltips on tap for mobile */
+    .attribute-item {
+        position: relative;
+    }
+    
+    .attribute-description {
+        display: block !important;
+        font-size: 0.8rem;
+        color: #aaa;
     }
     
     #llm-collection-ui .collection-container {
@@ -126,4 +139,25 @@
 
 .compact-mode textarea.setting-input {
     min-height: 50px;
+}
+
+/* Attribute grid responsive sizing */
+.compact-mode .attribute-grid {
+    gap: 5px;
+}
+
+.compact-mode .attribute-item {
+    padding: 5px;
+}
+
+.compact-mode .attribute-header {
+    margin-bottom: 2px;
+}
+
+.compact-mode .attribute-name {
+    font-size: 0.9rem;
+}
+
+.compact-mode .attribute-value {
+    height: 15px;
 }

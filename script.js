@@ -333,6 +333,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Create new LLM clicked');
             createLLMUI.classList.add('active');
             setupLLMCreationInterface();
+            
+            // Initialize UI optimization
+            setTimeout(() => {
+                optimizeUIHeight();
+            }, 100);
         });
         
         closeCreateLLMButton.addEventListener('click', () => {
@@ -383,6 +388,15 @@ document.addEventListener('DOMContentLoaded', () => {
             window.humanoidCamera.updateProjectionMatrix();
             window.humanoidRenderer.setSize(width, height);
         }
+        
+        // Add call to optimize UI height on resize
+        if (document.getElementById('create-llm-ui').classList.contains('active')) {
+            optimizeUIHeight();
+        }
+    }
+
+    function optimizeUIHeight() {
+        // TO DO: implement the logic to optimize the UI height
     }
 
     window.addEventListener('resize', handleViewportResize);
