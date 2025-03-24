@@ -62,25 +62,23 @@ function addProfileImageToEditor() {
     const basicInfoGroup = document.querySelector('.settings-group:first-child');
     if (!basicInfoGroup) return;
     
-    // Check if the profile image container already exists
-    let profileImageContainer = basicInfoGroup.querySelector('.profile-image-display');
-    if (!profileImageContainer) {
-        profileImageContainer = document.createElement('div');
-        profileImageContainer.className = 'profile-image-display';
-        profileImageContainer.innerHTML = `
-            <div class="profile-image-label">Profile Image</div>
-            <div class="profile-image-placeholder">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#555"/>
-                </svg>
-            </div>
-            <img class="profile-image hidden" alt="LLM Profile">
-        `;
-        const firstSettingItem = basicInfoGroup.querySelector('.setting-item');
-        basicInfoGroup.insertBefore(profileImageContainer, firstSettingItem);
-    }
+    // Create profile image container
+    const profileImageContainer = document.createElement('div');
+    profileImageContainer.className = 'profile-image-display';
+    profileImageContainer.innerHTML = `
+        <div class="profile-image-placeholder">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#555"/>
+            </svg>
+        </div>
+        <img class="profile-image hidden" alt="LLM Profile">
+    `;
     
-    // Immediately update the display if an image URL was previously saved
+    // Insert before the name input
+    const firstSettingItem = basicInfoGroup.querySelector('.setting-item');
+    basicInfoGroup.insertBefore(profileImageContainer, firstSettingItem);
+    
+    // Check if we have a stored image URL
     const statusElement = document.getElementById('generation-status');
     if (statusElement && statusElement.dataset.profileImageUrl) {
         updateProfileImageDisplay(statusElement.dataset.profileImageUrl);
@@ -91,12 +89,8 @@ function addProfileImageToEditor() {
 export function updateProfileImageDisplay(imageUrl) {
     if (!imageUrl) return;
     
-    // Use the create-llm-ui container to avoid conflicts if similar classes exist elsewhere
-    const createUI = document.getElementById('create-llm-ui');
-    if (!createUI) return;
-    
-    const placeholder = createUI.querySelector('.profile-image-placeholder');
-    const profileImage = createUI.querySelector('.profile-image');
+    const placeholder = document.querySelector('.profile-image-placeholder');
+    const profileImage = document.querySelector('.profile-image');
     
     if (placeholder && profileImage) {
         profileImage.src = imageUrl;
