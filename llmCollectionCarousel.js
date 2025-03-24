@@ -231,6 +231,8 @@ function addSelectionIndicator(model) {
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.rotation.x = Math.PI / 2; // Flat on the ground
     ring.position.y = -0.99; // Just above the floor
+    ring.position.x = model.position.x; // Match model X position
+    ring.position.z = model.position.z; // Match model Z position
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
     // Add to scene directly instead of to the model to keep it fixed
@@ -361,7 +363,7 @@ function animateCarousel() {
             // Find the ring and lights
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData.isSelectionRing) {
-                    // Update ring position to follow model, but stay at the same Y
+                    // Update ring position to follow model in X and Z only, keeping Y fixed
                     indicator.position.x = model.position.x;
                     indicator.position.z = model.position.z;
                     
