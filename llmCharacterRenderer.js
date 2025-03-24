@@ -1,12 +1,19 @@
 import { createCustomCharacter } from './characterGenerator.js';
-import { normalizeColor } from './llmColorManager.js';
+import { modelAppearanceManager } from './modelAppearanceManager.js';
 
 // Helper functions to create and render LLM characters
 export function renderLLMCharacter(THREE, llm) {
     if (llm.customCharacterCode) {
         // Create custom character from stored code
         try {
-            return createCustomCharacter(THREE, llm.customCharacterCode);
+            const character = createCustomCharacter(THREE, llm.customCharacterCode);
+            
+            // Apply appearance data if available
+            if (llm.appearanceData) {
+                modelAppearanceManager.applyAppearanceData(character, llm.appearanceData);
+            }
+            
+            return character;
         } catch (error) {
             console.error("Error creating custom character:", error);
             // Fall back to standard model
@@ -23,9 +30,7 @@ function createStandardModel(THREE, llm) {
     // Create a robot model based on the stored properties
     const group = new THREE.Group();
     
-    // Ensure color is in correct format
-    const colorStr = normalizeColor(llm.color || 0x3cb371);
-    const color = new THREE.Color(colorStr);
+    const color = new THREE.Color(llm.color || 0x3cb371);
     
     // Create head
     const headMaterial = new THREE.MeshStandardMaterial({
@@ -220,6 +225,11 @@ function createStandardModel(THREE, llm) {
     rightFoot.position.set(0.15, -0.1, 0.05);
     rightFoot.castShadow = true;
     group.add(rightFoot);
+    
+    // Apply appearance data if available
+    if (llm.appearanceData) {
+        modelAppearanceManager.applyAppearanceData(group, llm.appearanceData);
+    }
     
     return group;
 }
