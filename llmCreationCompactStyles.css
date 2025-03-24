@@ -1,0 +1,107 @@
+/* Compact styles for Create LLM UI on desktop */
+@media screen and (min-width: 769px) {
+    /* More compact settings groups */
+    .settings-group {
+        margin-bottom: 10px;
+        padding: 10px;
+    }
+    
+    .settings-group-title {
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+    
+    /* Smaller margins between setting items */
+    .setting-item {
+        margin-bottom: 8px;
+    }
+    
+    /* More compact form elements */
+    .setting-input, .setting-select {
+        padding: 6px;
+    }
+    
+    /* Compact attribute grid */
+    .attribute-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    
+    .attribute-item {
+        padding: 8px;
+        position: relative;
+    }
+    
+    /* Add tooltip on hover */
+    .attribute-item:hover .attribute-tooltip {
+        display: block;
+    }
+    
+    .attribute-tooltip {
+        display: none;
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px;
+        border-radius: 4px;
+        width: 200px;
+        top: -5px;
+        left: 105%;
+        z-index: 10;
+        font-size: 0.8rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Show tooltip to the left for the rightmost column */
+    .attribute-item:nth-child(3n) .attribute-tooltip {
+        left: auto;
+        right: 105%;
+    }
+    
+    /* Tooltip arrow */
+    .attribute-tooltip::after {
+        content: "";
+        position: absolute;
+        top: 10px;
+        right: 100%;
+        border-width: 5px;
+        border-style: solid;
+        border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
+    }
+    
+    .attribute-item:nth-child(3n) .attribute-tooltip::after {
+        right: auto;
+        left: 100%;
+        border-color: transparent transparent transparent rgba(0, 0, 0, 0.8);
+    }
+    
+    /* Compact attribute header */
+    .attribute-header {
+        margin-bottom: 3px;
+    }
+    
+    /* Hide attribute description to save space */
+    .attribute-description {
+        display: none;
+    }
+    
+    /* Compact textarea */
+    textarea.setting-input {
+        min-height: 60px;
+    }
+    
+    /* Optimize create LLM UI layout to reduce height */
+    .create-llm-sidebar {
+        display: flex;
+        flex-direction: column;
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+    
+    /* Enlarge color picker */
+    .color-input {
+        width: 100px !important;
+        height: 60px !important;
+        border-radius: 5px;
+    }
+}

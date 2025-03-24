@@ -6,6 +6,7 @@ import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { createRobotModel } from './llmModelCreationRenderer.js';
+import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -87,6 +88,9 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
     resetButton.addEventListener('click', resetForm);
+    
+    // Handle window resize for optimizing UI height
+    window.addEventListener('resize', optimizeUIHeight);
 }
 
 // Function to render the attribute grid
@@ -163,6 +167,10 @@ function renderAttributeGrid() {
         
         gridContainer.appendChild(item);
     });
+    
+    // Add tooltips and optimize height for desktop
+    setupAttributeTooltips();
+    optimizeUIHeight();
 }
 
 // Function to update points display
