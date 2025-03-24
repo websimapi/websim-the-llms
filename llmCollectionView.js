@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
-import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId } from './llmCollectionCarousel.js';
+import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId, getSelectedModel } from './llmCollectionCarousel.js';
 
 let collectionAnimationId;
 
