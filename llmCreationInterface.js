@@ -10,6 +10,7 @@ let customCharacter = null;
 let generatingCharacter = false;
 let humanoidMixer = null; // Initialize mixer as null
 let selectedMesh = null; // Track the currently selected mesh
+let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock; // Declare scene variables at global scope
 
 // Make models available to other modules
 window.currentRobotModel = null;
@@ -237,7 +238,6 @@ function initHumanoidPreview(llmToEdit) {
     viewport.innerHTML = '';
     
     // Setup Three.js scene
-    let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
     humanoidScene = new THREE.Scene();
     humanoidScene.background = new THREE.Color(0x111111);
     
