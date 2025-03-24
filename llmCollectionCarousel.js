@@ -63,11 +63,8 @@ function initCarouselScene(viewportElement) {
         camera.position.set(0, 2, 7);
         camera.lookAt(0, 1, 0);
         
-        // Setup renderer with preserveDrawingBuffer for raycasting
-        renderer = new THREE.WebGLRenderer({ 
-            antialias: true,
-            preserveDrawingBuffer: true 
-        });
+        // Setup renderer
+        renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(viewportElement.clientWidth, viewportElement.clientHeight);
         renderer.shadowMap.enabled = true;
         viewportElement.appendChild(renderer.domElement);
@@ -277,12 +274,6 @@ function addSelectionIndicator(model) {
     // Store a reference to the selection indicators
     model.userData.selectionIndicators = [ring, highlight, bottomLight];
     model.userData.selectionRing = ring; // Store direct reference to ring
-    
-    // Update edit selected button state
-    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-    if (editSelectedBtn) {
-        editSelectedBtn.disabled = false;
-    }
 }
 
 function clearSelection() {
@@ -313,12 +304,6 @@ function clearSelection() {
     });
     
     selectedModelId = null;
-    
-    // Update button state when selection is cleared
-    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-    if (editSelectedBtn) {
-        editSelectedBtn.disabled = true;
-    }
 }
 
 // Function to select a model by ID
@@ -348,12 +333,6 @@ export function selectModel(id) {
     
     // Update list view highlighting
     updateListSelection(id);
-    
-    // Update edit selected button state
-    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-    if (editSelectedBtn) {
-        editSelectedBtn.disabled = !id;
-    }
 }
 
 // Update the list view to highlight selected item
@@ -368,22 +347,11 @@ function updateListSelection(id) {
     if (selectedItem) {
         selectedItem.classList.add('selected');
     }
-    
-    // Update edit selected button state
-    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-    if (editSelectedBtn) {
-        editSelectedBtn.disabled = !id;
-    }
 }
 
-// Export functionality for updating button state with selection changes
+// Get the ID of the currently selected model
 export function getSelectedModelId() {
     return selectedModelId;
-}
-
-// Add function to get selected model data
-export function getSelectedModel() {
-    return carouselLLMs.find(llm => llm.id === selectedModelId);
 }
 
 function animateCarousel() {

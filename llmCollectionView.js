@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
-import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId, getSelectedModel } from './llmCollectionCarousel.js';
+import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId } from './llmCollectionCarousel.js';
 
 let collectionAnimationId;
 
@@ -86,9 +86,6 @@ export function setupLLMCollectionView(selectLLMId = null) {
             // Add click event to viewport for model selection
             collectionViewport.addEventListener('click', handleViewportClick);
             
-            // Add edit selected button
-            addEditSelectedButton();
-            
             // Add event listeners for buttons
             document.querySelectorAll('.llm-edit-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -159,9 +156,6 @@ function handleEditLLM(id) {
     if (collectionAnimationId) {
         cancelAnimationFrame(collectionAnimationId);
     }
-    
-    // Clean up carousel
-    cleanupCarousel();
 }
 
 // Handle clicks in the viewport area
@@ -199,38 +193,6 @@ function handleViewportClick(event) {
             // Select the exact model that was clicked
             selectModel(model.userData.id);
         }
-    }
-}
-
-// Add edit selected button
-function addEditSelectedButton() {
-    const footer = document.querySelector('.collection-footer');
-    
-    // Create edit selected button if it doesn't exist
-    if (!document.getElementById('edit-selected-llm-btn')) {
-        const editSelectedBtn = document.createElement('button');
-        editSelectedBtn.id = 'edit-selected-llm-btn';
-        editSelectedBtn.className = 'collection-button secondary';
-        editSelectedBtn.textContent = 'Edit Selected';
-        editSelectedBtn.disabled = !getSelectedModelId(); // Initially disabled if no selection
-        
-        // Add click handler
-        editSelectedBtn.addEventListener('click', () => {
-            const selectedId = getSelectedModelId();
-            if (selectedId) {
-                handleEditLLM(selectedId);
-            }
-        });
-        
-        // Insert before the create new button
-        footer.insertBefore(editSelectedBtn, document.getElementById('create-new-llm-btn'));
-    }
-    
-    // Update button state with current selection status
-    const selectedId = getSelectedModelId();
-    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-    if (editSelectedBtn) {
-        editSelectedBtn.disabled = !selectedId;
     }
 }
 
