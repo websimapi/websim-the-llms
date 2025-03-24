@@ -304,6 +304,12 @@ function clearSelection() {
     });
     
     selectedModelId = null;
+    
+    // Update Edit Selected button state when clearing selection
+    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+    if (editSelectedBtn) {
+        editSelectedBtn.disabled = true;
+    }
 }
 
 // Function to select a model by ID
@@ -333,6 +339,12 @@ export function selectModel(id) {
     
     // Update list view highlighting
     updateListSelection(id);
+    
+    // Update Edit Selected button state
+    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+    if (editSelectedBtn) {
+        editSelectedBtn.disabled = !id;
+    }
 }
 
 // Update the list view to highlight selected item

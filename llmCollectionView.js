@@ -223,20 +223,12 @@ function addEditSelectedButton() {
         footer.insertBefore(editSelectedBtn, document.getElementById('create-new-llm-btn'));
     }
     
-    // Add selection change listener to update button state
-    const observer = new MutationObserver((mutations) => {
-        const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-        if (editSelectedBtn) {
-            const selectedId = getSelectedModelId();
-            editSelectedBtn.disabled = !selectedId;
-        }
-    });
-    
-    observer.observe(document.getElementById('llm-list'), { 
-        attributes: true, 
-        subtree: true,
-        attributeFilter: ['class']
-    });
+    // Update button state to match current selection
+    const selectedId = getSelectedModelId();
+    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+    if (editSelectedBtn) {
+        editSelectedBtn.disabled = !selectedId;
+    }
 }
 
 function deleteLLM(id) {
