@@ -40,6 +40,11 @@ export function setupLLMCarousel(viewportElement, llms) {
     
     // Start animation
     animateCarousel();
+    
+    // Select first LLM by default
+    if (carouselLLMs.length > 0) {
+        selectModel(carouselLLMs[0].id);
+    }
 }
 
 function initCarouselScene(viewportElement) {
@@ -215,24 +220,37 @@ function displayEmptyState(viewportElement) {
 }
 
 function addSelectionIndicator(model) {
-    // Create a ring around the model
-    const geometry = new THREE.RingGeometry(1.5, 1.7, 32);
-    const material = new THREE.MeshBasicMaterial({ 
+    // Create a ring around the model - now using DOM elements for better performance
+    const ringGeometry = new THREE.RingGeometry(1.5, 1.7, 32);
+    const ringMaterial = new THREE.MeshBasicMaterial({ 
         color: 0x3cb371,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.8
     });
-    const ring = new THREE.Mesh(geometry, material);
+    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.rotation.x = Math.PI / 2; // Flat on the ground
     ring.position.y = -0.99; // Just above the floor
+    ring.userData.isSelectionRing = true;
+    ring.name = "selectionRing";
     model.add(ring);
     
     // Add a highlight effect
     const highlight = new THREE.PointLight(0x3cb371, 1, 3);
     highlight.position.set(0, 1, 0);
+    highlight.userData.isSelectionHighlight = true;
+    highlight.name = "selectionHighlight";
     model.add(highlight);
     
+    // Add another light from below for more dramatic effect
+    const bottomLight = new THREE.PointLight(0x3cb371, 0.5, 2);
+    bottomLight.position.set(0, -0.5, 0);
+    bottomLight.userData.isSelectionHighlight = true;
+    bottomLight.name = "bottomHighlight";
+    model.add(bottomLight);
+    
     // Store a reference to the selection indicators
-    model.userData.selectionIndicators = [ring, highlight];
+    model.userData.selectionIndicators = [ring, highlight, bottomLight];
 }
 
 // Function to select a model by ID
@@ -249,13 +267,21 @@ export function selectModel(id) {
     const selectedModel = llmModels.find(model => model.userData.id === id);
     if (selectedModel) {
         addSelectionIndicator(selectedModel);
+        
+        // Find the index of the selected LLM
+        const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
+        if (llmIndex !== -1 && llmIndex !== currentIndex) {
+            // Pan to the selected model if it's not the current one
+            currentIndex = llmIndex;
+            updateCarouselModels();
+            updateArrowVisibility();
+        }
     }
     
     // Update list view highlighting
     updateListSelection(id);
 }
 
-// Function to clear all selections
 function clearSelection() {
     // Remove indicators from previously selected model
     llmModels.forEach(model => {
@@ -314,8 +340,25 @@ function animateCarousel() {
         // Subtle rotation
         const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
         model.rotation.y = baseRotation + Math.sin(time * 0.5 + offset) * 0.1;
+        
+        // Animate selection indicators if present
+        if (model.userData.selectionIndicators) {
+            // Find the ring and lights
+            model.userData.selectionIndicators.forEach(indicator => {
+                if (indicator.userData.isSelectionRing) {
+                    // Pulse the ring size slightly
+                    const scale = 1 + Math.sin(time * 2) * 0.05;
+                    indicator.scale.set(scale, scale, scale);
+                }
+                
+                if (indicator.userData.isSelectionHighlight) {
+                    // Pulse the light intensity
+                    indicator.intensity = 1 + Math.sin(time * 2) * 0.3;
+                }
+            });
+        }
     });
-    
+
     renderer.render(scene, camera);
 }
 
