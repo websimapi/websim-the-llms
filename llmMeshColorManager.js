@@ -1,4 +1,5 @@
 // Helper functions for managing individual mesh colors in the LLM creation UI
+import * as THREE from 'three';
 
 // Ensure each mesh has its own material instance
 export function prepareModelForIndividualColoring(model) {
