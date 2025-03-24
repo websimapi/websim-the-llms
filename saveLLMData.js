@@ -2,6 +2,7 @@ import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { attributeSystem } from './attributeSystem.js';
 import { modelAppearanceManager } from './modelAppearanceManager.js';
+import { storeModelAppearance, preserveExistingAppearance, clearModelState } from './llmAppearanceHelper.js';
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
@@ -36,15 +37,8 @@ export function saveLLMData() {
         console.log("No custom character code found to save");
     }
     
-    // Get the current model to store appearance data
-    const robotModel = window.currentRobotModel || null;
-    const customCharacter = window.currentCustomCharacter || null;
-    const modelToStore = customCharacter || robotModel;
-    
-    if (modelToStore) {
-        llmData.appearanceData = modelAppearanceManager.storeAppearanceData(modelToStore);
-        console.log("Saved appearance data for model:", llmData.appearanceData);
-    }
+    // Store model appearance data
+    storeModelAppearance(llmData);
     
     // Check if we're in edit mode
     const createUI = document.getElementById('create-llm-ui');
@@ -63,10 +57,8 @@ export function saveLLMData() {
                 llmData.customCharacterCode = existingLLM.customCharacterCode;
             }
             
-            // If no appearance data was saved, keep existing appearance data
-            if (!llmData.appearanceData && existingLLM.appearanceData) {
-                llmData.appearanceData = existingLLM.appearanceData;
-            }
+            // Preserve existing appearance data if needed
+            preserveExistingAppearance(llmData, existingLLM);
             
             llmDataManager.updateLLM(llmData);
         } else {
@@ -78,6 +70,9 @@ export function saveLLMData() {
         // Save as new LLM
         llmDataManager.addLLM(llmData);
     }
+    
+    // Clear model state
+    clearModelState();
     
     // Close creation UI and show collection
     document.getElementById('create-llm-ui').classList.remove('active');
