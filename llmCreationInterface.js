@@ -47,7 +47,7 @@ export function setupLLMCreationInterface(llmToEdit) {
     updatePointsDisplay();
     
     // Add event listeners for form elements that should update the humanoid preview
-    document.getElementById('llm-color').addEventListener('input', updateSelectedMeshColor);
+    document.getElementById('llm-color').addEventListener('input', handleColorChange);
     
     // Setup character generation button
     const generateBtn = document.getElementById('generate-character-btn');
@@ -370,7 +370,7 @@ function createDefaultRobot(llmToEdit) {
     });
 }
 
-function updateSelectedMeshColor() {
+function handleColorChange() {
     const meshUpdated = updateSelectedMeshColor(window.selectedMesh);
     
     if (!meshUpdated) {
@@ -379,7 +379,6 @@ function updateSelectedMeshColor() {
     }
 }
 
-// Updated to remove style dependency
 function updateHumanoidPreview() {
     if (!robotModel) return;
     
