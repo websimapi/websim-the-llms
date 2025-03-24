@@ -132,11 +132,6 @@ function navigateLeft() {
         currentIndex--;
         updateCarouselModels();
         updateArrowVisibility();
-        
-        // Select the current model after navigation
-        if (carouselLLMs[currentIndex]) {
-            selectModel(carouselLLMs[currentIndex].id);
-        }
     }
 }
 
@@ -145,11 +140,6 @@ function navigateRight() {
         currentIndex++;
         updateCarouselModels();
         updateArrowVisibility();
-        
-        // Select the current model after navigation
-        if (carouselLLMs[currentIndex]) {
-            selectModel(carouselLLMs[currentIndex].id);
-        }
     }
 }
 
@@ -343,16 +333,9 @@ function animateCarousel() {
         const time = Date.now() * 0.001;
         const offset = index * 0.5;
         
-        // Simple hover effect - now only applies to the model, not the selection ring
+        // Simple hover effect - only apply to the model, not its children directly
         const originY = calculatePosition(model.userData.index - currentIndex).y;
-        
-        // Find the main model body to animate (excluding selection indicators)
-        model.children.forEach(child => {
-            // Skip selection indicators for the hover animation
-            if (!child.userData.isSelectionRing && !child.userData.isSelectionHighlight) {
-                child.position.y = originY + Math.sin(time + offset) * 0.1;
-            }
-        });
+        model.position.y = originY + Math.sin(time + offset) * 0.1;
         
         // Subtle rotation
         const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
@@ -363,11 +346,11 @@ function animateCarousel() {
             // Find the ring and lights
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData.isSelectionRing) {
-                    // Pulse the ring size slightly
-                    const scale = 1 + Math.sin(time * 2) * 0.05;
-                    indicator.scale.set(scale, scale, scale);
-                    // Keep the ring at a fixed position on the floor
-                    indicator.position.y = -0.99; // Fixed position relative to the model
+                    // Pulse the ring size slightly but keep it fixed relative to ground
+                    indicator.scale.x = indicator.scale.z = 1 + Math.sin(time * 2) * 0.05;
+                    
+                    // Keep ring at a fixed height relative to ground
+                    indicator.position.y = -0.99 - model.position.y;
                 }
                 
                 if (indicator.userData.isSelectionHighlight) {
