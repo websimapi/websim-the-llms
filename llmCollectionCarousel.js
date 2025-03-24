@@ -363,16 +363,25 @@ function animateCarousel() {
             // Find the ring and lights
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData.isSelectionRing) {
-                    // Pulse the ring size slightly but keep it fixed at the same Y position
+                    // Pulse the ring size slightly but keep it fixed relative to ground
                     indicator.scale.x = indicator.scale.z = 1 + Math.sin(time * 2) * 0.05;
                     
-                    // Keep ring at a fixed height relative to ground - don't use model.position.y
-                    indicator.position.y = -0.99;
-                }
-                
-                if (indicator.userData.isSelectionHighlight) {
-                    // Pulse the light intensity
-                    indicator.intensity = 1 + Math.sin(time * 2) * 0.3;
+                    // Position the ring at a fixed height RELATIVE TO WORLD SPACE
+                    // This overrides the parent model's y position to prevent bobbing
+                    const worldPos = new THREE.Vector3(0, -0.99, 0);
+                    model.updateMatrixWorld();
+                    worldPos.y = -0.99; // Fixed height above ground
+                    
+                    indicator.position.copy(worldPos);
+                    indicator.position.y = -0.99; // Keep fixed relative to world
+                    
+                    // Calculate the model's world position
+                    const modelWorldPos = new THREE.Vector3();
+                    model.getWorldPosition(modelWorldPos);
+                    
+                    // Keep ring aligned with the floor regardless of model bobbing
+                    // Update the ring's matrix to counter the model's Y movement
+                    indicator.updateMatrix();
                 }
             });
         }
