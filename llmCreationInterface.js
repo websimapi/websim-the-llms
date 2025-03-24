@@ -230,6 +230,7 @@ function initHumanoidPreview(llmToEdit) {
     
     // Setup Three.js scene
     humanoidScene = new THREE.Scene();
+    window.currentHumanoidScene = humanoidScene;
     humanoidScene.background = new THREE.Color(0x111111);
     
     // Setup camera
@@ -277,7 +278,15 @@ function initHumanoidPreview(llmToEdit) {
     if (llmToEdit && llmToEdit.customCharacterCode) {
         try {
             customCharacter = createCustomCharacter(THREE, llmToEdit.customCharacterCode);
+            window.customCharacter = customCharacter;
             humanoidScene.add(customCharacter);
+            
+            // Apply saved model data if it exists
+            if (llmToEdit.modelData) {
+                import('./llmModelStorage.js').then(module => {
+                    module.applyStoredModelData(customCharacter, llmToEdit);
+                });
+            }
             
             // Store the generated code for later use
             const statusElement = document.getElementById('generation-status');
@@ -489,6 +498,7 @@ function createRobotModel() {
     
     // Add robot to scene
     robotModel = robotGroup;
+    window.robotModel = robotModel;
     humanoidScene.add(robotModel);
 }
 

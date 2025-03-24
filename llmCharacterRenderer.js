@@ -1,12 +1,20 @@
 import { createCustomCharacter } from './characterGenerator.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
+import { applyStoredModelData } from './llmModelStorage.js';
 
 // Helper functions to create and render LLM characters
 export function renderLLMCharacter(THREE, llm) {
     if (llm.customCharacterCode) {
         // Create custom character from stored code
         try {
-            return createCustomCharacter(THREE, llm.customCharacterCode);
+            const customChar = createCustomCharacter(THREE, llm.customCharacterCode);
+            
+            // Apply stored model data if available
+            if (llm.modelData) {
+                applyStoredModelData(customChar, llm);
+            }
+            
+            return customChar;
         } catch (error) {
             console.error("Error creating custom character:", error);
             // Fall back to standard model
@@ -14,7 +22,14 @@ export function renderLLMCharacter(THREE, llm) {
         }
     } else {
         // Create standard model
-        return createStandardModel(THREE, llm);
+        const standardModel = createStandardModel(THREE, llm);
+        
+        // Apply stored model data if available
+        if (llm.modelData) {
+            applyStoredModelData(standardModel, llm);
+        }
+        
+        return standardModel;
     }
 }
 

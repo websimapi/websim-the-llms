@@ -1,6 +1,7 @@
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { attributeSystem } from './attributeSystem.js';
+import { storeModelData } from './llmModelStorage.js';
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
@@ -34,6 +35,24 @@ export function saveLLMData() {
         console.log("Saved custom character code:", llmData.customCharacterCode.substring(0, 50) + "...");
     } else {
         console.log("No custom character code found to save");
+    }
+    
+    // Store current model data - this handles colors and other properties
+    // Get the current robot or custom model from the scene
+    const humanoidScene = window.currentHumanoidScene;
+    if (humanoidScene) {
+        let modelToStore = null;
+        
+        // Find the model in the scene
+        humanoidScene.traverse(child => {
+            if (child.isGroup && (child === window.robotModel || child === window.customCharacter)) {
+                modelToStore = child;
+            }
+        });
+        
+        if (modelToStore) {
+            storeModelData(modelToStore, llmData);
+        }
     }
     
     // Check if we're in edit mode

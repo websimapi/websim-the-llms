@@ -76,3 +76,43 @@ export function createStandardMaterials(color, style) {
         chestLightMaterial
     };
 }
+
+// New functions for model serialization and storage
+export function serializeModelData(model) {
+    const modelData = {
+        parts: []
+    };
+    
+    model.traverse(child => {
+        if (child.isMesh && child.material) {
+            modelData.parts.push({
+                name: child.name || `part_${modelData.parts.length}`,
+                position: child.position.toArray(),
+                rotation: [child.rotation.x, child.rotation.y, child.rotation.z],
+                scale: child.scale.toArray(),
+                materialProps: serializeMaterial(child.material)
+            });
+        }
+    });
+    
+    return modelData;
+}
+
+export function serializeMaterial(material) {
+    const materialData = {
+        type: material.type
+    };
+    
+    // Store color properties if they exist
+    if (material.color) materialData.color = '#' + material.color.getHexString();
+    if (material.emissive) materialData.emissive = '#' + material.emissive.getHexString();
+    if (material.specular) materialData.specular = '#' + material.specular.getHexString();
+    
+    // Store numeric properties
+    const numericProps = ['metalness', 'roughness', 'opacity', 'transparent', 'emissiveIntensity'];
+    numericProps.forEach(prop => {
+        if (material[prop] !== undefined) materialData[prop] = material[prop];
+    });
+    
+    return materialData;
+}
