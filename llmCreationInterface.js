@@ -8,6 +8,7 @@ import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { createRobotModel } from './llmModelCreationRenderer.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
 import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGenerateCharacter } from './llmCreationInterfaceCompact.js';
+import { prepareModelForIndividualColoring, applyColorToMesh } from './llmMeshColorManager.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -234,6 +235,9 @@ function createDefaultRobot(llmToEdit) {
     const result = createRobotModel(humanoidScene, color, style);
     robotModel = result.model;
     
+    // Prepare the model for individual part coloring
+    prepareModelForIndividualColoring(robotModel);
+    
     // Store material references
     headMaterial = result.materials.headMaterial;
     bodyMaterial = result.materials.bodyMaterial;
@@ -245,6 +249,8 @@ function createDefaultRobot(llmToEdit) {
     if (llmToEdit && llmToEdit.modelData) {
         import('./llmModelStorage.js').then(module => {
             module.applyStoredModelData(robotModel, llmToEdit);
+            // Ensure model is prepared for individual coloring after applying stored data
+            prepareModelForIndividualColoring(robotModel);
         });
     }
 }
@@ -291,6 +297,12 @@ function handleMeshSelection(event) {
         
         // Select the new mesh
         selectedMesh = intersects[0].object;
+        
+        // Ensure the mesh has its own material instance
+        if (selectedMesh.material && !selectedMesh.userData.hasUniqueInstance) {
+            selectedMesh.material = selectedMesh.material.clone();
+            selectedMesh.userData.hasUniqueInstance = true;
+        }
         
         // Store original emissive color and highlight the selection
         if (!selectedMesh.userData.originalEmissive && selectedMesh.material.emissive) {
@@ -372,21 +384,8 @@ function updateSelectedMeshColor() {
     const color = document.getElementById('llm-color').value;
     
     if (selectedMesh && selectedMesh.material) {
-        // Update just the selected mesh's color
-        selectedMesh.material.color.set(color);
-        
-        // Also update emissive with a toned down version of the color
-        if (selectedMesh.material.emissive) {
-            // Store the highlight for selection state
-            if (!selectedMesh.userData.originalEmissive) {
-                selectedMesh.userData.originalEmissive = new THREE.Color(color).multiplyScalar(0.2);
-            } else {
-                selectedMesh.userData.originalEmissive.set(new THREE.Color(color).multiplyScalar(0.2));
-            }
-            
-            // Keep the highlight if it's selected
-            selectedMesh.material.emissive.set(0x333333);
-        }
+        // Use the color manager to apply color only to the selected mesh
+        applyColorToMesh(selectedMesh, color);
     } else {
         // If no mesh is selected, fall back to the original behavior
         updateHumanoidPreview();
