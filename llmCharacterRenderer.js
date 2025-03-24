@@ -49,6 +49,7 @@ function createStandardModel(THREE, llm) {
         new THREE.BoxGeometry(0.4, 0.4, 0.4),
         materials.headMaterial
     );
+    headMain.name = "Head";
     head.add(headMain);
     
     // Eyes
@@ -56,10 +57,12 @@ function createStandardModel(THREE, llm) {
     
     const leftEye = new THREE.Mesh(eyeGeometry, materials.eyeMaterial);
     leftEye.position.set(-0.1, 0.05, 0.2);
+    leftEye.name = "Left Eye";
     head.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, materials.eyeMaterial);
     rightEye.position.set(0.1, 0.05, 0.2);
+    rightEye.name = "Right Eye";
     head.add(rightEye);
     
     // Antenna

@@ -363,12 +363,11 @@ function animateCarousel() {
             // Find the ring and lights
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData.isSelectionRing) {
-                    // Pulse the ring size slightly but keep it fixed at the same Y position
+                    // Pulse the ring size slightly
                     indicator.scale.x = indicator.scale.z = 1 + Math.sin(time * 2) * 0.05;
                     
-                    // Calculate a floor-relative position that doesn't bob with the model
-                    // Fix the ring to always be just above the floor regardless of model position
-                    indicator.position.y = -0.99 - model.position.y;
+                    // Keep the ring at a fixed Y position that never goes below the floor
+                    indicator.position.y = -0.99;
                 }
                 
                 if (indicator.userData.isSelectionHighlight) {
