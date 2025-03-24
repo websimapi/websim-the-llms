@@ -21,6 +21,8 @@ export function setupLLMCreationInterface(llmToEdit) {
         delete statusElement.dataset.generatedCode;
     }
     customCharacter = null;
+    window.customCharacter = null;
+    window.robotModel = null;
     
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
@@ -209,6 +211,7 @@ async function handleGenerateCharacter() {
         
         // Create the new character
         customCharacter = createCustomCharacter(THREE, generatedCode);
+        window.customCharacter = customCharacter; // Make globally accessible for saving
         humanoidScene.add(customCharacter);
         
         statusElement.textContent = "Character generated successfully!";
@@ -533,6 +536,7 @@ function createRobotModel() {
     
     // Add robot to scene
     robotModel = robotGroup;
+    window.robotModel = robotModel; // Make globally accessible for saving
     humanoidScene.add(robotModel);
 }
 
@@ -586,17 +590,6 @@ function handleMeshSelection(event) {
         if (selectedMesh.material.color) {
             const hexColor = '#' + selectedMesh.material.color.getHexString();
             document.getElementById('llm-color').value = hexColor;
-            
-            // Store the part's unique identifier and its color
-            if (!selectedMesh.userData.partId) {
-                // Generate a unique ID for this part if it doesn't have one
-                selectedMesh.userData.partId = selectedMesh.uuid.substring(0, 8);
-            }
-            
-            // Store this part's color change
-            if (typeof storePartColor === 'function') {
-                storePartColor(selectedMesh.userData.partId, hexColor);
-            }
         }
     } else {
         // Unhighlight if clicked elsewhere
@@ -683,16 +676,6 @@ function updateSelectedMeshColor() {
         // Update just the selected mesh's color
         selectedMesh.material.color.set(color);
         
-        // Store the part's unique identifier and its color
-        if (!selectedMesh.userData.partId) {
-            selectedMesh.userData.partId = selectedMesh.uuid.substring(0, 8);
-        }
-        
-        // Store this part's color change using our storage utility
-        if (typeof storePartColor === 'function') {
-            storePartColor(selectedMesh.userData.partId, color);
-        }
-        
         // Also update emissive with a toned down version of the color
         if (selectedMesh.material.emissive) {
             // Store the highlight for selection state
@@ -751,11 +734,6 @@ function resetForm() {
     document.getElementById('llm-color').value = '#3cb371';
     document.getElementById('llm-style').selectedIndex = 0;
     document.getElementById('llm-custom-prompt').value = '';
-    
-    // Clear stored part colors if function exists
-    if (typeof clearStoredPartColors === 'function') {
-        clearStoredPartColors();
-    }
     
     // Reset attributes
     attributeSystem.initializeAttributes();

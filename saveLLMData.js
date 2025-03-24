@@ -1,6 +1,7 @@
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { attributeSystem } from './attributeSystem.js';
+import { llmColorManager } from './llmColorManager.js';
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
@@ -23,13 +24,8 @@ export function saveLLMData() {
         customPrompt,
         attributes,
         customCharacterCode: null,
-        customPartColors: {} // Add storage for custom part colors
+        meshColors: null
     };
-    
-    // Get custom part colors if available
-    if (typeof getStoredPartColors === 'function') {
-        llmData.customPartColors = getStoredPartColors();
-    }
     
     // If we have a custom character, save its code
     const statusElement = document.getElementById('generation-status');
@@ -38,6 +34,13 @@ export function saveLLMData() {
         console.log("Saved custom character code:", llmData.customCharacterCode.substring(0, 50) + "...");
     } else {
         console.log("No custom character code found to save");
+    }
+    
+    // Save mesh colors from the current model in the viewport
+    if (window.robotModel) {
+        llmData.meshColors = llmColorManager.saveMeshColors(window.robotModel);
+    } else if (window.customCharacter) {
+        llmData.meshColors = llmColorManager.saveMeshColors(window.customCharacter);
     }
     
     // Check if we're in edit mode
