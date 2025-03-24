@@ -114,38 +114,6 @@
     }
 }
 
-/* Make color picker larger for better interaction */
-.color-input {
-    width: 80px !important;
-    height: 60px !important;
-    padding: 0 !important;
-    border: 3px solid #555;
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background-color: currentColor;
-}
-
-.color-input:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(60, 179, 113, 0.5);
-}
-
-.color-input::-webkit-color-swatch-wrapper {
-    padding: 0;
-}
-
-.color-input::-webkit-color-swatch {
-    border: none;
-    border-radius: 7px;
-}
-
-.color-input::-moz-color-swatch {
-    border: none;
-    border-radius: 7px;
-}
-
 /* Add compact mode class */
 .compact-mode .settings-group {
     padding: 8px;

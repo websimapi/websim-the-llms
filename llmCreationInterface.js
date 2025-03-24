@@ -279,6 +279,9 @@ function handleMeshSelection(event) {
     // Find intersections
     const intersects = raycaster.intersectObjects(meshes);
     
+    // Get the selected mesh name display element
+    const selectedMeshNameEl = document.getElementById('selected-mesh-name');
+    
     if (intersects.length > 0) {
         // Unhighlight previous selection
         if (selectedMesh && selectedMesh.userData.originalEmissive) {
@@ -300,6 +303,12 @@ function handleMeshSelection(event) {
             const hexColor = '#' + selectedMesh.material.color.getHexString();
             document.getElementById('llm-color').value = hexColor;
         }
+        
+        // Update the selected mesh name display
+        if (selectedMeshNameEl) {
+            selectedMeshNameEl.textContent = selectedMesh.name || `Part ${meshes.indexOf(selectedMesh) + 1}`;
+            selectedMeshNameEl.classList.remove('hidden');
+        }
     } else {
         // Unhighlight if clicked elsewhere
         if (selectedMesh && selectedMesh.userData.originalEmissive) {
@@ -307,6 +316,11 @@ function handleMeshSelection(event) {
             delete selectedMesh.userData.originalEmissive;
         }
         selectedMesh = null;
+        
+        // Hide the selected mesh name
+        if (selectedMeshNameEl) {
+            selectedMeshNameEl.classList.add('hidden');
+        }
     }
 }
 
