@@ -140,7 +140,12 @@ function setupEditableValue(elementId, axis, mode) {
     element.style.cursor = 'text';
     element.title = 'Click to edit value';
     
-    element.addEventListener('click', function() {
+    element.addEventListener('click', function(event) {
+        // If an input is already active, don't create a new one
+        if (this.querySelector('input')) {
+            return;
+        }
+        
         // Create an input field
         const currentValue = parseFloat(this.textContent);
         const input = document.createElement('input');
@@ -162,8 +167,13 @@ function setupEditableValue(elementId, axis, mode) {
         input.focus();
         input.select();
         
+        // Stop propagation to prevent immediate blur
+        event.stopPropagation();
+        
         // Handle input completion
         function completeEdit() {
+            if (!input.parentNode) return; // Already removed
+            
             let newValue = parseFloat(input.value);
             if (isNaN(newValue)) {
                 newValue = currentValue;
@@ -171,6 +181,11 @@ function setupEditableValue(elementId, axis, mode) {
             applyManualValue(newValue, axis, mode);
             element.textContent = newValue.toFixed(2);
         }
+        
+        // Add click handler to the input to prevent propagation
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
         
         input.addEventListener('blur', completeEdit);
         input.addEventListener('keydown', function(e) {
