@@ -61,9 +61,12 @@ export function saveLLMData() {
     const isEditMode = createUI.getAttribute('data-edit-mode') === 'true';
     const editId = createUI.getAttribute('data-edit-id');
     
+    let savedLLMId;
+    
     if (isEditMode && editId) {
         // Update existing LLM
         llmData.id = editId;
+        savedLLMId = editId;
         const existingLLM = llmDataManager.getLLMById(editId);
         if (existingLLM) {
             llmData.createdAt = existingLLM.createdAt;
@@ -78,15 +81,15 @@ export function saveLLMData() {
         } else {
             console.error("Could not find LLM with ID:", editId);
             // Fall back to adding as new
-            llmDataManager.addLLM(llmData);
+            savedLLMId = llmDataManager.addLLM(llmData);
         }
     } else {
         // Save as new LLM
         console.log('Adding new LLM with style:', llmData.style);
-        llmDataManager.addLLM(llmData);
+        savedLLMId = llmDataManager.addLLM(llmData);
     }
     
     // Close creation UI and show collection
     document.getElementById('create-llm-ui').classList.remove('active');
-    setupLLMCollectionView();
+    setupLLMCollectionView(savedLLMId); // Pass the saved LLM ID to select it
 }

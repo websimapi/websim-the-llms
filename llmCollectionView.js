@@ -8,7 +8,7 @@ import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId } fr
 
 let collectionAnimationId;
 
-export function setupLLMCollectionView() {
+export function setupLLMCollectionView(selectLLMId = null) {
     // Initialize the LLM data manager
     llmDataManager.init();
     
@@ -100,6 +100,13 @@ export function setupLLMCollectionView() {
                     }
                 });
             });
+            
+            // Select specific LLM if ID provided, otherwise select first one
+            if (selectLLMId) {
+                selectModel(selectLLMId);
+            } else if (llms.length > 0) {
+                selectModel(llms[0].id);
+            }
         }
     }, 100);
     
