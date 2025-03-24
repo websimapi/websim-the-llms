@@ -185,11 +185,6 @@ function updateCarouselModels() {
             model.rotation.y = position.rotation;
             model.userData = { id: llm.id, index: index };
             
-            // Add a selection indicator if this model is selected
-            if (llm.id === selectedModelId) {
-                addSelectionIndicator(model);
-            }
-            
             scene.add(model);
             llmModels.push(model);
         } catch (error) {
@@ -220,7 +215,7 @@ function displayEmptyState(viewportElement) {
 }
 
 function addSelectionIndicator(model) {
-    // Create a ring around the model - now using DOM elements for better performance
+    // Create a ring around the model - now using THREE.js objects for consistent rendering
     const ringGeometry = new THREE.RingGeometry(1.5, 1.7, 32);
     const ringMaterial = new THREE.MeshBasicMaterial({ 
         color: 0x3cb371,
@@ -266,8 +261,6 @@ export function selectModel(id) {
     // Find model with this ID
     const selectedModel = llmModels.find(model => model.userData.id === id);
     if (selectedModel) {
-        addSelectionIndicator(selectedModel);
-        
         // Find the index of the selected LLM
         const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
         if (llmIndex !== -1 && llmIndex !== currentIndex) {
@@ -341,21 +334,36 @@ function animateCarousel() {
         const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
         model.rotation.y = baseRotation + Math.sin(time * 0.5 + offset) * 0.1;
         
-        // Animate selection indicators if present
-        if (model.userData.selectionIndicators) {
-            // Find the ring and lights
-            model.userData.selectionIndicators.forEach(indicator => {
-                if (indicator.userData.isSelectionRing) {
-                    // Pulse the ring size slightly
-                    const scale = 1 + Math.sin(time * 2) * 0.05;
-                    indicator.scale.set(scale, scale, scale);
-                }
-                
-                if (indicator.userData.isSelectionHighlight) {
-                    // Pulse the light intensity
-                    indicator.intensity = 1 + Math.sin(time * 2) * 0.3;
-                }
-            });
+        // Check if this model should have selection indicators
+        if (model.userData.id === selectedModelId) {
+            // If it doesn't have selection indicators, add them
+            if (!model.userData.selectionIndicators) {
+                addSelectionIndicator(model);
+            }
+            
+            // Animate the existing selection indicators
+            if (model.userData.selectionIndicators) {
+                model.userData.selectionIndicators.forEach(indicator => {
+                    if (indicator.userData.isSelectionRing) {
+                        // Pulse the ring size slightly
+                        const scale = 1 + Math.sin(time * 2) * 0.05;
+                        indicator.scale.set(scale, scale, scale);
+                    }
+                    
+                    if (indicator.userData.isSelectionHighlight) {
+                        // Pulse the light intensity
+                        indicator.intensity = 1 + Math.sin(time * 2) * 0.3;
+                    }
+                });
+            }
+        } else {
+            // If this model has selection indicators but shouldn't, remove them
+            if (model.userData.selectionIndicators) {
+                model.userData.selectionIndicators.forEach(indicator => {
+                    model.remove(indicator);
+                });
+                delete model.userData.selectionIndicators;
+            }
         }
     });
 
