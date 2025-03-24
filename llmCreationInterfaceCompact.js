@@ -177,29 +177,3 @@ export async function handleGenerateCharacter(generatingCharacter, setGenerating
         generateBtn.disabled = false;
     }
 }
-
-export function setupLLMCreationInterface(llmToEdit) {
-    // ... existing code ...
-    
-    // If editing an existing LLM, load its attributes
-    if (llmToEdit && llmToEdit.attributes) {
-        // ... existing code ...
-        
-        // If there's a profile image URL, update the profile image display
-        if (llmToEdit.profileImageUrl) {
-            const statusElement = document.getElementById('generation-status');
-            if (statusElement) {
-                statusElement.dataset.profileImageUrl = llmToEdit.profileImageUrl;
-            }
-            
-            // Wait for profile image UI to be created before updating
-            setTimeout(() => {
-                import('./llmProfileImageUI.js').then(module => {
-                    module.updateProfileImageDisplay(llmToEdit.profileImageUrl);
-                });
-            }, 200);
-        }
-    }
-    
-    // ... existing code ...
-}
