@@ -126,18 +126,39 @@ function setupPreviewPanelHandlers(container) {
     
     // Save button updates the form data but doesn't close the panel
     const saveButton = document.getElementById('save-profile-image');
-    saveButton.addEventListener('click', () => {
-        // Store the current image URL in the form data
-        const statusElement = document.getElementById('generation-status');
-        if (statusElement && lastGeneratedImageUrl) {
-            statusElement.dataset.profileImageUrl = lastGeneratedImageUrl;
-            
-            // Show the profile image in the editor
-            updateProfileImageDisplay(lastGeneratedImageUrl);
-        }
+    saveButton.addEventListener('click', saveProfileImage);
+}
+
+// Add this new function to the file
+export function saveProfileImage() {
+    const imageElement = document.getElementById('profile-image-preview');
+    if (!imageElement || !imageElement.src) {
+        console.error("No image available to save");
+        return;
+    }
+    
+    // Store URL in the status element for when the LLM is saved
+    const statusElement = document.getElementById('generation-status');
+    if (statusElement) {
+        statusElement.dataset.profileImageUrl = imageElement.src;
         
+        // Dispatch event for other components to react to
+        const event = new CustomEvent('profileImageSaved', { 
+            detail: { url: imageElement.src }
+        });
+        document.dispatchEvent(event);
+    }
+    
+    // Add animation effect to the container
+    const container = document.getElementById('profile-image-preview-container');
+    if (container) {
         container.classList.add('saved');
         setTimeout(() => container.classList.remove('saved'), 1000);
+    }
+    
+    // Update display in appearance tab
+    import('./llmProfileImageDisplay.js').then(module => {
+        module.updateProfileImageDisplay(imageElement.src);
     });
 }
 
@@ -157,30 +178,3 @@ function showGenerationError(message) {
         </div>
     `;
 }
-
-// New function to display the profile image in the editor
-function updateProfileImageDisplay(imageUrl) {
-    let profileDisplay = document.getElementById('editor-profile-display');
-    
-    // Create profile display if it doesn't exist
-    if (!profileDisplay) {
-        profileDisplay = document.createElement('div');
-        profileDisplay.id = 'editor-profile-display';
-        profileDisplay.className = 'editor-profile-display';
-        
-        // Add to the editor near the name field
-        const nameField = document.getElementById('llm-name');
-        if (nameField) {
-            const settingItem = nameField.closest('.setting-item');
-            if (settingItem) {
-                settingItem.appendChild(profileDisplay);
-            }
-        }
-    }
-    
-    // Update the image
-    profileDisplay.innerHTML = `<img src="${imageUrl}" alt="Profile">`;
-    profileDisplay.style.display = 'block';
-}
-
-export { setupProfileImageCapture, updateProfileImageDisplay };

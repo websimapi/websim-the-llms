@@ -126,6 +126,16 @@ export function setupProfileImageUI() {
     });
 }
 
+// New function to initialize profile image UI in the appearance tab
+export function setupProfileImageAppearance() {
+    // Import and setup the profile image display in appearance tab
+    import('./llmProfileImageDisplay.js').then(module => {
+        module.setupProfileImageInAppearance();
+    }).catch(error => {
+        console.error("Error setting up profile image appearance:", error);
+    });
+}
+
 // Character generation handler - moved from llmCreationInterface.js
 export async function handleGenerateCharacter(generatingCharacter, setGeneratingCharacter) {
     if (generatingCharacter) return;

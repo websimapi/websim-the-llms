@@ -186,6 +186,66 @@
     background-color: #2a8c5a;
 }
 
+/* Profile image display in appearance tab */
+.profile-image-display {
+    margin-top: 10px;
+}
+
+.profile-image-header {
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.profile-image-container {
+    width: 100%;
+    height: 150px;
+    background-color: #222;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.profile-image-placeholder {
+    color: #666;
+    text-align: center;
+    font-size: 0.9rem;
+    padding: 15px;
+}
+
+.profile-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* LLM list profile images */
+.llm-list-item.with-image {
+    grid-template-columns: auto 1fr auto;
+    display: grid;
+    gap: 15px;
+}
+
+.llm-list-image-container {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.llm-list-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 /* Mobile responsiveness */
 @media screen and (max-width: 768px) {
     .profile-image-preview-container {
@@ -195,5 +255,10 @@
     .camera-button {
         bottom: 10px;
         right: 10px;
+    }
+    
+    .llm-list-image-container {
+        width: 50px;
+        height: 50px;
     }
 }

@@ -52,10 +52,6 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 llmItem.className = 'llm-list-item';
                 llmItem.setAttribute('data-id', llm.id);
                 llmItem.innerHTML = `
-                    <div class="llm-profile-img">
-                        ${llm.profileImageUrl ? `<img src="${llm.profileImageUrl}" alt="${llm.name}">` : 
-                        `<div class="profile-placeholder">${llm.name.charAt(0).toUpperCase()}</div>`}
-                    </div>
                     <div class="llm-info">
                         <h3>${llm.name}</h3>
                         <p class="llm-type">${llm.model}</p>
@@ -86,6 +82,11 @@ export function setupLLMCollectionView(selectLLMId = null) {
             
             // Setup carousel
             setupLLMCarousel(collectionViewport, llms);
+            
+            // Add profile images to the list items
+            import('./llmProfileImageDisplay.js').then(module => {
+                module.addProfileImagesToLLMList();
+            });
             
             // Add click event to viewport for model selection
             collectionViewport.addEventListener('click', handleViewportClick);

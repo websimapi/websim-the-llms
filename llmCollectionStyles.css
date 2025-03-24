@@ -51,13 +51,27 @@
 
 /* Selection styling for LLM list */
 .llm-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.llm-list-item.with-image {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 15px;
+    align-items: center;
+}
+
+.llm-info {
+    flex: 1;
+}
+
+.llm-list-item {
     background-color: #333;
     border-radius: 5px;
     padding: 15px;
     margin-bottom: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     border-left: 3px solid transparent;
     transition: all 0.2s ease;
     cursor: pointer;

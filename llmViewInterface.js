@@ -64,20 +64,6 @@ function updateDetailsPanel(llm) {
     modelEl.textContent = llm.model;
     createdAtEl.textContent = new Date(llm.createdAt).toLocaleDateString();
     
-    // Add profile image if available
-    if (llm.profileImageUrl) {
-        // Check if profile image container exists
-        let profileContainer = document.querySelector('.llm-detail-profile');
-        if (!profileContainer) {
-            profileContainer = document.createElement('div');
-            profileContainer.className = 'llm-detail-profile';
-            // Insert after name
-            nameEl.parentNode.insertBefore(profileContainer, nameEl.nextSibling);
-        }
-        
-        profileContainer.innerHTML = `<img src="${llm.profileImageUrl}" alt="${llm.name}">`;
-    }
-    
     // Add edit button if it doesn't exist
     if (!document.querySelector('.edit-llm-btn')) {
         const editButton = document.createElement('button');

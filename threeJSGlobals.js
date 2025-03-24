@@ -53,3 +53,8 @@ export function getModels() {
         customCharacter: customCharacter
     };
 }
+
+// Return true if all required Three.js globals are available
+export function checkGlobalsAvailable() {
+    return Boolean(currentHumanoidScene && humanoidCamera && humanoidRenderer);
+}

@@ -87,13 +87,6 @@ export function setupLLMCreationInterface(llmToEdit) {
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
         document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
         
-        // Display profile image if available
-        if (llmToEdit.profileImageUrl) {
-            import('./llmProfileImageUI.js').then(module => {
-                module.updateProfileImageDisplay(llmToEdit.profileImageUrl);
-            });
-        }
-        
         // Store the edit ID on the form
         const createUI = document.getElementById('create-llm-ui');
         createUI.setAttribute('data-edit-mode', 'true');
@@ -126,6 +119,7 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Setup profile image UI with camera button
     import('./llmCreationInterfaceCompact.js').then(module => {
         module.setupProfileImageUI();
+        module.setupProfileImageAppearance();
     });
     
     // Wait a short moment for the UI to render before optimizing
