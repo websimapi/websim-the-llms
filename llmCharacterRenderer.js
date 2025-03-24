@@ -194,4 +194,3 @@ function createStandardModel(THREE, llm) {
     
     return group;
 }
-

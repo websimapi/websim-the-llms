@@ -571,46 +571,11 @@ function updateHumanoidPreview() {
     bodyMaterial = materials.bodyMaterial;
     limbsMaterial = materials.limbsMaterial;
     
-    // Update all materials in the robot model
-    robotModel.traverse(child => {
-        if (child.isMesh) {
-            // Determine which material to use based on the mesh position or role
-            if (child.position.y > 1.7) {
-                // Head parts
-                child.material = materials.headMaterial;
-            } else if (child.position.y < 0.0) {
-                // Feet
-                child.material = materials.limbsMaterial;
-            } else if (child.geometry.type === 'CircleGeometry') {
-                // Chest light
-                child.material = materials.chestLightMaterial;
-            } else if (child.geometry.type === 'SphereGeometry') {
-                if (child.scale.x < 0.1) {
-                    // Antenna tip
-                    child.material = materials.antennaTipMaterial; 
-                } else if (child.position.y < 1.0) {
-                    // Hands
-                    child.material = materials.headMaterial;
-                } else if (child.position.z > 0.1) {
-                    // Eyes
-                    child.material = materials.eyeMaterial;
-                }
-            } else if (child.geometry.type === 'CylinderGeometry') {
-                // Arms, legs, neck
-                child.material = materials.limbsMaterial;
-            } else if (child.geometry.type === 'BoxGeometry') {
-                if (child.position.y > 1.0) {
-                    // Torso
-                    child.material = materials.bodyMaterial;
-                } else {
-                    // Hip or lower parts
-                    child.material = (child.position.y > 0.6) 
-                        ? materials.bodyMaterial 
-                        : materials.limbsMaterial;
-                }
-            }
-        }
-    });
+    // Remove existing robot model and create a new one with updated materials
+    if (robotModel.parent) {
+        robotModel.parent.remove(robotModel);
+    }
+    createRobotModel();
 }
 
 function updateSelectedMeshColor() {

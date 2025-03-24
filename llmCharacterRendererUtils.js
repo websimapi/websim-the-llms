@@ -48,7 +48,7 @@ export function createStandardMaterials(color, style) {
     });
     
     const limbsMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0x444444),
+        color: threeColor.clone().multiplyScalar(0.6),
         emissive: threeColor.clone().multiplyScalar(0.1),
         emissiveIntensity: emissiveIntensity,
         metalness: metalness + 0.3,
