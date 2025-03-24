@@ -1,4 +1,5 @@
 import { captureModelSnapshot, generateProfileImage } from './llmProfileImageGenerator.js';
+import { getGlobalReferences } from './threeJSGlobals.js';
 
 let lastGeneratedImageUrl = null;
 
@@ -64,10 +65,8 @@ async function handleCaptureButtonClick() {
                         "A 3D character model";
     
     try {
-        // Access the Three.js scene, camera and renderer from the global scope
-        const scene = window.currentHumanoidScene;
-        const camera = window.humanoidCamera;
-        const renderer = window.humanoidRenderer;
+        // Get Three.js objects from our global reference manager
+        const { scene, camera, renderer } = getGlobalReferences();
         
         if (!scene || !camera || !renderer) {
             throw new Error("3D scene not available");

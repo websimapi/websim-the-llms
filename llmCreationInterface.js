@@ -10,6 +10,7 @@ import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips
 import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGenerateCharacter } from './llmCreationInterfaceCompact.js';
 import { prepareModelForIndividualColoring, applyColorToMesh } from './llmMeshColorManager.js';
 import { initMeshManipulator, updateManipulationDisplays } from './llmMeshManipulator.js';
+import { setGlobalReferences, setModels, setSelectedMesh } from './threeJSGlobals.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -172,6 +173,9 @@ function initHumanoidPreview(llmToEdit) {
     humanoidRenderer.shadowMap.enabled = true;
     viewport.appendChild(humanoidRenderer.domElement);
     
+    // Set global references
+    setGlobalReferences(humanoidScene, humanoidCamera, humanoidRenderer);
+    
     // Add click event listener for mesh selection
     humanoidRenderer.domElement.addEventListener('click', handleMeshSelection);
     
@@ -249,6 +253,9 @@ function createDefaultRobot(llmToEdit) {
     // Create the robot model using the imported function
     const result = createRobotModel(humanoidScene, color, style);
     robotModel = result.model;
+    
+    // Update global references
+    setModels(robotModel, null);
     
     // Prepare the model for individual part coloring
     prepareModelForIndividualColoring(robotModel);
@@ -358,6 +365,7 @@ function handleMeshSelection(event) {
         }
         
         window.selectedMesh = selectedMesh;
+        setSelectedMesh(selectedMesh);
         updateManipulationDisplays();
     } else {
         // Unhighlight if clicked elsewhere
@@ -373,6 +381,7 @@ function handleMeshSelection(event) {
         }
         
         window.selectedMesh = null;
+        setSelectedMesh(null);
         
         // Hide manipulation controls when nothing is selected
         const manipulationControls = document.querySelector('.manipulation-controls');

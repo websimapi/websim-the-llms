@@ -1,0 +1,55 @@
+// Central place to manage global references to Three.js objects
+let currentHumanoidScene = null;
+let humanoidCamera = null;
+let humanoidRenderer = null;
+let selectedMesh = null;
+let robotModel = null;
+let customCharacter = null;
+
+// Export functions to set and get global references
+export function setGlobalReferences(scene, camera, renderer) {
+    currentHumanoidScene = scene;
+    humanoidCamera = camera;
+    humanoidRenderer = renderer;
+    
+    // Also set window variables for backward compatibility
+    window.currentHumanoidScene = scene;
+    window.humanoidCamera = camera;
+    window.humanoidRenderer = renderer;
+}
+
+export function getGlobalReferences() {
+    return {
+        scene: currentHumanoidScene,
+        camera: humanoidCamera,
+        renderer: humanoidRenderer
+    };
+}
+
+export function setSelectedMesh(mesh) {
+    selectedMesh = mesh;
+    window.selectedMesh = mesh;
+}
+
+export function getSelectedMesh() {
+    return selectedMesh;
+}
+
+export function setModels(robot, custom) {
+    if (robot) {
+        robotModel = robot;
+        window.robotModel = robot;
+    }
+    
+    if (custom) {
+        customCharacter = custom;
+        window.customCharacter = custom;
+    }
+}
+
+export function getModels() {
+    return {
+        robotModel: robotModel,
+        customCharacter: customCharacter
+    };
+}
