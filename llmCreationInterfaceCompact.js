@@ -124,53 +124,6 @@ export function resetFormAttributes() {
     }
 }
 
-// New function to add profile image to editor
-export function addProfileImageToEditor() {
-    const basicInfoGroup = document.querySelector('.settings-group:first-child');
-    if (!basicInfoGroup) return;
-    
-    // Check if profile image container already exists
-    if (basicInfoGroup.querySelector('.profile-image-display')) {
-        return; // Don't create duplicate containers
-    }
-    
-    // Create profile image container
-    const profileImageContainer = document.createElement('div');
-    profileImageContainer.className = 'profile-image-display';
-    profileImageContainer.innerHTML = `
-        <div class="profile-image-placeholder">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#555"/>
-            </svg>
-        </div>
-        <img class="profile-image hidden" alt="LLM Profile">
-    `;
-    
-    // Insert before the name input
-    const firstSettingItem = basicInfoGroup.querySelector('.setting-item');
-    basicInfoGroup.insertBefore(profileImageContainer, firstSettingItem);
-    
-    // Check if we have a stored image URL
-    const statusElement = document.getElementById('generation-status');
-    if (statusElement && statusElement.dataset.profileImageUrl) {
-        updateProfileImageDisplay(statusElement.dataset.profileImageUrl);
-    }
-}
-
-// Update profile image display in the editor
-export function updateProfileImageDisplay(imageUrl) {
-    if (!imageUrl) return;
-    
-    const placeholder = document.querySelector('.profile-image-placeholder');
-    const profileImage = document.querySelector('.profile-image');
-    
-    if (placeholder && profileImage) {
-        profileImage.src = imageUrl;
-        profileImage.classList.remove('hidden');
-        placeholder.classList.add('hidden');
-    }
-}
-
 // New function to initialize profile image UI
 export function setupProfileImageUI() {
     // Import and setup the profile image capture functionality
