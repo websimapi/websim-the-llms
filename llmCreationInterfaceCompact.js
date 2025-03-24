@@ -129,6 +129,12 @@ export function setupProfileImageUI() {
     // Import and setup the profile image capture functionality
     import('./llmProfileImageUI.js').then(module => {
         module.setupProfileImageCapture();
+        
+        // Check if we have a stored image URL right away
+        const statusElement = document.getElementById('generation-status');
+        if (statusElement && statusElement.dataset.profileImageUrl) {
+            module.updateProfileImageDisplay(statusElement.dataset.profileImageUrl);
+        }
     }).catch(error => {
         console.error("Error setting up profile image capture:", error);
     });
