@@ -9,6 +9,9 @@
     .settings-group-title {
         font-size: 1rem;
         margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     
     /* Smaller margins between setting items */
@@ -116,6 +119,16 @@
         min-height: 60px;
     }
     
+    /* Make custom design section more compact */
+    .settings-group:nth-child(2) {
+        margin-bottom: 10px;
+        padding: 10px 12px;
+    }
+    
+    .settings-group:nth-child(2) .setting-item:last-child {
+        margin-bottom: 0;
+    }
+    
     /* Optimize create LLM UI layout to reduce height */
     .create-llm-sidebar {
         display: flex;
@@ -124,10 +137,22 @@
         overflow-y: auto;
     }
     
+    /* Adjust generate button to be more compact */
+    #generate-character-btn {
+        padding: 8px 12px;
+        margin-top: 5px;
+    }
+    
     /* Enlarge color picker */
     .color-input {
         width: 100px !important;
         height: 60px !important;
         border-radius: 5px;
+    }
+    
+    /* Make textarea smaller in compact mode */
+    .compact-mode #llm-custom-prompt {
+        min-height: 40px;
+        max-height: 60px;
     }
 }

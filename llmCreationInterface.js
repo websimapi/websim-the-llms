@@ -7,6 +7,7 @@ import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { createRobotModel } from './llmModelCreationRenderer.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
+import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGenerateCharacter } from './llmCreationInterfaceCompact.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -47,17 +48,40 @@ export function setupLLMCreationInterface(llmToEdit) {
     
     // Add event listeners for form elements that should update the humanoid preview
     document.getElementById('llm-color').addEventListener('input', updateSelectedMeshColor);
-    document.getElementById('llm-style').addEventListener('change', updateHumanoidPreview);
     
     // Setup character generation button
     const generateBtn = document.getElementById('generate-character-btn');
-    generateBtn.addEventListener('click', handleGenerateCharacter);
+    generateBtn.addEventListener('click', () => {
+        // Using the moved handleGenerateCharacter function with a callback for state
+        handleGenerateCharacter(generatingCharacter, (state) => {
+            generatingCharacter = state;
+        }).then(result => {
+            if (result && result.success) {
+                // Remove previous custom character if it exists
+                if (customCharacter && customCharacter.parent) {
+                    customCharacter.parent.remove(customCharacter);
+                }
+                
+                // Remove default robot if it exists
+                if (robotModel && robotModel.parent) {
+                    robotModel.parent.remove(robotModel);
+                    robotModel = null;
+                }
+                
+                // Create the new character
+                customCharacter = createCustomCharacter(THREE, result.code);
+                humanoidScene.add(customCharacter);
+                
+                const statusElement = document.getElementById('generation-status');
+                statusElement.textContent = "Character generated successfully!";
+            }
+        });
+    });
     
     // Set form values from existing LLM if editing
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
-        document.getElementById('llm-style').value = llmToEdit.style || 'modern';
         document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
         
         // Store the edit ID on the form
@@ -104,149 +128,6 @@ export function setupLLMCreationInterface(llmToEdit) {
             module.optimizeUIHeight();
         });
     });
-}
-
-// Function to render the attribute grid
-function renderAttributeGrid() {
-    const gridContainer = document.getElementById('attribute-grid');
-    gridContainer.innerHTML = '';
-    
-    const attributesArray = attributeSystem.getAttributesArray();
-    
-    attributesArray.forEach(attr => {
-        const item = document.createElement('div');
-        item.className = 'attribute-item';
-        
-        const header = document.createElement('div');
-        header.className = 'attribute-header';
-        
-        const name = document.createElement('div');
-        name.className = 'attribute-name';
-        name.textContent = attr.name;
-        
-        const controls = document.createElement('div');
-        controls.className = 'attribute-controls';
-        
-        const decBtn = document.createElement('button');
-        decBtn.className = 'attribute-button';
-        decBtn.textContent = '-';
-        decBtn.disabled = attr.value <= 0;
-        decBtn.onclick = () => {
-            if (attributeSystem.decrementAttribute(attr.name)) {
-                renderAttributeGrid();
-                updatePointsDisplay();
-            }
-        };
-        
-        const value = document.createElement('span');
-        value.className = 'attribute-value-text';
-        value.textContent = attr.value;
-        
-        const incBtn = document.createElement('button');
-        incBtn.className = 'attribute-button';
-        incBtn.textContent = '+';
-        incBtn.disabled = attributeSystem.getRemainingPoints() <= 0 || 
-                           attr.value >= attributeSystem.maxPointsPerAttribute;
-        incBtn.onclick = () => {
-            if (attributeSystem.incrementAttribute(attr.name)) {
-                renderAttributeGrid();
-                updatePointsDisplay();
-            }
-        };
-        
-        controls.appendChild(decBtn);
-        controls.appendChild(value);
-        controls.appendChild(incBtn);
-        
-        header.appendChild(name);
-        header.appendChild(controls);
-        
-        const valueBar = document.createElement('div');
-        valueBar.className = 'attribute-value';
-        
-        const valueFill = document.createElement('div');
-        valueFill.className = 'attribute-fill';
-        valueFill.style.width = `${(attr.value / attributeSystem.maxPointsPerAttribute) * 100}%`;
-        
-        valueBar.appendChild(valueFill);
-        
-        const description = document.createElement('div');
-        description.className = 'attribute-description';
-        description.textContent = attr.description;
-        
-        item.appendChild(header);
-        item.appendChild(valueBar);
-        item.appendChild(description);
-        
-        gridContainer.appendChild(item);
-    });
-    
-    // Setup attribute tooltips - this is now handled after rendering
-    // by the optimizeUIHeight and setupAttributeTooltips functions imported above
-}
-
-// Function to update points display
-function updatePointsDisplay() {
-    const pointsDisplay = document.getElementById('points-remaining');
-    const remaining = attributeSystem.getRemainingPoints();
-    pointsDisplay.textContent = `${remaining} Points Remaining`;
-    
-    // Change color based on points remaining
-    if (remaining <= 3) {
-        pointsDisplay.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
-    } else if (remaining <= 7) {
-        pointsDisplay.style.backgroundColor = 'rgba(255, 165, 0, 0.2)';
-    } else {
-        pointsDisplay.style.backgroundColor = 'rgba(60, 179, 113, 0.2)';
-    }
-}
-
-async function handleGenerateCharacter() {
-    if (generatingCharacter) return;
-    
-    const promptInput = document.getElementById('llm-custom-prompt');
-    const userPrompt = promptInput.value.trim();
-    const statusElement = document.getElementById('generation-status');
-    const generateBtn = document.getElementById('generate-character-btn');
-    
-    if (userPrompt.length < 5) {
-        statusElement.textContent = "Please enter a more detailed description";
-        return;
-    }
-    
-    generatingCharacter = true;
-    statusElement.textContent = "Generating character...";
-    generateBtn.disabled = true;
-    
-    try {
-        const generatedCode = await generateCharacterCode(userPrompt);
-        
-        // Store the generated code for later use
-        statusElement.dataset.generatedCode = generatedCode;
-        
-        // Remove previous custom character if it exists
-        if (customCharacter && customCharacter.parent) {
-            customCharacter.parent.remove(customCharacter);
-        }
-        
-        // Remove default robot if it exists
-        if (robotModel && robotModel.parent) {
-            robotModel.parent.remove(robotModel);
-            robotModel = null;
-        }
-        
-        // Create the new character
-        customCharacter = createCustomCharacter(THREE, generatedCode);
-        humanoidScene.add(customCharacter);
-        
-        statusElement.textContent = "Character generated successfully!";
-    } catch (error) {
-        console.error("Failed to generate character:", error);
-        statusElement.textContent = "Failed to generate character. Try again with a different description.";
-    } finally {
-        generatingCharacter = false;
-        generateBtn.disabled = false;
-    }
 }
 
 function initHumanoidPreview(llmToEdit) {
@@ -344,11 +225,10 @@ function initHumanoidPreview(llmToEdit) {
     });
 }
 
-// New helper function to create default robot with proper model data application
 function createDefaultRobot(llmToEdit) {
     // Get current selected color or color from edit data
     const color = llmToEdit?.color || document.getElementById('llm-color').value;
-    const style = llmToEdit?.style || 'modern'; // Default style
+    const style = llmToEdit?.style || 'modern';
     
     // Create the robot model using the imported function
     const result = createRobotModel(humanoidScene, color, style);
@@ -431,10 +311,29 @@ function handleMeshSelection(event) {
 }
 
 function updateHumanoidPreview() {
-    // Import and use the function from the new module
-    import('./llmCreationUIUpdater.js').then(module => {
-        module.updateHumanoidPreviewStyle();
-    });
+    if (!robotModel) return;
+    
+    // If we have a custom character, don't update the default robot
+    if (customCharacter) return;
+    
+    // Get new color value
+    const color = document.getElementById('llm-color').value;
+    const style = 'modern';
+    
+    // Remove existing robot model
+    if (robotModel.parent) {
+        robotModel.parent.remove(robotModel);
+    }
+    
+    // Create a new robot with updated materials
+    const result = createRobotModel(humanoidScene, color, style);
+    robotModel = result.model;
+    window.robotModel = robotModel;
+    
+    // Update stored material references
+    headMaterial = result.materials.headMaterial;
+    bodyMaterial = result.materials.bodyMaterial;
+    limbsMaterial = result.materials.limbsMaterial;
 }
 
 function updateSelectedMeshColor() {
@@ -494,13 +393,26 @@ function animateHumanoid() {
 }
 
 function resetForm() {
-    // Import and use the function from the new module
-    import('./llmCreationUIUpdater.js').then(module => {
-        module.resetCreationForm();
-    });
+    // Reset name with random number
+    document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
+    
+    // Reset other form values
+    document.getElementById('llm-model').selectedIndex = 0;
+    document.getElementById('llm-color').value = '#3cb371';
+    document.getElementById('llm-custom-prompt').value = '';
+    
+    // Use imported reset function for attributes
+    resetFormAttributes();
+    
+    // Reset humanoid
+    if (customCharacter && customCharacter.parent) {
+        customCharacter.parent.remove(customCharacter);
+        customCharacter = null;
+    }
+    
+    if (!robotModel) {
+        createDefaultRobot();
+    } else {
+        updateHumanoidPreview();
+    }
 }
-
-// Make key functions available to the window for use by other modules
-window.renderAttributeGrid = renderAttributeGrid;
-window.updatePointsDisplay = updatePointsDisplay;
-window.createDefaultRobot = createDefaultRobot;

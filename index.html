@@ -112,12 +112,18 @@
                             <option value="companion">Companion</option>
                         </select>
                     </div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-color">Color (click on any body part to select it)</label>
+                        <div class="color-picker-container">
+                            <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
+                        </div>
+                    </div>
                 </div>
-                
+
                 <div class="settings-group">
                     <div class="settings-group-title">Custom Design</div>
                     <div class="setting-item">
-                        <label class="setting-label" for="llm-custom-prompt">AI Generated Character</label>
+                        <label class="setting-label" for="llm-custom-prompt">AI Generated Character Description</label>
                         <textarea id="llm-custom-prompt" class="setting-input" placeholder="Describe your character (e.g., 'A sleek silver robot with blue glowing eyes and antenna')"></textarea>
                     </div>
                     <div class="setting-item">
@@ -135,12 +141,6 @@
                 
                 <div class="settings-group">
                     <div class="settings-group-title">Appearance</div>
-                    <div class="setting-item">
-                        <label class="setting-label" for="llm-color">Color (click on any body part to select it)</label>
-                        <div class="color-picker-container">
-                            <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="create-llm-actions">
