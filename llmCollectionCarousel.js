@@ -233,13 +233,15 @@ function addSelectionIndicator(model) {
     // Remove any existing selection indicators first
     if (model.userData.selectionIndicators) {
         model.userData.selectionIndicators.forEach(indicator => {
-            if (indicator.parent) {
-                indicator.parent.remove(indicator);
+            if (indicator.parent === model) {
+                model.remove(indicator);
+            } else if (indicator.parent === scene) {
+                scene.remove(indicator);
             }
         });
     }
     
-    // Create a ring around the model - now using DOM elements for better performance
+    // Create a ring around the model
     const ringGeometry = new THREE.RingGeometry(1.5, 1.7, 32);
     const ringMaterial = new THREE.MeshBasicMaterial({ 
         color: 0x3cb371,
@@ -249,12 +251,14 @@ function addSelectionIndicator(model) {
     });
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.rotation.x = Math.PI / 2; // Flat on the ground
-    ring.position.y = -1; // Fixed position at ground level, not relative to model
+    ring.position.y = -0.99; // Fixed position just above ground level
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
-    scene.add(ring); // Add to scene directly instead of the model
-    ring.position.x = model.position.x; // Match the model's x position
-    ring.position.z = model.position.z; // Match the model's z position
+    scene.add(ring); // Add to scene instead of model
+    
+    // Position the ring under the model
+    ring.position.x = model.position.x;
+    ring.position.z = model.position.z;
     
     // Add a highlight effect
     const highlight = new THREE.PointLight(0x3cb371, 1, 3);
@@ -272,6 +276,7 @@ function addSelectionIndicator(model) {
     
     // Store a reference to the selection indicators
     model.userData.selectionIndicators = [ring, highlight, bottomLight];
+    model.userData.selectionRing = ring; // Store direct reference to ring
 }
 
 // Function to select a model by ID
@@ -308,12 +313,14 @@ function clearSelection() {
     llmModels.forEach(model => {
         if (model.userData.selectionIndicators) {
             model.userData.selectionIndicators.forEach(indicator => {
-                // Remove from the correct parent
-                if (indicator.parent) {
-                    indicator.parent.remove(indicator);
+                if (indicator.parent === model) {
+                    model.remove(indicator);
+                } else if (indicator.parent === scene) {
+                    scene.remove(indicator);
                 }
             });
             delete model.userData.selectionIndicators;
+            delete model.userData.selectionRing;
         }
     });
     
@@ -367,19 +374,20 @@ function animateCarousel() {
         
         // Animate selection indicators if present
         if (model.userData.selectionIndicators) {
-            // Find the ring and lights
-            model.userData.selectionIndicators.forEach(indicator => {
-                if (indicator.userData.isSelectionRing) {
-                    // Pulse the ring size slightly
-                    indicator.scale.x = indicator.scale.z = 1 + Math.sin(time * 2) * 0.05;
-                    
-                    // Update ring position to match model's x and z position
-                    indicator.position.x = model.position.x;
-                    indicator.position.z = model.position.z;
-                    // Keep at a fixed y position
-                    indicator.position.y = -1;
-                }
+            // Find the selection ring (now placed in scene)
+            const ring = model.userData.selectionRing;
+            if (ring) {
+                // Keep ring at fixed height
+                ring.position.x = model.position.x;
+                ring.position.z = model.position.z;
                 
+                // Pulse the ring size slightly
+                const pulseFactor = 1 + Math.sin(time * 2) * 0.05;
+                ring.scale.x = ring.scale.z = pulseFactor;
+            }
+            
+            // Update lights
+            model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData.isSelectionHighlight) {
                     // Pulse the light intensity
                     indicator.intensity = 1 + Math.sin(time * 2) * 0.3;
@@ -396,27 +404,21 @@ export function cleanupCarousel() {
         cancelAnimationFrame(animationId);
     }
     
-    // Clean up all models and selection rings
+    // Clean up all models and selection indicators
     if (scene) {
-        // Remove all models
-        llmModels.forEach(model => {
-            if (model && model.parent) {
-                // Also clean up any selection indicators that may be in the scene
-                if (model.userData.selectionIndicators) {
-                    model.userData.selectionIndicators.forEach(indicator => {
-                        if (indicator.parent) {
-                            indicator.parent.remove(indicator);
-                        }
-                    });
-                }
-                model.parent.remove(model);
+        // Clean up selection indicators in scene
+        scene.children.forEach(child => {
+            if (child.userData && child.userData.isSelectionRing) {
+                scene.remove(child);
             }
         });
         
-        // Clean up any other objects in the scene
-        while(scene.children.length > 0) { 
-            scene.remove(scene.children[0]); 
-        }
+        // Clean up models
+        llmModels.forEach(model => {
+            if (model && model.parent) {
+                model.parent.remove(model);
+            }
+        });
     }
     
     llmModels = [];
