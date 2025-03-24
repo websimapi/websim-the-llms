@@ -184,8 +184,14 @@ function setupPreviewPanelHandlers(container) {
             updateProfileImageDisplay(previewImage.src);
         }
         
+        // Close the preview panel after saving
+        container.classList.add('hidden');
+        
+        // Show a saved animation before closing
         container.classList.add('saved');
-        setTimeout(() => container.classList.remove('saved'), 1000);
+        setTimeout(() => {
+            container.classList.remove('saved');
+        }, 1000);
     });
 }
 
