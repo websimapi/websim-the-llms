@@ -185,6 +185,11 @@ function updateCarouselModels() {
             model.rotation.y = position.rotation;
             model.userData = { id: llm.id, index: index };
             
+            // Add a selection indicator if this model is selected
+            if (llm.id === selectedModelId) {
+                addSelectionIndicator(model);
+            }
+            
             scene.add(model);
             llmModels.push(model);
         } catch (error) {
@@ -215,7 +220,7 @@ function displayEmptyState(viewportElement) {
 }
 
 function addSelectionIndicator(model) {
-    // Create a ring around the model - now using THREE.js objects for consistent rendering
+    // Create a ring around the model - now using DOM elements for better performance
     const ringGeometry = new THREE.RingGeometry(1.5, 1.7, 32);
     const ringMaterial = new THREE.MeshBasicMaterial({ 
         color: 0x3cb371,
@@ -261,6 +266,8 @@ export function selectModel(id) {
     // Find model with this ID
     const selectedModel = llmModels.find(model => model.userData.id === id);
     if (selectedModel) {
+        addSelectionIndicator(selectedModel);
+        
         // Find the index of the selected LLM
         const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
         if (llmIndex !== -1 && llmIndex !== currentIndex) {
@@ -334,14 +341,14 @@ function animateCarousel() {
         const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
         model.rotation.y = baseRotation + Math.sin(time * 0.5 + offset) * 0.1;
         
-        // Check if this model should have selection indicators
+        // Check if this model should be selected
         if (model.userData.id === selectedModelId) {
-            // If it doesn't have selection indicators, add them
+            // Ensure selection indicators exist
             if (!model.userData.selectionIndicators) {
                 addSelectionIndicator(model);
             }
             
-            // Animate the existing selection indicators
+            // Animate existing selection indicators
             if (model.userData.selectionIndicators) {
                 model.userData.selectionIndicators.forEach(indicator => {
                     if (indicator.userData.isSelectionRing) {
@@ -355,14 +362,6 @@ function animateCarousel() {
                         indicator.intensity = 1 + Math.sin(time * 2) * 0.3;
                     }
                 });
-            }
-        } else {
-            // If this model has selection indicators but shouldn't, remove them
-            if (model.userData.selectionIndicators) {
-                model.userData.selectionIndicators.forEach(indicator => {
-                    model.remove(indicator);
-                });
-                delete model.userData.selectionIndicators;
             }
         }
     });
