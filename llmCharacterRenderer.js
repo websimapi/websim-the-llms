@@ -1,19 +1,11 @@
 import { createCustomCharacter } from './characterGenerator.js';
-import { avatarColorManager } from './avatarColorManager.js';
 
 // Helper functions to create and render LLM characters
 export function renderLLMCharacter(THREE, llm) {
     if (llm.customCharacterCode) {
         // Create custom character from stored code
         try {
-            const character = createCustomCharacter(THREE, llm.customCharacterCode);
-            
-            // Apply stored mesh colors if available
-            if (llm.meshColors && Array.isArray(llm.meshColors)) {
-                avatarColorManager.applyColorData(character, llm.meshColors);
-            }
-            
-            return character;
+            return createCustomCharacter(THREE, llm.customCharacterCode);
         } catch (error) {
             console.error("Error creating custom character:", error);
             // Fall back to standard model
@@ -21,14 +13,7 @@ export function renderLLMCharacter(THREE, llm) {
         }
     } else {
         // Create standard model
-        const standardModel = createStandardModel(THREE, llm);
-        
-        // Apply stored mesh colors if available
-        if (llm.meshColors && Array.isArray(llm.meshColors)) {
-            avatarColorManager.applyColorData(standardModel, llm.meshColors);
-        }
-        
-        return standardModel;
+        return createStandardModel(THREE, llm);
     }
 }
 
@@ -53,6 +38,7 @@ function createStandardModel(THREE, llm) {
     );
     head.position.y = 1.8;
     head.castShadow = true;
+    head.userData.partId = 'head';
     group.add(head);
     
     // Eyes
@@ -61,10 +47,12 @@ function createStandardModel(THREE, llm) {
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     leftEye.position.set(-0.1, 0.05, 0.2);
+    leftEye.userData.partId = 'leftEye';
     head.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     rightEye.position.set(0.1, 0.05, 0.2);
+    rightEye.userData.partId = 'rightEye';
     head.add(rightEye);
     
     // Antenna
@@ -77,6 +65,7 @@ function createStandardModel(THREE, llm) {
         })
     );
     antenna.position.set(0, 0.3, 0);
+    antenna.userData.partId = 'antenna';
     head.add(antenna);
     
     const antennaTip = new THREE.Mesh(
@@ -84,6 +73,7 @@ function createStandardModel(THREE, llm) {
         new THREE.MeshBasicMaterial({ color: 0xff0000 })
     );
     antennaTip.position.set(0, 0.4, 0);
+    antennaTip.userData.partId = 'antennaTip';
     head.add(antennaTip);
     
     // Neck
@@ -99,6 +89,7 @@ function createStandardModel(THREE, llm) {
     );
     neck.position.set(0, 1.6, 0);
     neck.castShadow = true;
+    neck.userData.partId = 'neck';
     group.add(neck);
     
     // Create body
@@ -115,6 +106,7 @@ function createStandardModel(THREE, llm) {
     );
     body.position.y = 1.2;
     body.castShadow = true;
+    body.userData.partId = 'body';
     group.add(body);
     
     // Chest light
@@ -126,6 +118,7 @@ function createStandardModel(THREE, llm) {
     );
     chestLight.position.set(0, 1.3, 0.16);
     chestLight.rotation.x = Math.PI / 2;
+    chestLight.userData.partId = 'chestLight';
     group.add(chestLight);
     
     // Create limbs
@@ -145,12 +138,14 @@ function createStandardModel(THREE, llm) {
     leftUpperArm.position.set(-0.4, 1.3, 0);
     leftUpperArm.rotation.z = Math.PI / 6;
     leftUpperArm.castShadow = true;
+    leftUpperArm.userData.partId = 'leftUpperArm';
     group.add(leftUpperArm);
     
     const leftLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
     leftLowerArm.position.set(-0.55, 1.0, 0);
     leftLowerArm.rotation.z = Math.PI / 4;
     leftLowerArm.castShadow = true;
+    leftLowerArm.userData.partId = 'leftLowerArm';
     group.add(leftLowerArm);
     
     const leftHand = new THREE.Mesh(
@@ -159,6 +154,7 @@ function createStandardModel(THREE, llm) {
     );
     leftHand.position.set(-0.75, 0.8, 0);
     leftHand.castShadow = true;
+    leftHand.userData.partId = 'leftHand';
     group.add(leftHand);
     
     // Right arm
@@ -166,12 +162,14 @@ function createStandardModel(THREE, llm) {
     rightUpperArm.position.set(0.4, 1.3, 0);
     rightUpperArm.rotation.z = -Math.PI / 6;
     rightUpperArm.castShadow = true;
+    rightUpperArm.userData.partId = 'rightUpperArm';
     group.add(rightUpperArm);
     
     const rightLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
     rightLowerArm.position.set(0.55, 1.0, 0);
     rightLowerArm.rotation.z = -Math.PI / 4;
     rightLowerArm.castShadow = true;
+    rightLowerArm.userData.partId = 'rightLowerArm';
     group.add(rightLowerArm);
     
     const rightHand = new THREE.Mesh(
@@ -180,6 +178,7 @@ function createStandardModel(THREE, llm) {
     );
     rightHand.position.set(0.75, 0.8, 0);
     rightHand.castShadow = true;
+    rightHand.userData.partId = 'rightHand';
     group.add(rightHand);
     
     // Hip
@@ -189,6 +188,7 @@ function createStandardModel(THREE, llm) {
     );
     hip.position.set(0, 0.8, 0);
     hip.castShadow = true;
+    hip.userData.partId = 'hip';
     group.add(hip);
     
     // Legs
@@ -199,11 +199,13 @@ function createStandardModel(THREE, llm) {
     const leftUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
     leftUpperLeg.position.set(-0.15, 0.5, 0);
     leftUpperLeg.castShadow = true;
+    leftUpperLeg.userData.partId = 'leftUpperLeg';
     group.add(leftUpperLeg);
     
     const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
     leftLowerLeg.position.set(-0.15, 0.1, 0);
     leftLowerLeg.castShadow = true;
+    leftLowerLeg.userData.partId = 'leftLowerLeg';
     group.add(leftLowerLeg);
     
     const leftFoot = new THREE.Mesh(
@@ -212,17 +214,20 @@ function createStandardModel(THREE, llm) {
     );
     leftFoot.position.set(-0.15, -0.1, 0.05);
     leftFoot.castShadow = true;
+    leftFoot.userData.partId = 'leftFoot';
     group.add(leftFoot);
     
     // Right leg
     const rightUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
     rightUpperLeg.position.set(0.15, 0.5, 0);
     rightUpperLeg.castShadow = true;
+    rightUpperLeg.userData.partId = 'rightUpperLeg';
     group.add(rightUpperLeg);
     
     const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
     rightLowerLeg.position.set(0.15, 0.1, 0);
     rightLowerLeg.castShadow = true;
+    rightLowerLeg.userData.partId = 'rightLowerLeg';
     group.add(rightLowerLeg);
     
     const rightFoot = new THREE.Mesh(
@@ -231,7 +236,33 @@ function createStandardModel(THREE, llm) {
     );
     rightFoot.position.set(0.15, -0.1, 0.05);
     rightFoot.castShadow = true;
+    rightFoot.userData.partId = 'rightFoot';
     group.add(rightFoot);
     
+    // Apply any custom part colors if available
+    if (llm.customPartColors) {
+        applyCustomPartColors(group, llm.customPartColors);
+    }
+    
     return group;
+}
+
+// Apply stored custom colors to the model parts
+function applyCustomPartColors(modelGroup, customColors) {
+    if (!customColors || typeof customColors !== 'object') return;
+    
+    // Traverse the model hierarchy and apply colors to matching parts
+    modelGroup.traverse((child) => {
+        if (child.isMesh && child.userData.partId) {
+            const partId = child.userData.partId;
+            if (customColors[partId]) {
+                child.material.color.set(customColors[partId]);
+                
+                // Update emissive color too if it exists
+                if (child.material.emissive) {
+                    child.material.emissive.set(new THREE.Color(customColors[partId]).multiplyScalar(0.2));
+                }
+            }
+        }
+    });
 }

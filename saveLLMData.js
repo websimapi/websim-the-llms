@@ -1,7 +1,6 @@
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { attributeSystem } from './attributeSystem.js';
-import { avatarColorManager } from './avatarColorManager.js';
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
@@ -24,8 +23,13 @@ export function saveLLMData() {
         customPrompt,
         attributes,
         customCharacterCode: null,
-        meshColors: []
+        customPartColors: {} // Add storage for custom part colors
     };
+    
+    // Get custom part colors if available
+    if (typeof getStoredPartColors === 'function') {
+        llmData.customPartColors = getStoredPartColors();
+    }
     
     // If we have a custom character, save its code
     const statusElement = document.getElementById('generation-status');
@@ -35,12 +39,6 @@ export function saveLLMData() {
     } else {
         console.log("No custom character code found to save");
     }
-    
-    // Get the currently selected mesh from the creation interface
-    const selectedMesh = window.selectedMesh || null;
-    
-    // Store color data for the selected mesh
-    avatarColorManager.storeColorData(llmData, selectedMesh);
     
     // Check if we're in edit mode
     const createUI = document.getElementById('create-llm-ui');
@@ -57,16 +55,6 @@ export function saveLLMData() {
             // If no new character was generated, keep the existing character code
             if (!llmData.customCharacterCode && existingLLM.customCharacterCode) {
                 llmData.customCharacterCode = existingLLM.customCharacterCode;
-            }
-            
-            // Preserve existing mesh colors if any, and merge with new ones
-            if (existingLLM.meshColors && Array.isArray(existingLLM.meshColors)) {
-                // Merge existing colors with new ones
-                existingLLM.meshColors.forEach(colorData => {
-                    if (!llmData.meshColors.some(m => m.meshType === colorData.meshType)) {
-                        llmData.meshColors.push(colorData);
-                    }
-                });
             }
             
             llmDataManager.updateLLM(llmData);
