@@ -144,12 +144,11 @@ function setupEditableValue(elementId, axis, mode) {
         // Create an input field
         const currentValue = parseFloat(this.textContent);
         const input = document.createElement('input');
-        input.type = 'number';
-        input.step = '0.05'; 
-        input.value = currentValue;
-        input.style.width = '60px'; 
-        input.style.height = '24px'; 
-        input.style.fontSize = '14px'; 
+        input.type = 'text'; 
+        input.value = currentValue.toFixed(2); 
+        input.style.width = '70px'; 
+        input.style.height = '28px'; 
+        input.style.fontSize = '16px'; 
         input.style.backgroundColor = '#333';
         input.style.color = '#3cb371';
         input.style.border = '1px solid #555';
@@ -165,11 +164,12 @@ function setupEditableValue(elementId, axis, mode) {
         
         // Handle input completion
         function completeEdit() {
-            const newValue = parseFloat(input.value);
-            if (!isNaN(newValue)) {
-                applyManualValue(newValue, axis, mode);
+            let newValue = parseFloat(input.value);
+            if (isNaN(newValue)) {
+                newValue = currentValue;
             }
-            element.textContent = isNaN(newValue) ? currentValue.toFixed(2) : newValue.toFixed(2);
+            applyManualValue(newValue, axis, mode);
+            element.textContent = newValue.toFixed(2);
         }
         
         input.addEventListener('blur', completeEdit);
@@ -182,6 +182,13 @@ function setupEditableValue(elementId, axis, mode) {
                 e.preventDefault();
             }
         });
+        
+        input.addEventListener('keypress', function(e) {
+            const allowedKeys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-', '+'];
+            if (!allowedKeys.includes(e.key)) {
+                e.preventDefault();
+            }
+        });
     });
 }
 
@@ -190,7 +197,6 @@ function applyManualValue(value, axis, mode) {
     if (!mesh) return;
     
     if (mode === 'rotate') {
-        // Apply rotation
         if (axis === 'x') {
             mesh.rotation.x = value;
         } else if (axis === 'y') {
@@ -200,7 +206,6 @@ function applyManualValue(value, axis, mode) {
         }
     } 
     else if (mode === 'position') {
-        // Apply position change
         if (axis === 'x') {
             mesh.position.x = value;
         } else if (axis === 'y') {
@@ -210,17 +215,14 @@ function applyManualValue(value, axis, mode) {
         }
     }
     
-    // Store the transformation in mesh userData
     storeTransformData(mesh);
 }
 
 function updateTransformUIState() {
-    // Reset all buttons
     document.querySelectorAll('.control-button').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    // Highlight active buttons based on current transform mode
     if (transformMode !== 'none') {
         const selector = `#${transformMode}-${transformAxis}-${transformMultiplier > 0 ? 'plus' : 'minus'}`;
         const activeButton = document.querySelector(selector);
@@ -229,7 +231,6 @@ function updateTransformUIState() {
         }
     }
     
-    // Update manipulation controls visibility based on selection
     const manipulationControls = document.querySelector('.manipulation-controls');
     const noSelectionMessage = document.querySelector('.no-selection-message');
     
@@ -249,7 +250,6 @@ export function applyTransform() {
     const step = transformStep * transformMultiplier;
     
     if (transformMode === 'rotate') {
-        // Apply rotation
         if (transformAxis === 'x') {
             mesh.rotation.x += step;
         } else if (transformAxis === 'y') {
@@ -258,11 +258,9 @@ export function applyTransform() {
             mesh.rotation.z += step;
         }
         
-        // Update rotation display
         updateRotationDisplay(mesh);
     } 
     else if (transformMode === 'position') {
-        // Apply position change
         if (transformAxis === 'x') {
             mesh.position.x += step;
         } else if (transformAxis === 'y') {
@@ -271,11 +269,9 @@ export function applyTransform() {
             mesh.position.z += step;
         }
         
-        // Update position display
         updatePositionDisplay(mesh);
     }
     
-    // Store the transformation in mesh userData
     storeTransformData(mesh);
 }
 
@@ -309,7 +305,6 @@ export function updateManipulationDisplays() {
 }
 
 function storeTransformData(mesh) {
-    // Store current transform data in mesh userData for later serialization
     if (!mesh.userData.transforms) {
         mesh.userData.transforms = {};
     }
@@ -330,7 +325,6 @@ function storeTransformData(mesh) {
 export function applyStoredTransforms(mesh, transformData) {
     if (!mesh || !transformData) return;
     
-    // Apply position
     if (transformData.position) {
         mesh.position.set(
             transformData.position.x || 0,
@@ -339,7 +333,6 @@ export function applyStoredTransforms(mesh, transformData) {
         );
     }
     
-    // Apply rotation
     if (transformData.rotation) {
         mesh.rotation.set(
             transformData.rotation.x || 0,
@@ -348,6 +341,5 @@ export function applyStoredTransforms(mesh, transformData) {
         );
     }
     
-    // Store the transform data
     mesh.userData.transforms = { ...transformData };
 }
