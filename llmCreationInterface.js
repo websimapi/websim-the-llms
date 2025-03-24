@@ -6,6 +6,8 @@ import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { createRobotModel } from './llmModelCreationRenderer.js';
+// Import the utility functions moved to the new file
+import { renderAttributeGrid, updatePointsDisplay, resetForm as resetFormUtil } from './llmCreationInterfaceUtils.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -81,6 +83,64 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
     resetButton.addEventListener('click', resetForm);
+    
+    // Add event listener for close button
+    const closeButton = document.querySelector('.create-llm-close');
+    closeButton.addEventListener('click', () => {
+        document.getElementById('create-llm-ui').classList.remove('active');
+    });
+    
+    // Add event listener for form reset events
+    document.addEventListener('resetLLMForm', handleResetForm);
+    
+    // Handle orientation change for mobile
+    window.addEventListener('orientationchange', handleOrientationChange);
+}
+
+// Reset form function now delegates to the utility function and handles the model reset
+function resetForm() {
+    resetFormUtil(); // Call the utility function
+    
+    // Reset humanoid
+    if (customCharacter && customCharacter.parent) {
+        customCharacter.parent.remove(customCharacter);
+        customCharacter = null;
+    }
+    
+    if (!robotModel) {
+        createDefaultRobot();
+    } else {
+        updateHumanoidPreview();
+    }
+}
+
+// Handle reset form event
+function handleResetForm() {
+    // Reset humanoid
+    if (customCharacter && customCharacter.parent) {
+        customCharacter.parent.remove(customCharacter);
+        customCharacter = null;
+    }
+    
+    if (!robotModel) {
+        createDefaultRobot();
+    } else {
+        updateHumanoidPreview();
+    }
+}
+
+// Handle orientation change for mobile devices
+function handleOrientationChange() {
+    if (humanoidCamera && humanoidRenderer) {
+        const viewport = document.querySelector('.humanoid-viewport');
+        if (viewport) {
+            setTimeout(() => {
+                humanoidCamera.aspect = viewport.clientWidth / viewport.clientHeight;
+                humanoidCamera.updateProjectionMatrix();
+                humanoidRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
+            }, 300); // Wait for the resize to complete
+        }
+    }
 }
 
 // Function to render the attribute grid
@@ -485,32 +545,4 @@ function animateHumanoid() {
     }
     
     humanoidRenderer.render(humanoidScene, humanoidCamera);
-}
-
-function resetForm() {
-    // Reset name with random number
-    document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
-    
-    // Reset other form values
-    document.getElementById('llm-model').selectedIndex = 0;
-    document.getElementById('llm-color').value = '#3cb371';
-    document.getElementById('llm-style').selectedIndex = 0;
-    document.getElementById('llm-custom-prompt').value = '';
-    
-    // Reset attributes
-    attributeSystem.initializeAttributes();
-    renderAttributeGrid();
-    updatePointsDisplay();
-    
-    // Reset humanoid
-    if (customCharacter && customCharacter.parent) {
-        customCharacter.parent.remove(customCharacter);
-        customCharacter = null;
-    }
-    
-    if (!robotModel) {
-        createDefaultRobot();
-    } else {
-        updateHumanoidPreview();
-    }
 }
