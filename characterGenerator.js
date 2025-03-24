@@ -21,7 +21,20 @@ Important requirements:
 3. Use only Three.js built-in geometries and materials
 4. Return a THREE.Group containing all objects
 5. Make sure the code is safe (no fetch, eval, etc.)
-6. Be creative with colors and shapes to match the description`;
+6. Be creative with colors and shapes to match the description
+7. Give each part a descriptive name using object.name = "PartType_Description" format
+8. Use consistent naming like "Head_Main", "Body_Torso", "LeftArm_Upper", "RightLeg_Lower", etc.
+9. Position parts appropriately in 3D space with proper parent-child relationships
+10. Include at least one head, body/torso, and limbs (arms/legs) in the character
+
+Here are examples of well-structured character parts:
+- Head parts: Head_Main, Head_Eyes, Head_Mouth, Head_Ears, Head_Hair
+- Body parts: Body_Torso, Body_Chest, Body_Shoulders, Body_Back, Body_Core
+- Arm parts: LeftArm_Upper, LeftArm_Lower, LeftArm_Hand, RightArm_Upper, RightArm_Lower, RightArm_Hand
+- Leg parts: LeftLeg_Upper, LeftLeg_Lower, LeftLeg_Foot, RightLeg_Upper, RightLeg_Lower, RightLeg_Foot
+- Feature parts: Feature_Antenna, Feature_Wings, Feature_Tail, Feature_Accessory
+
+Ensure proper positioning of parts and hierarchical structure where appropriate.`;
 
         const completion = await websim.chat.completions.create({
             messages: [
@@ -126,6 +139,7 @@ function createFallbackCharacter(THREE) {
         new THREE.MeshStandardMaterial({ color: 0x6495ED })
     );
     head.position.y = 1.5;
+    head.name = "Head_Main";
     group.add(head);
     
     const body = new THREE.Mesh(
@@ -133,6 +147,7 @@ function createFallbackCharacter(THREE) {
         new THREE.MeshStandardMaterial({ color: 0x4169E1 })
     );
     body.position.y = 1.0;
+    body.name = "Body_Torso";
     group.add(body);
     
     const leftArm = new THREE.Mesh(
@@ -141,6 +156,7 @@ function createFallbackCharacter(THREE) {
     );
     leftArm.position.set(-0.3, 1.0, 0);
     leftArm.rotation.z = Math.PI / 2;
+    leftArm.name = "LeftArm_Upper";
     group.add(leftArm);
     
     const rightArm = new THREE.Mesh(
@@ -149,6 +165,7 @@ function createFallbackCharacter(THREE) {
     );
     rightArm.position.set(0.3, 1.0, 0);
     rightArm.rotation.z = -Math.PI / 2;
+    rightArm.name = "RightArm_Upper";
     group.add(rightArm);
     
     const legs = new THREE.Mesh(
@@ -156,6 +173,7 @@ function createFallbackCharacter(THREE) {
         new THREE.MeshStandardMaterial({ color: 0x4682B4 })
     );
     legs.position.y = 0.4;
+    legs.name = "LeftLeg_Upper";
     group.add(legs);
     
     return group;

@@ -1,6 +1,6 @@
 // New file to reduce size of llmCreationInterface.js
 import * as THREE from 'three';
-import { createCustomCharacter, generateCharacterCode } from './characterGenerator.js';
+import { createCustomCharacter } from './characterGenerator.js';
 import { attributeSystem } from './attributeSystem.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
 
@@ -123,6 +123,8 @@ export async function handleGenerateCharacter(generatingCharacter, setGenerating
     generateBtn.disabled = true;
     
     try {
+        // Import the function from characterGenerator.js to fix the reference error
+        const { generateCharacterCode } = await import('./characterGenerator.js');
         const generatedCode = await generateCharacterCode(userPrompt);
         
         // Store the generated code for later use

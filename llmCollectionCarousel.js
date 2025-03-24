@@ -247,7 +247,7 @@ function addSelectionIndicator(model) {
     });
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.rotation.x = Math.PI / 2; // Flat on the ground
-    ring.position.y = -0.99; // Just above the floor
+    ring.position.y = -1; // Fixed position at ground level, not relative to model
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
     model.add(ring);
@@ -363,12 +363,12 @@ function animateCarousel() {
             // Find the ring and lights
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData.isSelectionRing) {
-                    // Pulse the ring size slightly but keep it fixed at the same Y position
+                    // Pulse the ring size slightly
                     indicator.scale.x = indicator.scale.z = 1 + Math.sin(time * 2) * 0.05;
                     
-                    // Calculate a floor-relative position that doesn't bob with the model
-                    // Fix the ring to always be just above the floor regardless of model position
-                    indicator.position.y = -0.99 - model.position.y;
+                    // Fix ring to ground regardless of model bobbing
+                    // Use a fixed position relative to the world instead of the model
+                    indicator.position.y = -1 - model.position.y;
                 }
                 
                 if (indicator.userData.isSelectionHighlight) {

@@ -57,5 +57,9 @@
     color: #fff;
     font-weight: normal;
     font-size: 0.8rem;
-    display: block;
+    display: inline-block;
+    margin-left: 5px;
+    padding: 2px 5px;
+    background-color: rgba(60, 179, 113, 0.3);
+    border-radius: 3px;
 }
