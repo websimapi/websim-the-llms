@@ -4,6 +4,7 @@ import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
+import { robotColorManager } from './robotColorManager.js';
 
 let robotModel;
 let customCharacter = null;
@@ -582,30 +583,25 @@ function handleMeshSelection(event) {
     
     if (intersects.length > 0) {
         // Unhighlight previous selection
-        if (selectedMesh && selectedMesh.userData.originalEmissive) {
-            selectedMesh.material.emissive.set(selectedMesh.userData.originalEmissive);
-            delete selectedMesh.userData.originalEmissive;
+        if (selectedMesh) {
+            robotColorManager.unhighlightMesh(selectedMesh);
         }
         
         // Select the new mesh
         selectedMesh = intersects[0].object;
         
-        // Store original emissive color and highlight the selection
-        if (!selectedMesh.userData.originalEmissive && selectedMesh.material.emissive) {
-            selectedMesh.userData.originalEmissive = selectedMesh.material.emissive.clone();
-            selectedMesh.material.emissive.set(0x333333);
-        }
+        // Highlight the selection
+        robotColorManager.highlightMesh(selectedMesh);
         
         // Update color picker to match the selected mesh's color
-        if (selectedMesh.material.color) {
+        if (selectedMesh.material && selectedMesh.material.color) {
             const hexColor = '#' + selectedMesh.material.color.getHexString();
             document.getElementById('llm-color').value = hexColor;
         }
     } else {
         // Unhighlight if clicked elsewhere
-        if (selectedMesh && selectedMesh.userData.originalEmissive) {
-            selectedMesh.material.emissive.set(selectedMesh.userData.originalEmissive);
-            delete selectedMesh.userData.originalEmissive;
+        if (selectedMesh) {
+            robotColorManager.unhighlightMesh(selectedMesh);
         }
         selectedMesh = null;
     }
@@ -682,22 +678,9 @@ function updateHumanoidPreview() {
 function updateSelectedMeshColor() {
     const color = document.getElementById('llm-color').value;
     
-    if (selectedMesh && selectedMesh.material) {
-        // Update just the selected mesh's color
-        selectedMesh.material.color.set(color);
-        
-        // Also update emissive with a toned down version of the color
-        if (selectedMesh.material.emissive) {
-            // Store the highlight for selection state
-            if (!selectedMesh.userData.originalEmissive) {
-                selectedMesh.userData.originalEmissive = new THREE.Color(color).multiplyScalar(0.2);
-            } else {
-                selectedMesh.userData.originalEmissive.set(new THREE.Color(color).multiplyScalar(0.2));
-            }
-            
-            // Keep the highlight if it's selected
-            selectedMesh.material.emissive.set(0x333333);
-        }
+    if (selectedMesh) {
+        // Use the color manager to apply color to the selected mesh
+        robotColorManager.applyColorToMesh(selectedMesh, color);
     } else {
         // If no mesh is selected, fall back to the original behavior
         updateHumanoidPreview();

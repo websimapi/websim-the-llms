@@ -30,6 +30,7 @@ function createStandardModel(THREE, llm) {
     // Create a robot model based on the stored properties
     const group = new THREE.Group();
     
+    // Use stored color or default
     const color = new THREE.Color(llm.color || 0x3cb371);
     
     // Create head
@@ -46,6 +47,7 @@ function createStandardModel(THREE, llm) {
     );
     head.position.y = 1.8;
     head.castShadow = true;
+    head.name = "head";
     group.add(head);
     
     // Eyes
@@ -54,10 +56,12 @@ function createStandardModel(THREE, llm) {
     
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     leftEye.position.set(-0.1, 0.05, 0.2);
+    leftEye.name = "leftEye";
     head.add(leftEye);
     
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     rightEye.position.set(0.1, 0.05, 0.2);
+    rightEye.name = "rightEye";
     head.add(rightEye);
     
     // Antenna
@@ -108,6 +112,7 @@ function createStandardModel(THREE, llm) {
     );
     body.position.y = 1.2;
     body.castShadow = true;
+    body.name = "body";
     group.add(body);
     
     // Chest light
@@ -119,6 +124,7 @@ function createStandardModel(THREE, llm) {
     );
     chestLight.position.set(0, 1.3, 0.16);
     chestLight.rotation.x = Math.PI / 2;
+    chestLight.name = "chestLight";
     group.add(chestLight);
     
     // Create limbs
@@ -138,12 +144,14 @@ function createStandardModel(THREE, llm) {
     leftUpperArm.position.set(-0.4, 1.3, 0);
     leftUpperArm.rotation.z = Math.PI / 6;
     leftUpperArm.castShadow = true;
+    leftUpperArm.name = "leftUpperArm";
     group.add(leftUpperArm);
     
     const leftLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
     leftLowerArm.position.set(-0.55, 1.0, 0);
     leftLowerArm.rotation.z = Math.PI / 4;
     leftLowerArm.castShadow = true;
+    leftLowerArm.name = "leftLowerArm";
     group.add(leftLowerArm);
     
     const leftHand = new THREE.Mesh(
@@ -152,6 +160,7 @@ function createStandardModel(THREE, llm) {
     );
     leftHand.position.set(-0.75, 0.8, 0);
     leftHand.castShadow = true;
+    leftHand.name = "leftHand";
     group.add(leftHand);
     
     // Right arm
@@ -159,12 +168,14 @@ function createStandardModel(THREE, llm) {
     rightUpperArm.position.set(0.4, 1.3, 0);
     rightUpperArm.rotation.z = -Math.PI / 6;
     rightUpperArm.castShadow = true;
+    rightUpperArm.name = "rightUpperArm";
     group.add(rightUpperArm);
     
     const rightLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
     rightLowerArm.position.set(0.55, 1.0, 0);
     rightLowerArm.rotation.z = -Math.PI / 4;
     rightLowerArm.castShadow = true;
+    rightLowerArm.name = "rightLowerArm";
     group.add(rightLowerArm);
     
     const rightHand = new THREE.Mesh(
@@ -173,6 +184,7 @@ function createStandardModel(THREE, llm) {
     );
     rightHand.position.set(0.75, 0.8, 0);
     rightHand.castShadow = true;
+    rightHand.name = "rightHand";
     group.add(rightHand);
     
     // Hip
@@ -182,6 +194,7 @@ function createStandardModel(THREE, llm) {
     );
     hip.position.set(0, 0.8, 0);
     hip.castShadow = true;
+    hip.name = "hip";
     group.add(hip);
     
     // Legs
@@ -192,11 +205,13 @@ function createStandardModel(THREE, llm) {
     const leftUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
     leftUpperLeg.position.set(-0.15, 0.5, 0);
     leftUpperLeg.castShadow = true;
+    leftUpperLeg.name = "leftUpperLeg";
     group.add(leftUpperLeg);
     
     const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
     leftLowerLeg.position.set(-0.15, 0.1, 0);
     leftLowerLeg.castShadow = true;
+    leftLowerLeg.name = "leftLowerLeg";
     group.add(leftLowerLeg);
     
     const leftFoot = new THREE.Mesh(
@@ -205,17 +220,20 @@ function createStandardModel(THREE, llm) {
     );
     leftFoot.position.set(-0.15, -0.1, 0.05);
     leftFoot.castShadow = true;
+    leftFoot.name = "leftFoot";
     group.add(leftFoot);
     
     // Right leg
     const rightUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
     rightUpperLeg.position.set(0.15, 0.5, 0);
     rightUpperLeg.castShadow = true;
+    rightUpperLeg.name = "rightUpperLeg";
     group.add(rightUpperLeg);
     
     const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
     rightLowerLeg.position.set(0.15, 0.1, 0);
     rightLowerLeg.castShadow = true;
+    rightLowerLeg.name = "rightLowerLeg";
     group.add(rightLowerLeg);
     
     const rightFoot = new THREE.Mesh(
@@ -224,9 +242,10 @@ function createStandardModel(THREE, llm) {
     );
     rightFoot.position.set(0.15, -0.1, 0.05);
     rightFoot.castShadow = true;
+    rightFoot.name = "rightFoot";
     group.add(rightFoot);
     
-    // Apply appearance data if available
+    // Apply appearance data if available - IMPORTANT: must be applied AFTER creating all parts
     if (llm.appearanceData) {
         modelAppearanceManager.applyAppearanceData(group, llm.appearanceData);
     }
