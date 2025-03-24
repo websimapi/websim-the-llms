@@ -1,0 +1,258 @@
+// Helper functions for 3D mesh manipulation
+import * as THREE from 'three';
+
+let transformMode = 'none'; // 'none', 'rotate', 'position'
+let transformAxis = 'y'; // 'x', 'y', 'z'
+let transformStep = 0.1; // Step size for transformations
+let transformMultiplier = 1; // For larger/smaller steps
+
+export function initMeshManipulator() {
+    // Add event listeners to manipulation buttons
+    setupRotationControls();
+    setupPositionControls();
+    updateTransformUIState();
+}
+
+function setupRotationControls() {
+    // X axis rotation
+    document.getElementById('rotate-x-minus').addEventListener('click', () => {
+        transformMode = 'rotate';
+        transformAxis = 'x';
+        transformMultiplier = -1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    document.getElementById('rotate-x-plus').addEventListener('click', () => {
+        transformMode = 'rotate';
+        transformAxis = 'x';
+        transformMultiplier = 1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    // Y axis rotation
+    document.getElementById('rotate-y-minus').addEventListener('click', () => {
+        transformMode = 'rotate';
+        transformAxis = 'y';
+        transformMultiplier = -1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    document.getElementById('rotate-y-plus').addEventListener('click', () => {
+        transformMode = 'rotate';
+        transformAxis = 'y';
+        transformMultiplier = 1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    // Z axis rotation
+    document.getElementById('rotate-z-minus').addEventListener('click', () => {
+        transformMode = 'rotate';
+        transformAxis = 'z';
+        transformMultiplier = -1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    document.getElementById('rotate-z-plus').addEventListener('click', () => {
+        transformMode = 'rotate';
+        transformAxis = 'z';
+        transformMultiplier = 1;
+        updateTransformUIState();
+        applyTransform();
+    });
+}
+
+function setupPositionControls() {
+    // X axis position
+    document.getElementById('position-x-minus').addEventListener('click', () => {
+        transformMode = 'position';
+        transformAxis = 'x';
+        transformMultiplier = -1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    document.getElementById('position-x-plus').addEventListener('click', () => {
+        transformMode = 'position';
+        transformAxis = 'x';
+        transformMultiplier = 1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    // Y axis position
+    document.getElementById('position-y-minus').addEventListener('click', () => {
+        transformMode = 'position';
+        transformAxis = 'y';
+        transformMultiplier = -1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    document.getElementById('position-y-plus').addEventListener('click', () => {
+        transformMode = 'position';
+        transformAxis = 'y';
+        transformMultiplier = 1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    // Z axis position
+    document.getElementById('position-z-minus').addEventListener('click', () => {
+        transformMode = 'position';
+        transformAxis = 'z';
+        transformMultiplier = -1;
+        updateTransformUIState();
+        applyTransform();
+    });
+    
+    document.getElementById('position-z-plus').addEventListener('click', () => {
+        transformMode = 'position';
+        transformAxis = 'z';
+        transformMultiplier = 1;
+        updateTransformUIState();
+        applyTransform();
+    });
+}
+
+function updateTransformUIState() {
+    // Reset all buttons
+    document.querySelectorAll('.control-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Highlight active buttons based on current transform mode
+    if (transformMode !== 'none') {
+        const selector = `#${transformMode}-${transformAxis}-${transformMultiplier > 0 ? 'plus' : 'minus'}`;
+        const activeButton = document.querySelector(selector);
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
+    }
+    
+    // Update manipulation controls visibility based on selection
+    const manipulationControls = document.querySelector('.manipulation-controls');
+    const noSelectionMessage = document.querySelector('.no-selection-message');
+    
+    if (window.selectedMesh) {
+        if (manipulationControls) manipulationControls.style.display = 'flex';
+        if (noSelectionMessage) noSelectionMessage.style.display = 'none';
+    } else {
+        if (manipulationControls) manipulationControls.style.display = 'none';
+        if (noSelectionMessage) noSelectionMessage.style.display = 'block';
+    }
+}
+
+export function applyTransform() {
+    const mesh = window.selectedMesh;
+    if (!mesh) return;
+    
+    const step = transformStep * transformMultiplier;
+    
+    if (transformMode === 'rotate') {
+        // Apply rotation
+        if (transformAxis === 'x') {
+            mesh.rotation.x += step;
+        } else if (transformAxis === 'y') {
+            mesh.rotation.y += step;
+        } else if (transformAxis === 'z') {
+            mesh.rotation.z += step;
+        }
+        
+        // Update rotation display
+        updateRotationDisplay(mesh);
+    } 
+    else if (transformMode === 'position') {
+        // Apply position change
+        if (transformAxis === 'x') {
+            mesh.position.x += step;
+        } else if (transformAxis === 'y') {
+            mesh.position.y += step;
+        } else if (transformAxis === 'z') {
+            mesh.position.z += step;
+        }
+        
+        // Update position display
+        updatePositionDisplay(mesh);
+    }
+    
+    // Store the transformation in mesh userData
+    storeTransformData(mesh);
+}
+
+function updateRotationDisplay(mesh) {
+    const xRotDisplay = document.getElementById('rotation-x-value');
+    const yRotDisplay = document.getElementById('rotation-y-value');
+    const zRotDisplay = document.getElementById('rotation-z-value');
+    
+    if (xRotDisplay) xRotDisplay.textContent = mesh.rotation.x.toFixed(2);
+    if (yRotDisplay) yRotDisplay.textContent = mesh.rotation.y.toFixed(2);
+    if (zRotDisplay) zRotDisplay.textContent = mesh.rotation.z.toFixed(2);
+}
+
+function updatePositionDisplay(mesh) {
+    const xPosDisplay = document.getElementById('position-x-value');
+    const yPosDisplay = document.getElementById('position-y-value');
+    const zPosDisplay = document.getElementById('position-z-value');
+    
+    if (xPosDisplay) xPosDisplay.textContent = mesh.position.x.toFixed(2);
+    if (yPosDisplay) yPosDisplay.textContent = mesh.position.y.toFixed(2);
+    if (zPosDisplay) zPosDisplay.textContent = mesh.position.z.toFixed(2);
+}
+
+export function updateManipulationDisplays() {
+    const mesh = window.selectedMesh;
+    if (!mesh) return;
+    
+    updateRotationDisplay(mesh);
+    updatePositionDisplay(mesh);
+    updateTransformUIState();
+}
+
+function storeTransformData(mesh) {
+    // Store current transform data in mesh userData for later serialization
+    if (!mesh.userData.transforms) {
+        mesh.userData.transforms = {};
+    }
+    
+    mesh.userData.transforms.position = {
+        x: mesh.position.x,
+        y: mesh.position.y,
+        z: mesh.position.z
+    };
+    
+    mesh.userData.transforms.rotation = {
+        x: mesh.rotation.x,
+        y: mesh.rotation.y,
+        z: mesh.rotation.z
+    };
+}
+
+export function applyStoredTransforms(mesh, transformData) {
+    if (!mesh || !transformData) return;
+    
+    // Apply position
+    if (transformData.position) {
+        mesh.position.set(
+            transformData.position.x || 0,
+            transformData.position.y || 0,
+            transformData.position.z || 0
+        );
+    }
+    
+    // Apply rotation
+    if (transformData.rotation) {
+        mesh.rotation.set(
+            transformData.rotation.x || 0,
+            transformData.rotation.y || 0,
+            transformData.rotation.z || 0
+        );
+    }
+    
+    // Store the transform data
+    mesh.userData.transforms = { ...transformData };
+}

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="llmColorPickerStyles.css">
     <link rel="stylesheet" href="llmMobileResponsive.css">
     <link rel="stylesheet" href="llmCreationCompactStyles.css">
+    <link rel="stylesheet" href="llmManipulationControls.css">
     <script type="importmap">
     {
       "imports": {
@@ -118,6 +119,74 @@
                         <div class="color-picker-container">
                             <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
                             <span id="selected-mesh-name" class="selected-mesh-name hidden">No part selected</span>
+                        </div>
+                        
+                        <div class="no-selection-message">Select a body part to manipulate it</div>
+                        
+                        <div class="manipulation-controls">
+                            <!-- Rotation Controls -->
+                            <div class="control-group">
+                                <span class="control-group-label">Rotation:</span>
+                                
+                                <!-- X Axis -->
+                                <button id="rotate-x-minus" class="control-button axis-x">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
+                                </button>
+                                <span id="rotation-x-value" class="control-value">0.00</span>
+                                <button id="rotate-x-plus" class="control-button axis-x">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
+                                </button>
+                                
+                                <!-- Y Axis -->
+                                <button id="rotate-y-minus" class="control-button axis-y">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
+                                </button>
+                                <span id="rotation-y-value" class="control-value">0.00</span>
+                                <button id="rotate-y-plus" class="control-button axis-y">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
+                                </button>
+                                
+                                <!-- Z Axis -->
+                                <button id="rotate-z-minus" class="control-button axis-z">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
+                                </button>
+                                <span id="rotation-z-value" class="control-value">0.00</span>
+                                <button id="rotate-z-plus" class="control-button axis-z">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z
+                                </button>
+                            </div>
+                            
+                            <!-- Position Controls -->
+                            <div class="control-group">
+                                <span class="control-group-label">Position:</span>
+                                
+                                <!-- X Axis -->
+                                <button id="position-x-minus" class="control-button axis-x">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
+                                </button>
+                                <span id="position-x-value" class="control-value">0.00</span>
+                                <button id="position-x-plus" class="control-button axis-x">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
+                                </button>
+                                
+                                <!-- Y Axis -->
+                                <button id="position-y-minus" class="control-button axis-y">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
+                                </button>
+                                <span id="position-y-value" class="control-value">0.00</span>
+                                <button id="position-y-plus" class="control-button axis-y">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
+                                </button>
+                                
+                                <!-- Z Axis -->
+                                <button id="position-z-minus" class="control-button axis-z">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
+                                </button>
+                                <span id="position-z-value" class="control-value">0.00</span>
+                                <button id="position-z-plus" class="control-button axis-z">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -272,6 +341,7 @@
     <script type="module" src="llmViewInterface.js"></script>
     <script type="module" src="llmCollectionView.js"></script>
     <script type="module" src="saveLLMData.js"></script>
+    <script type="module" src="llmMeshManipulator.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

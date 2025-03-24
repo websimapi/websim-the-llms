@@ -9,6 +9,7 @@ import { createRobotModel } from './llmModelCreationRenderer.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
 import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGenerateCharacter } from './llmCreationInterfaceCompact.js';
 import { prepareModelForIndividualColoring, applyColorToMesh } from './llmMeshColorManager.js';
+import { initMeshManipulator, updateManipulationDisplays } from './llmMeshManipulator.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -122,6 +123,15 @@ export function setupLLMCreationInterface(llmToEdit) {
             module.optimizeUIHeight();
         });
     }, 100);
+    
+    // Initialize mesh manipulator after UI setup
+    setTimeout(() => {
+        initMeshManipulator();
+        
+        // Initial state - hide manipulation controls until something is selected
+        const manipulationControls = document.querySelector('.manipulation-controls');
+        if (manipulationControls) manipulationControls.style.display = 'none';
+    }, 200);
     
     // Handle window resize for optimizing UI height
     window.addEventListener('resize', () => {
@@ -256,6 +266,8 @@ function createDefaultRobot(llmToEdit) {
 }
 
 function handleMeshSelection(event) {
+    window.selectedMesh = null;
+    
     const viewport = document.querySelector('.humanoid-viewport');
     const rect = viewport.getBoundingClientRect();
     
@@ -339,6 +351,9 @@ function handleMeshSelection(event) {
             
             selectedMeshNameEl.classList.remove('hidden');
         }
+        
+        window.selectedMesh = selectedMesh;
+        updateManipulationDisplays();
     } else {
         // Unhighlight if clicked elsewhere
         if (selectedMesh && selectedMesh.userData.originalEmissive) {
@@ -351,6 +366,15 @@ function handleMeshSelection(event) {
         if (selectedMeshNameEl) {
             selectedMeshNameEl.classList.add('hidden');
         }
+        
+        window.selectedMesh = null;
+        
+        // Hide manipulation controls when nothing is selected
+        const manipulationControls = document.querySelector('.manipulation-controls');
+        const noSelectionMessage = document.querySelector('.no-selection-message');
+        
+        if (manipulationControls) manipulationControls.style.display = 'none';
+        if (noSelectionMessage) noSelectionMessage.style.display = 'block';
     }
 }
 

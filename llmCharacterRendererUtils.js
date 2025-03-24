@@ -90,7 +90,19 @@ export function serializeModelData(model) {
                 position: child.position.toArray(),
                 rotation: [child.rotation.x, child.rotation.y, child.rotation.z],
                 scale: child.scale.toArray(),
-                materialProps: serializeMaterial(child.material)
+                materialProps: serializeMaterial(child.material),
+                transforms: child.userData.transforms || {
+                    position: {
+                        x: child.position.x,
+                        y: child.position.y,
+                        z: child.position.z
+                    },
+                    rotation: {
+                        x: child.rotation.x,
+                        y: child.rotation.y,
+                        z: child.rotation.z
+                    }
+                }
             });
         }
     });

@@ -1,6 +1,7 @@
 // New file for model storage functionality
 import * as THREE from 'three';
 import { serializeModelData, createStandardMaterials } from './llmCharacterRendererUtils.js';
+import { applyStoredTransforms } from './llmMeshManipulator.js';
 
 // Store a model's data completely
 export function storeModelData(model, llmData) {
@@ -58,6 +59,11 @@ export function applyStoredModelData(model, llmData) {
                         const colorPicker = document.getElementById('llm-color');
                         if (colorPicker) colorPicker.value = hexColor;
                     }
+                }
+                
+                // Apply stored transformation data if available
+                if (partData.transforms) {
+                    applyStoredTransforms(child, partData.transforms);
                 }
                 
                 // Increment counter
