@@ -231,15 +231,7 @@ function displayEmptyState(viewportElement) {
 
 function addSelectionIndicator(model) {
     // Remove any existing selection indicators first
-    if (model.userData.selectionIndicators) {
-        model.userData.selectionIndicators.forEach(indicator => {
-            if (indicator.parent === model) {
-                model.remove(indicator);
-            } else if (indicator.parent === scene) {
-                scene.remove(indicator);
-            }
-        });
-    }
+    clearSelection();
     
     // Create a ring around the model
     const ringGeometry = new THREE.RingGeometry(1.5, 1.7, 32);
@@ -309,14 +301,19 @@ export function selectModel(id) {
 }
 
 function clearSelection() {
-    // Remove indicators from previously selected model
+    // First find and remove all existing selection rings in the scene
+    scene.children.forEach(child => {
+        if (child.userData && child.userData.isSelectionRing) {
+            scene.remove(child);
+        }
+    });
+    
+    // Then remove other indicators from models
     llmModels.forEach(model => {
-        if (model.userData.selectionIndicators) {
+        if (model && model.userData.selectionIndicators) {
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.parent === model) {
                     model.remove(indicator);
-                } else if (indicator.parent === scene) {
-                    scene.remove(indicator);
                 }
             });
             delete model.userData.selectionIndicators;
@@ -377,9 +374,10 @@ function animateCarousel() {
             // Find the selection ring (now placed in scene)
             const ring = model.userData.selectionRing;
             if (ring) {
-                // Keep ring at fixed height
+                // Keep ring at fixed height and update x,z position
                 ring.position.x = model.position.x;
                 ring.position.z = model.position.z;
+                ring.position.y = -0.99; // Keep at fixed height above the ground
                 
                 // Pulse the ring size slightly
                 const pulseFactor = 1 + Math.sin(time * 2) * 0.05;
@@ -408,7 +406,7 @@ export function cleanupCarousel() {
     if (scene) {
         // Clean up selection indicators in scene
         scene.children.forEach(child => {
-            if (child.userData && child.userData.isSelectionRing) {
+            if (child.userData && (child.userData.isSelectionRing || child.userData.isSelectionIndicator)) {
                 scene.remove(child);
             }
         });
@@ -425,4 +423,5 @@ export function cleanupCarousel() {
     scene = null;
     camera = null;
     renderer = null;
+    selectedModelId = null; // Reset selection when cleaning up
 }
