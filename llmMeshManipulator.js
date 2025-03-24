@@ -140,9 +140,17 @@ function setupEditableValue(elementId, axis, mode) {
     element.style.cursor = 'text';
     element.title = 'Click to edit value';
     
+    // Track if the element is currently in edit mode
+    let isEditing = false;
+    
     element.addEventListener('click', function() {
-        // Create an input field
-        const currentValue = parseFloat(this.textContent);
+        // Don't recreate input if already editing
+        if (isEditing) return;
+        
+        isEditing = true;
+        
+        // Create an input field that preserves the current value
+        const currentValue = this.textContent;
         const input = document.createElement('input');
         input.type = 'number';
         input.step = '0.05'; 
@@ -165,11 +173,12 @@ function setupEditableValue(elementId, axis, mode) {
         
         // Handle input completion
         function completeEdit() {
+            isEditing = false;
             const newValue = parseFloat(input.value);
             if (!isNaN(newValue)) {
                 applyManualValue(newValue, axis, mode);
             }
-            element.textContent = isNaN(newValue) ? currentValue.toFixed(2) : newValue.toFixed(2);
+            element.textContent = isNaN(newValue) ? currentValue : newValue.toFixed(2);
         }
         
         input.addEventListener('blur', completeEdit);
@@ -178,7 +187,8 @@ function setupEditableValue(elementId, axis, mode) {
                 completeEdit();
                 e.preventDefault();
             } else if (e.key === 'Escape') {
-                element.textContent = currentValue.toFixed(2);
+                isEditing = false;
+                element.textContent = currentValue;
                 e.preventDefault();
             }
         });
