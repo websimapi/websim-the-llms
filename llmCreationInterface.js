@@ -304,9 +304,27 @@ function handleMeshSelection(event) {
             document.getElementById('llm-color').value = hexColor;
         }
         
-        // Update the selected mesh name display
+        // Update the selected mesh name display with formatted part name
         if (selectedMeshNameEl) {
-            selectedMeshNameEl.textContent = selectedMesh.name || `Part ${meshes.indexOf(selectedMesh) + 1}`;
+            const displayName = selectedMesh.name || `Part ${meshes.indexOf(selectedMesh) + 1}`;
+            
+            // Split the name to get type and number (if using the naming convention)
+            let partType = "";
+            let partName = displayName;
+            
+            if (displayName.includes('_')) {
+                const nameParts = displayName.split('_');
+                partType = nameParts[0];
+                partName = nameParts.slice(1).join(' ');
+            }
+            
+            // Format the display
+            if (partType) {
+                selectedMeshNameEl.innerHTML = `${partName} <span class="part-type">${partType}</span>`;
+            } else {
+                selectedMeshNameEl.textContent = displayName;
+            }
+            
             selectedMeshNameEl.classList.remove('hidden');
         }
     } else {

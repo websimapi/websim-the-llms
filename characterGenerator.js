@@ -55,11 +55,65 @@ function createCustomCharacter(THREE, generatedCode) {
         `);
         
         // Execute the function with THREE as parameter
-        return createCharacterFn(THREE);
+        const character = createCharacterFn(THREE);
+        
+        // Add name labels to each part
+        let partIndex = 0;
+        character.traverse(child => {
+            if (child.isMesh) {
+                // Name parts if they don't have names already
+                if (!child.name || child.name === '') {
+                    const partType = determineMeshType(child);
+                    child.name = `${partType}_${partIndex}`;
+                    partIndex++;
+                }
+            }
+        });
+        
+        return character;
     } catch (error) {
         console.error("Error creating custom character:", error);
         return createFallbackCharacter(THREE);
     }
+}
+
+// Helper function to determine mesh type based on position and geometry
+function determineMeshType(mesh) {
+    // Position-based detection
+    const position = mesh.position.clone();
+    const parent = mesh.parent;
+    
+    // If parent exists, get world position
+    if (parent) {
+        parent.updateMatrixWorld();
+        position.applyMatrix4(parent.matrixWorld);
+    }
+    
+    // Y-position based detection
+    if (position.y > 1.5) {
+        return "Head";
+    } else if (position.y > 0.8 && position.y < 1.5) {
+        return "Body";
+    } else if (position.y < 0.8 && position.y > 0) {
+        // Check if it's on the side
+        if (Math.abs(position.x) > 0.2) {
+            return position.x < 0 ? "LeftLimb" : "RightLimb";
+        }
+        return "Legs";
+    } else if (position.y <= 0) {
+        return "Base";
+    }
+    
+    // Geometry-based detection fallback
+    if (mesh.geometry) {
+        if (mesh.geometry.type.includes("Sphere")) {
+            return "Head";
+        } else if (mesh.geometry.type.includes("Box") || mesh.geometry.type.includes("Cylinder")) {
+            return "Body";
+        }
+    }
+    
+    return "Part";
 }
 
 // Fallback character in case the generated code fails

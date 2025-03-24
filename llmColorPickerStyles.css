@@ -44,9 +44,18 @@
     color: #3cb371;
     font-weight: bold;
     transition: opacity 0.3s ease;
+    margin-left: 10px;
+    font-size: 0.9rem;
+    text-transform: capitalize;
 }
 
 .selected-mesh-name.hidden {
     opacity: 0;
 }
 
+.part-type {
+    color: #fff;
+    font-weight: normal;
+    font-size: 0.8rem;
+    display: block;
+}
