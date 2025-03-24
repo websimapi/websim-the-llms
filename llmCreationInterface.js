@@ -6,7 +6,6 @@ import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { createRobotModel } from './llmModelCreationRenderer.js';
-import { enhanceCreationUIInteraction } from './llmCreationUIEnhancements.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -82,9 +81,6 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
     resetButton.addEventListener('click', resetForm);
-    
-    // Add enhanced UI interactions
-    enhanceCreationUIInteraction();
 }
 
 // Function to render the attribute grid
@@ -398,20 +394,6 @@ function handleMeshSelection(event) {
         if (selectedMesh.material.color) {
             const hexColor = '#' + selectedMesh.material.color.getHexString();
             document.getElementById('llm-color').value = hexColor;
-            
-            // Update the color display element
-            const colorDisplay = document.getElementById('color-display');
-            if (colorDisplay) {
-                colorDisplay.style.backgroundColor = hexColor;
-            }
-            
-            // Update the selected part indicator
-            const indicator = document.getElementById('selected-part-indicator');
-            if (indicator) {
-                indicator.textContent = selectedMesh.name || 'Part selected';
-                indicator.style.backgroundColor = '#3cb371';
-                indicator.style.color = 'white';
-            }
         }
     } else {
         // Unhighlight if clicked elsewhere
@@ -420,13 +402,6 @@ function handleMeshSelection(event) {
             delete selectedMesh.userData.originalEmissive;
         }
         selectedMesh = null;
-        
-        // Update the selected part indicator
-        const indicator = document.getElementById('selected-part-indicator');
-        if (indicator) {
-            indicator.textContent = 'No part selected';
-            indicator.style.backgroundColor = '#333';
-        }
     }
 }
 
