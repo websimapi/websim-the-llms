@@ -271,31 +271,8 @@ function addSelectionIndicator(model) {
     model.userData.selectionRing = ring; // Store direct reference to ring
 }
 
-function clearSelection() {
-    // First find and remove all existing selection rings in the scene
-    scene.children.forEach(child => {
-        if (child.userData && child.userData.isSelectionRing) {
-            scene.remove(child);
-        }
-    });
-    
-    // Then remove other indicators from models
-    llmModels.forEach(model => {
-        if (model && model.userData.selectionIndicators) {
-            model.userData.selectionIndicators.forEach(indicator => {
-                if (indicator.parent === model) {
-                    model.remove(indicator);
-                }
-            });
-            delete model.userData.selectionIndicators;
-            delete model.userData.selectionRing;
-        }
-    });
-    
-    selectedModelId = null;
-}
-
-function selectModel(id) {
+// Function to select a model by ID
+export function selectModel(id) {
     if (id === selectedModelId) return; // Already selected
     
     // Remove selection from previous model
@@ -323,6 +300,37 @@ function selectModel(id) {
     updateListSelection(id);
 }
 
+function clearSelection() {
+    // First find and remove all existing selection rings in the scene
+    const selectionRings = [];
+    scene.children.forEach(child => {
+        if (child.userData && child.userData.isSelectionRing) {
+            selectionRings.push(child);
+        }
+    });
+    
+    // Remove rings outside of the loop to avoid modifying the collection while iterating
+    selectionRings.forEach(ring => {
+        scene.remove(ring);
+    });
+    
+    // Then remove other indicators from models
+    llmModels.forEach(model => {
+        if (model && model.userData.selectionIndicators) {
+            model.userData.selectionIndicators.forEach(indicator => {
+                if (indicator.parent === model) {
+                    model.remove(indicator);
+                }
+            });
+            delete model.userData.selectionIndicators;
+            delete model.userData.selectionRing;
+        }
+    });
+    
+    selectedModelId = null;
+}
+
+// Update the list view to highlight selected item
 function updateListSelection(id) {
     // Remove previous highlights
     document.querySelectorAll('.llm-list-item').forEach(item => {
@@ -334,6 +342,11 @@ function updateListSelection(id) {
     if (selectedItem) {
         selectedItem.classList.add('selected');
     }
+}
+
+// Get the ID of the currently selected model
+export function getSelectedModelId() {
+    return selectedModelId;
 }
 
 function animateCarousel() {
@@ -370,7 +383,6 @@ function animateCarousel() {
                 // Keep ring at fixed height and update x,z position
                 ring.position.x = model.position.x;
                 ring.position.z = model.position.z;
-                ring.position.y = -0.99; // Keep at fixed height above the ground
                 
                 // Pulse the ring size slightly
                 const pulseFactor = 1 + Math.sin(time * 2) * 0.05;
@@ -417,8 +429,4 @@ export function cleanupCarousel() {
     camera = null;
     renderer = null;
     selectedModelId = null; // Reset selection when cleaning up
-}
-
-export function getSelectedModelId() {
-    return selectedModelId;
 }

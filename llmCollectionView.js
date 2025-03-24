@@ -70,6 +70,12 @@ export function setupLLMCollectionView(selectLLMId = null) {
                     if (e.target.tagName !== 'BUTTON') {
                         const id = llmItem.getAttribute('data-id');
                         selectModel(id);
+                        
+                        // Update button state when selection changes
+                        const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+                        if (editSelectedBtn) {
+                            editSelectedBtn.disabled = !id;
+                        }
                     }
                 });
             });
