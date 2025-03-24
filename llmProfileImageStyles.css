@@ -217,14 +217,6 @@
     object-fit: cover;
 }
 
-.profile-image.hidden {
-    display: none;
-}
-
-.profile-image-placeholder.hidden {
-    display: none;
-}
-
 /* Small profile image for list items */
 .list-profile-image {
     width: 40px;

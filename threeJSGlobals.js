@@ -20,9 +20,9 @@ export function setGlobalReferences(scene, camera, renderer) {
 
 export function getGlobalReferences() {
     return {
-        scene: currentHumanoidScene || window.currentHumanoidScene,
-        camera: humanoidCamera || window.humanoidCamera,
-        renderer: humanoidRenderer || window.humanoidRenderer
+        scene: currentHumanoidScene,
+        camera: humanoidCamera,
+        renderer: humanoidRenderer
     };
 }
 

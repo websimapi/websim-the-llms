@@ -184,12 +184,12 @@ function setupPreviewPanelHandlers(container) {
             updateProfileImageDisplay(previewImage.src);
         }
         
-        // Add highlighting effect and then close the panel
         container.classList.add('saved');
         setTimeout(() => {
             container.classList.remove('saved');
-            container.classList.add('hidden'); // Close the preview container after saving
-        }, 800);
+            // Close the preview panel after saving
+            container.classList.add('hidden');
+        }, 1000);
     });
 }
 
