@@ -223,6 +223,13 @@ function addEditSelectedButton() {
         footer.insertBefore(editSelectedBtn, document.getElementById('create-new-llm-btn'));
     }
     
+    // Update button state immediately based on current selection
+    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+    if (editSelectedBtn) {
+        const selectedId = getSelectedModelId();
+        editSelectedBtn.disabled = !selectedId;
+    }
+    
     // Add selection change listener to update button state
     const observer = new MutationObserver((mutations) => {
         const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
