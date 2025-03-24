@@ -57,32 +57,14 @@ export function setupProfileImageCapture() {
     addProfileImageToEditor();
 }
 
-// Add profile image display to the editor sidebar
+// Add profile image display to the editor
 function addProfileImageToEditor() {
-    const basicInfoGroup = document.querySelector('.settings-group:first-child');
-    if (!basicInfoGroup) return;
-    
-    // Create profile image container
-    const profileImageContainer = document.createElement('div');
-    profileImageContainer.className = 'profile-image-display';
-    profileImageContainer.innerHTML = `
-        <div class="profile-image-placeholder">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#555"/>
-            </svg>
-        </div>
-        <img class="profile-image hidden" alt="LLM Profile">
-    `;
-    
-    // Insert before the name input
-    const firstSettingItem = basicInfoGroup.querySelector('.setting-item');
-    basicInfoGroup.insertBefore(profileImageContainer, firstSettingItem);
-    
-    // Check if we have a stored image URL
-    const statusElement = document.getElementById('generation-status');
-    if (statusElement && statusElement.dataset.profileImageUrl) {
-        updateProfileImageDisplay(statusElement.dataset.profileImageUrl);
-    }
+    // Import and call the function from llmCreationInterfaceCompact
+    import('./llmCreationInterfaceCompact.js').then(module => {
+        module.addProfileImageToEditor();
+    }).catch(error => {
+        console.error("Error adding profile image to editor:", error);
+    });
 }
 
 // Update profile image display in the editor
@@ -114,7 +96,14 @@ async function handleCaptureButtonClick() {
         const { scene, camera, renderer } = getGlobalReferences();
         
         if (!scene || !camera || !renderer) {
-            throw new Error("3D scene not available");
+            // Fallback to window globals if getGlobalReferences fails
+            if (window.currentHumanoidScene && window.humanoidCamera && window.humanoidRenderer) {
+                scene = window.currentHumanoidScene;
+                camera = window.humanoidCamera;
+                renderer = window.humanoidRenderer;
+            } else {
+                throw new Error("3D scene not available");
+            }
         }
         
         // Capture a snapshot of the model
@@ -143,6 +132,9 @@ async function handleCaptureButtonClick() {
             if (statusElement) {
                 statusElement.dataset.profileImageUrl = result.url;
             }
+            
+            // Immediately update the profile image in the editor UI
+            updateProfileImageDisplay(result.url);
         } else {
             // Handle error
             showGenerationError(result.error);
@@ -180,7 +172,7 @@ function setupPreviewPanelHandlers(container) {
                 statusElement.dataset.profileImageUrl = previewImage.src;
             }
             
-            // Update the profile image display in the editor
+            // Update the profile image display in the editor - ensure this is called
             updateProfileImageDisplay(previewImage.src);
         }
         

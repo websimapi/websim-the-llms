@@ -45,12 +45,6 @@ export function setupLLMCreationInterface(llmToEdit) {
             if (statusElement) {
                 statusElement.dataset.profileImageUrl = llmToEdit.profileImageUrl;
             }
-            
-            setTimeout(() => {
-                import('./llmProfileImageUI.js').then(module => {
-                    module.updateProfileImageDisplay(llmToEdit.profileImageUrl);
-                });
-            }, 200);
         }
     }
     
@@ -112,6 +106,11 @@ export function setupLLMCreationInterface(llmToEdit) {
     
     import('./llmCreationInterfaceCompact.js').then(module => {
         module.setupProfileImageUI();
+        module.addProfileImageToEditor();
+        
+        if (llmToEdit && llmToEdit.profileImageUrl) {
+            module.updateProfileImageDisplay(llmToEdit.profileImageUrl);
+        }
     });
     
     setTimeout(() => {
