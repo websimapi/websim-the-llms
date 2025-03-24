@@ -5,6 +5,7 @@ import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
+import { createRobotModel } from './llmModelCreationRenderer.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -294,11 +295,11 @@ function initHumanoidPreview(llmToEdit) {
             statusElement.textContent = "Character loaded successfully!";
         } catch (error) {
             console.error("Error loading custom character:", error);
-            createRobotModel();
+            createDefaultRobot(llmToEdit);
         }
     } else {
         // Create robot humanoid model
-        createRobotModel();
+        createDefaultRobot(llmToEdit);
     }
     
     // Setup animation clock
@@ -318,188 +319,29 @@ function initHumanoidPreview(llmToEdit) {
     });
 }
 
-function createRobotModel() {
-    // Get current selected color
-    const color = document.getElementById('llm-color').value;
-    const style = document.getElementById('llm-style').value;
+// New helper function to create default robot with proper model data application
+function createDefaultRobot(llmToEdit) {
+    // Get current selected color or color from edit data
+    const color = llmToEdit?.color || document.getElementById('llm-color').value;
+    const style = llmToEdit?.style || document.getElementById('llm-style').value;
     
-    // Get standardized materials
-    const materials = createStandardMaterials(color, style);
+    // Create the robot model using the imported function
+    const result = createRobotModel(humanoidScene, color, style);
+    robotModel = result.model;
     
-    // Store references to materials for later updates
-    headMaterial = materials.headMaterial;
-    bodyMaterial = materials.bodyMaterial;
-    limbsMaterial = materials.limbsMaterial;
+    // Store material references
+    headMaterial = result.materials.headMaterial;
+    bodyMaterial = result.materials.bodyMaterial;
+    limbsMaterial = result.materials.limbsMaterial;
     
-    // Create robot parts
-    const robotGroup = new THREE.Group();
-    
-    // Head
-    const head = new THREE.Group();
-    const headMain = new THREE.Mesh(
-        new THREE.BoxGeometry(0.4, 0.4, 0.4),
-        headMaterial
-    );
-    head.add(headMain);
-    
-    // Eyes
-    const eyeGeometry = new THREE.SphereGeometry(0.06, 16, 16);
-    
-    const leftEye = new THREE.Mesh(eyeGeometry, materials.eyeMaterial);
-    leftEye.position.set(-0.1, 0.05, 0.2);
-    head.add(leftEye);
-    
-    const rightEye = new THREE.Mesh(eyeGeometry, materials.eyeMaterial);
-    rightEye.position.set(0.1, 0.05, 0.2);
-    head.add(rightEye);
-    
-    // Antenna
-    const antenna = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.01, 0.01, 0.2),
-        limbsMaterial
-    );
-    antenna.position.set(0, 0.3, 0);
-    head.add(antenna);
-    
-    const antennaTip = new THREE.Mesh(
-        new THREE.SphereGeometry(0.03, 16, 16),
-        materials.antennaTipMaterial
-    );
-    antennaTip.position.set(0, 0.4, 0);
-    head.add(antennaTip);
-    
-    head.position.set(0, 1.8, 0);
-    head.castShadow = true;
-    robotGroup.add(head);
-    
-    // Neck
-    const neck = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.1, 0.1, 0.1),
-        limbsMaterial
-    );
-    neck.position.set(0, 1.6, 0);
-    neck.castShadow = true;
-    robotGroup.add(neck);
-    
-    // Torso
-    const torso = new THREE.Mesh(
-        new THREE.BoxGeometry(0.6, 0.8, 0.3),
-        bodyMaterial
-    );
-    torso.position.set(0, 1.2, 0);
-    torso.castShadow = true;
-    robotGroup.add(torso);
-    
-    // Chest light
-    const chestLight = new THREE.Mesh(
-        new THREE.CircleGeometry(0.1, 32),
-        materials.chestLightMaterial
-    );
-    chestLight.position.set(0, 1.3, 0.16);
-    chestLight.rotation.x = Math.PI / 2;
-    robotGroup.add(chestLight);
-    
-    // Arms
-    const upperArmGeometry = new THREE.CylinderGeometry(0.08, 0.07, 0.4);
-    const lowerArmGeometry = new THREE.CylinderGeometry(0.07, 0.06, 0.4);
-    
-    // Left arm
-    const leftUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
-    leftUpperArm.position.set(-0.4, 1.3, 0);
-    leftUpperArm.rotation.z = -Math.PI / 6;
-    leftUpperArm.castShadow = true;
-    robotGroup.add(leftUpperArm);
-    
-    const leftLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
-    leftLowerArm.position.set(-0.55, 1.0, 0);
-    leftLowerArm.rotation.z = -Math.PI / 4;
-    leftLowerArm.castShadow = true;
-    robotGroup.add(leftLowerArm);
-    
-    const leftHand = new THREE.Mesh(
-        new THREE.SphereGeometry(0.08, 16, 16),
-        headMaterial
-    );
-    leftHand.position.set(-0.75, 0.8, 0);
-    leftHand.castShadow = true;
-    robotGroup.add(leftHand);
-    
-    // Right arm
-    const rightUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
-    rightUpperArm.position.set(0.4, 1.3, 0);
-    rightUpperArm.rotation.z = Math.PI / 6;
-    rightUpperArm.castShadow = true;
-    robotGroup.add(rightUpperArm);
-    
-    const rightLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
-    rightLowerArm.position.set(0.55, 1.0, 0);
-    rightLowerArm.rotation.z = Math.PI / 4;
-    rightLowerArm.castShadow = true;
-    robotGroup.add(rightLowerArm);
-    
-    const rightHand = new THREE.Mesh(
-        new THREE.SphereGeometry(0.08, 16, 16),
-        headMaterial
-    );
-    rightHand.position.set(0.75, 0.8, 0);
-    rightHand.castShadow = true;
-    robotGroup.add(rightHand);
-    
-    // Hip
-    const hip = new THREE.Mesh(
-        new THREE.BoxGeometry(0.35, 0.2, 0.3),
-        bodyMaterial
-    );
-    hip.position.set(0, 0.8, 0);
-    hip.castShadow = true;
-    robotGroup.add(hip);
-    
-    // Legs
-    const upperLegGeometry = new THREE.CylinderGeometry(0.09, 0.08, 0.4);
-    const lowerLegGeometry = new THREE.CylinderGeometry(0.08, 0.07, 0.4);
-    
-    // Left leg
-    const leftUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
-    leftUpperLeg.position.set(-0.15, 0.5, 0);
-    leftUpperLeg.castShadow = true;
-    robotGroup.add(leftUpperLeg);
-    
-    const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
-    leftLowerLeg.position.set(-0.15, 0.1, 0);
-    leftLowerLeg.castShadow = true;
-    robotGroup.add(leftLowerLeg);
-    
-    const leftFoot = new THREE.Mesh(
-        new THREE.BoxGeometry(0.15, 0.05, 0.25),
-        limbsMaterial
-    );
-    leftFoot.position.set(-0.15, -0.1, 0.05);
-    leftFoot.castShadow = true;
-    robotGroup.add(leftFoot);
-    
-    // Right leg
-    const rightUpperLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
-    rightUpperLeg.position.set(0.15, 0.5, 0);
-    rightUpperLeg.castShadow = true;
-    robotGroup.add(rightUpperLeg);
-    
-    const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, limbsMaterial);
-    rightLowerLeg.position.set(0.15, 0.1, 0);
-    rightLowerLeg.castShadow = true;
-    robotGroup.add(rightLowerLeg);
-    
-    const rightFoot = new THREE.Mesh(
-        new THREE.BoxGeometry(0.15, 0.05, 0.25),
-        limbsMaterial
-    );
-    rightFoot.position.set(0.15, -0.1, 0.05);
-    rightFoot.castShadow = true;
-    robotGroup.add(rightFoot);
-    
-    // Add robot to scene
-    robotModel = robotGroup;
     window.robotModel = robotModel;
-    humanoidScene.add(robotModel);
+    
+    // Apply stored model data if editing and model data exists
+    if (llmToEdit && llmToEdit.modelData) {
+        import('./llmModelStorage.js').then(module => {
+            module.applyStoredModelData(robotModel, llmToEdit);
+        });
+    }
 }
 
 function handleMeshSelection(event) {
@@ -573,19 +415,20 @@ function updateHumanoidPreview() {
     const color = document.getElementById('llm-color').value;
     const style = document.getElementById('llm-style').value;
     
-    // Get standardized materials
-    const materials = createStandardMaterials(color, style);
-    
-    // Update stored material references
-    headMaterial = materials.headMaterial;
-    bodyMaterial = materials.bodyMaterial;
-    limbsMaterial = materials.limbsMaterial;
-    
-    // Remove existing robot model and create a new one with updated materials
+    // Remove existing robot model
     if (robotModel.parent) {
         robotModel.parent.remove(robotModel);
     }
-    createRobotModel();
+    
+    // Create a new robot with updated materials
+    const result = createRobotModel(humanoidScene, color, style);
+    robotModel = result.model;
+    window.robotModel = robotModel;
+    
+    // Update stored material references
+    headMaterial = result.materials.headMaterial;
+    bodyMaterial = result.materials.bodyMaterial;
+    limbsMaterial = result.materials.limbsMaterial;
 }
 
 function updateSelectedMeshColor() {
@@ -666,7 +509,7 @@ function resetForm() {
     }
     
     if (!robotModel) {
-        createRobotModel();
+        createDefaultRobot();
     } else {
         updateHumanoidPreview();
     }

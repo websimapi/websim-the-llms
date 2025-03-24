@@ -51,6 +51,13 @@ export function applyStoredModelData(model, llmData) {
                     }
                     
                     child.material = material;
+                    
+                    // Update the color picker to match the first colored part
+                    if (partIndex === 0 && material.color) {
+                        const hexColor = '#' + material.color.getHexString();
+                        const colorPicker = document.getElementById('llm-color');
+                        if (colorPicker) colorPicker.value = hexColor;
+                    }
                 }
                 
                 // Increment counter
