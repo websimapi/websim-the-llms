@@ -246,11 +246,16 @@ function addSelectionIndicator(model) {
     ring.position.y = -0.99; // Fixed position just above ground level
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
-    scene.add(ring); // Add to scene instead of model
     
-    // Position the ring under the model
+    // IMPORTANT: Store the model ID with the ring for identification
+    ring.userData.modelId = model.userData.id;
+    
+    // Set position to match the model
     ring.position.x = model.position.x;
     ring.position.z = model.position.z;
+    
+    // Add to scene
+    scene.add(ring);
     
     // Add a highlight effect
     const highlight = new THREE.PointLight(0x3cb371, 1, 3);
@@ -271,6 +276,36 @@ function addSelectionIndicator(model) {
     model.userData.selectionRing = ring; // Store direct reference to ring
 }
 
+function clearSelection() {
+    // First find and remove all existing selection rings in the scene
+    const selectionRings = [];
+    scene.children.forEach(child => {
+        if (child.userData && child.userData.isSelectionRing) {
+            selectionRings.push(child);
+        }
+    });
+    
+    // Remove rings outside of the loop to avoid modifying the collection while iterating
+    selectionRings.forEach(ring => {
+        scene.remove(ring);
+    });
+    
+    // Then remove other indicators from models
+    llmModels.forEach(model => {
+        if (model && model.userData.selectionIndicators) {
+            model.userData.selectionIndicators.forEach(indicator => {
+                if (indicator.parent === model) {
+                    model.remove(indicator);
+                }
+            });
+            delete model.userData.selectionIndicators;
+            delete model.userData.selectionRing;
+        }
+    });
+    
+    selectedModelId = null;
+}
+
 // Function to select a model by ID
 export function selectModel(id) {
     if (id === selectedModelId) return; // Already selected
@@ -281,59 +316,23 @@ export function selectModel(id) {
     // Set new selection
     selectedModelId = id;
     
-    // Find model with this ID and position of LLM in carousel
+    // Find model with this ID
     const selectedModel = llmModels.find(model => model.userData.id === id);
-    const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
-    
-    // If selected LLM isn't in the visible models, we need to update the carousel
-    if (!selectedModel && llmIndex !== -1) {
-        // Pan to the selected model
-        currentIndex = llmIndex;
-        updateCarouselModels();
-        updateArrowVisibility();
-        
-        // Find the model again after updating carousel
-        const updatedModel = llmModels.find(model => model.userData.id === id);
-        if (updatedModel) {
-            addSelectionIndicator(updatedModel);
-        }
-    } else if (selectedModel) {
-        // Model is already visible, just add the selection
+    if (selectedModel) {
         addSelectionIndicator(selectedModel);
+        
+        // Find the index of the selected LLM
+        const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
+        if (llmIndex !== -1 && llmIndex !== currentIndex) {
+            // Pan to the selected model if it's not the current one
+            currentIndex = llmIndex;
+            updateCarouselModels();
+            updateArrowVisibility();
+        }
     }
     
     // Update list view highlighting
     updateListSelection(id);
-}
-
-function clearSelection() {
-    // Find and remove all selection rings in the scene
-    const selectionRings = [];
-    scene.children.forEach(child => {
-        if (child.userData && child.userData.isSelectionRing) {
-            selectionRings.push(child);
-        }
-    });
-    
-    // Remove rings in a separate loop to avoid modifying the collection while iterating
-    selectionRings.forEach(ring => {
-        scene.remove(ring);
-    });
-    
-    // Then remove other indicators from models
-    llmModels.forEach(model => {
-        if (model && model.userData && model.userData.selectionIndicators) {
-            model.userData.selectionIndicators.forEach(indicator => {
-                if (indicator !== model.userData.selectionRing && indicator.parent) {
-                    indicator.parent.remove(indicator);
-                }
-            });
-            delete model.userData.selectionIndicators;
-            delete model.userData.selectionRing;
-        }
-    });
-    
-    selectedModelId = null;
 }
 
 // Update the list view to highlight selected item
@@ -347,16 +346,12 @@ function updateListSelection(id) {
     const selectedItem = document.querySelector(`.llm-list-item[data-id="${id}"]`);
     if (selectedItem) {
         selectedItem.classList.add('selected');
-        
-        // If this selection came from list view, ensure the LLM is visible in the carousel
-        const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
-        if (llmIndex !== -1 && llmIndex !== currentIndex) {
-            // Update carousel to show the selected model
-            currentIndex = llmIndex;
-            updateCarouselModels();
-            updateArrowVisibility();
-        }
     }
+}
+
+// Get the ID of the currently selected model
+export function getSelectedModelId() {
+    return selectedModelId;
 }
 
 function animateCarousel() {
@@ -385,20 +380,22 @@ function animateCarousel() {
         const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
         model.rotation.y = baseRotation + Math.sin(time * 0.5 + offset) * 0.1;
         
-        // Animate selection indicators if present
-        if (model.userData.selectionRing) {
-            const ring = model.userData.selectionRing;
-            // Keep ring at fixed position, don't animate up/down
-            ring.position.x = model.position.x;
-            ring.position.z = model.position.z;
-            ring.position.y = -0.99; // Ensure it stays at fixed height
-            
-            // Pulse the ring size slightly
-            const pulseFactor = 1 + Math.sin(time * 2) * 0.05;
-            ring.scale.x = ring.scale.z = pulseFactor;
-        }
+        // Find the selection ring for this model and update its position
+        scene.children.forEach(child => {
+            if (child.userData && 
+                child.userData.isSelectionRing && 
+                child.userData.modelId === model.userData.id) {
+                // Keep ring at fixed height and update x,z position
+                child.position.x = model.position.x;
+                child.position.z = model.position.z;
+                
+                // Pulse the ring size slightly
+                const pulseFactor = 1 + Math.sin(time * 2) * 0.05;
+                child.scale.x = child.scale.z = pulseFactor;
+            }
+        });
         
-        // Update lights
+        // Update other lights/effects on the model
         if (model.userData.selectionIndicators) {
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData && indicator.userData.isSelectionHighlight) {
@@ -439,9 +436,4 @@ export function cleanupCarousel() {
     camera = null;
     renderer = null;
     selectedModelId = null; // Reset selection when cleaning up
-}
-
-// Get the ID of the currently selected model
-export function getSelectedModelId() {
-    return selectedModelId;
 }

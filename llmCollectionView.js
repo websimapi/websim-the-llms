@@ -63,6 +63,21 @@ export function setupLLMCollectionView(selectLLMId = null) {
                     </div>
                 `;
                 llmList.appendChild(llmItem);
+                
+                // Add click event to select LLM
+                llmItem.addEventListener('click', (e) => {
+                    // Don't trigger if clicking on a button
+                    if (e.target.tagName !== 'BUTTON') {
+                        const id = llmItem.getAttribute('data-id');
+                        selectModel(id);
+                        
+                        // Update button state when selection changes
+                        const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+                        if (editSelectedBtn) {
+                            editSelectedBtn.disabled = !id;
+                        }
+                    }
+                });
             });
             
             // Setup carousel
@@ -88,23 +103,6 @@ export function setupLLMCollectionView(selectLLMId = null) {
                     const confirmed = confirm('Are you sure you want to delete this LLM?');
                     if (confirmed) {
                         deleteLLM(id);
-                    }
-                });
-            });
-            
-            // Add click events for list items
-            document.querySelectorAll('.llm-list-item').forEach(item => {
-                item.addEventListener('click', (e) => {
-                    // Don't trigger if clicking on a button
-                    if (e.target.tagName !== 'BUTTON') {
-                        const id = item.getAttribute('data-id');
-                        selectModel(id);
-                        
-                        // Update button state when selection changes
-                        const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-                        if (editSelectedBtn) {
-                            editSelectedBtn.disabled = !id;
-                        }
                     }
                 });
             });
@@ -189,9 +187,13 @@ function handleViewportClick(event) {
         // Traverse up to find the parent model with userData
         while (model && (!model.userData || !model.userData.id)) {
             model = model.parent;
+            
+            // If we've reached the top without finding a valid model, break
+            if (!model) break;
         }
         
         if (model && model.userData && model.userData.id) {
+            // Select the exact model that was clicked
             selectModel(model.userData.id);
         }
     }
