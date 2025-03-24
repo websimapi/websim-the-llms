@@ -1,4 +1,6 @@
 // Helper module to manage color data for avatar parts
+import * as THREE from 'three';
+
 export const avatarColorManager = {
     // Store color data for an LLM's avatar parts
     storeColorData(llmData, selectedMesh) {
