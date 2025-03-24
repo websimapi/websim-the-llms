@@ -1,6 +1,6 @@
 // New file to reduce size of llmCreationInterface.js
 import * as THREE from 'three';
-import { createCustomCharacter } from './characterGenerator.js';
+import { createCustomCharacter, generateCharacterCode } from './characterGenerator.js';
 import { attributeSystem } from './attributeSystem.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
 
