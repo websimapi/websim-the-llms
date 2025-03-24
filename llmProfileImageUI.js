@@ -46,11 +46,51 @@ export function setupProfileImageCapture() {
     humanoidViewport.appendChild(cameraButton);
     humanoidViewport.appendChild(previewContainer);
     
+    // Initialize the profile image display container
+    initProfileImageDisplay();
+    
     // Add click handler for camera button
     cameraButton.addEventListener('click', handleCaptureButtonClick);
     
     // Add event handlers for preview panel
     setupPreviewPanelHandlers(previewContainer);
+}
+
+// Initialize profile image display container in Basic Information section
+function initProfileImageDisplay() {
+    const displayContainer = document.getElementById('profile-image-display');
+    if (!displayContainer) return;
+    
+    displayContainer.innerHTML = `
+        <div class="profile-image-container">
+            <img id="profile-display-image" class="profile-image" alt="LLM Profile Image">
+            <div class="profile-image-loading" style="display: none;">
+                <div class="loading-animation"></div>
+            </div>
+            <button class="remove-image-btn" title="Remove image">&times;</button>
+        </div>
+    `;
+    
+    // Add event listener to remove button
+    const removeBtn = displayContainer.querySelector('.remove-image-btn');
+    removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeProfileImage();
+    });
+}
+
+// Remove profile image
+function removeProfileImage() {
+    const displayContainer = document.getElementById('profile-image-display');
+    displayContainer.classList.remove('has-image');
+    
+    // Clear the stored image URL
+    const statusElement = document.getElementById('generation-status');
+    if (statusElement) {
+        delete statusElement.dataset.profileImageUrl;
+    }
+    
+    lastGeneratedImageUrl = null;
 }
 
 // Handle camera button click
@@ -59,9 +99,15 @@ async function handleCaptureButtonClick() {
     const button = document.getElementById('capture-profile-image');
     button.classList.add('capturing');
     
+    // Show loading state in Basic Information section
+    const profileDisplay = document.getElementById('profile-image-display');
+    const loadingElement = profileDisplay.querySelector('.profile-image-loading');
+    profileDisplay.classList.add('has-image');
+    loadingElement.style.display = 'flex';
+    
     // Get the description from the textarea
     const description = document.getElementById('llm-custom-prompt').value.trim() || 
-                        "A 3D character model";
+                       "A 3D character model";
     
     try {
         // Access the Three.js scene, camera and renderer from the global scope
@@ -79,20 +125,26 @@ async function handleCaptureButtonClick() {
         // Show preview panel with loading state
         const previewContainer = document.getElementById('profile-image-preview-container');
         const previewImage = document.getElementById('profile-image-preview');
-        const loadingElement = document.querySelector('.preview-loading');
+        const previewLoadingElement = document.querySelector('.preview-loading');
         
         previewContainer.classList.remove('hidden');
         previewImage.style.display = 'none';
-        loadingElement.style.display = 'flex';
+        previewLoadingElement.style.display = 'flex';
         
         // Generate profile image
         const result = await generateProfileImage(imageDataUrl, description);
         
         // Update the UI based on result
         if (result.success) {
+            // Update preview
             previewImage.src = result.url;
             previewImage.style.display = 'block';
             lastGeneratedImageUrl = result.url;
+            
+            // Update display in Basic Information section
+            const displayImage = document.getElementById('profile-display-image');
+            displayImage.src = result.url;
+            profileDisplay.classList.add('has-image');
             
             // Store the image URL on the form for later saving
             const statusElement = document.getElementById('generation-status');
@@ -107,9 +159,10 @@ async function handleCaptureButtonClick() {
         console.error("Error capturing model:", error);
         showGenerationError(error.message);
     } finally {
-        // Hide loading state
+        // Hide loading states
         button.classList.remove('capturing');
         document.querySelector('.preview-loading').style.display = 'none';
+        profileDisplay.querySelector('.profile-image-loading').style.display = 'none';
     }
 }
 
@@ -132,6 +185,15 @@ function setupPreviewPanelHandlers(container) {
         // It will be saved with the LLM when the Create/Save button is clicked
         container.classList.add('saved');
         setTimeout(() => container.classList.remove('saved'), 1000);
+        
+        // Update display in Basic Information section
+        const profileDisplay = document.getElementById('profile-image-display');
+        const displayImage = document.getElementById('profile-display-image');
+        
+        if (lastGeneratedImageUrl) {
+            displayImage.src = lastGeneratedImageUrl;
+            profileDisplay.classList.add('has-image');
+        }
     });
 }
 
@@ -150,4 +212,9 @@ function showGenerationError(message) {
             Error: ${message || "Failed to generate image"}
         </div>
     `;
+    
+    // Clear loading in Basic Information section
+    const profileDisplay = document.getElementById('profile-image-display');
+    profileDisplay.querySelector('.profile-image-loading').style.display = 'none';
+    profileDisplay.classList.remove('has-image');
 }
