@@ -233,7 +233,9 @@ function addSelectionIndicator(model) {
     // Remove any existing selection indicators first
     if (model.userData.selectionIndicators) {
         model.userData.selectionIndicators.forEach(indicator => {
-            model.remove(indicator);
+            if (indicator.parent) {
+                indicator.parent.remove(indicator);
+            }
         });
     }
     
@@ -250,7 +252,9 @@ function addSelectionIndicator(model) {
     ring.position.y = -1; // Fixed position at ground level, not relative to model
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
-    model.add(ring);
+    scene.add(ring); // Add to scene directly instead of the model
+    ring.position.x = model.position.x; // Match the model's x position
+    ring.position.z = model.position.z; // Match the model's z position
     
     // Add a highlight effect
     const highlight = new THREE.PointLight(0x3cb371, 1, 3);
@@ -304,7 +308,10 @@ function clearSelection() {
     llmModels.forEach(model => {
         if (model.userData.selectionIndicators) {
             model.userData.selectionIndicators.forEach(indicator => {
-                model.remove(indicator);
+                // Remove from the correct parent
+                if (indicator.parent) {
+                    indicator.parent.remove(indicator);
+                }
             });
             delete model.userData.selectionIndicators;
         }
@@ -366,9 +373,11 @@ function animateCarousel() {
                     // Pulse the ring size slightly
                     indicator.scale.x = indicator.scale.z = 1 + Math.sin(time * 2) * 0.05;
                     
-                    // Fix ring to ground regardless of model bobbing
-                    // Use a fixed position relative to the world instead of the model
-                    indicator.position.y = -1 - model.position.y;
+                    // Update ring position to match model's x and z position
+                    indicator.position.x = model.position.x;
+                    indicator.position.z = model.position.z;
+                    // Keep at a fixed y position
+                    indicator.position.y = -1;
                 }
                 
                 if (indicator.userData.isSelectionHighlight) {
@@ -387,13 +396,27 @@ export function cleanupCarousel() {
         cancelAnimationFrame(animationId);
     }
     
-    // Clean up all models
+    // Clean up all models and selection rings
     if (scene) {
+        // Remove all models
         llmModels.forEach(model => {
             if (model && model.parent) {
+                // Also clean up any selection indicators that may be in the scene
+                if (model.userData.selectionIndicators) {
+                    model.userData.selectionIndicators.forEach(indicator => {
+                        if (indicator.parent) {
+                            indicator.parent.remove(indicator);
+                        }
+                    });
+                }
                 model.parent.remove(model);
             }
         });
+        
+        // Clean up any other objects in the scene
+        while(scene.children.length > 0) { 
+            scene.remove(scene.children[0]); 
+        }
     }
     
     llmModels = [];
