@@ -4,6 +4,7 @@ import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
+import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -21,9 +22,6 @@ export function setupLLMCreationInterface(llmToEdit) {
         delete statusElement.dataset.generatedCode;
     }
     customCharacter = null;
-    
-    // Reset the entire humanoid preview
-    resetHumanoidPreview();
     
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
@@ -316,55 +314,13 @@ function createRobotModel() {
     const color = document.getElementById('llm-color').value;
     const style = document.getElementById('llm-style').value;
     
-    // Create materials based on selected style
-    let emissiveIntensity = 0;
-    let metalness = 0.2;
-    let roughness = 0.7;
+    // Get standardized materials
+    const materials = createStandardMaterials(color, style);
     
-    switch(style) {
-        case 'modern':
-            metalness = 0.6;
-            roughness = 0.2;
-            break;
-        case 'classic':
-            metalness = 0.1;
-            roughness = 0.9;
-            break;
-        case 'retro':
-            metalness = 0.3;
-            roughness = 0.8;
-            break;
-        case 'futuristic':
-            metalness = 0.8;
-            roughness = 0.1;
-            emissiveIntensity = 0.5;
-            break;
-    }
-    
-    // Create materials
-    headMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(color),
-        emissive: new THREE.Color(color).multiplyScalar(0.3),
-        emissiveIntensity: emissiveIntensity,
-        metalness: metalness + 0.2,
-        roughness: roughness - 0.1
-    });
-    
-    bodyMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(color).multiplyScalar(0.8),
-        emissive: new THREE.Color(color).multiplyScalar(0.2),
-        emissiveIntensity: emissiveIntensity,
-        metalness: metalness,
-        roughness: roughness
-    });
-    
-    limbsMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0x444444),
-        emissive: new THREE.Color(color).multiplyScalar(0.1),
-        emissiveIntensity: emissiveIntensity,
-        metalness: metalness + 0.3,
-        roughness: roughness + 0.1
-    });
+    // Store references to materials for later updates
+    headMaterial = materials.headMaterial;
+    bodyMaterial = materials.bodyMaterial;
+    limbsMaterial = materials.limbsMaterial;
     
     // Create robot parts
     const robotGroup = new THREE.Group();
@@ -379,13 +335,12 @@ function createRobotModel() {
     
     // Eyes
     const eyeGeometry = new THREE.SphereGeometry(0.06, 16, 16);
-    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
     
-    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    const leftEye = new THREE.Mesh(eyeGeometry, materials.eyeMaterial);
     leftEye.position.set(-0.1, 0.05, 0.2);
     head.add(leftEye);
     
-    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+    const rightEye = new THREE.Mesh(eyeGeometry, materials.eyeMaterial);
     rightEye.position.set(0.1, 0.05, 0.2);
     head.add(rightEye);
     
@@ -399,7 +354,7 @@ function createRobotModel() {
     
     const antennaTip = new THREE.Mesh(
         new THREE.SphereGeometry(0.03, 16, 16),
-        new THREE.MeshBasicMaterial({ color: 0xff0000 })
+        materials.antennaTipMaterial
     );
     antennaTip.position.set(0, 0.4, 0);
     head.add(antennaTip);
@@ -429,9 +384,7 @@ function createRobotModel() {
     // Chest light
     const chestLight = new THREE.Mesh(
         new THREE.CircleGeometry(0.1, 32),
-        new THREE.MeshBasicMaterial({ 
-            color: new THREE.Color(color).multiplyScalar(1.5) 
-        })
+        materials.chestLightMaterial
     );
     chestLight.position.set(0, 1.3, 0.16);
     chestLight.rotation.x = Math.PI / 2;
@@ -444,13 +397,13 @@ function createRobotModel() {
     // Left arm
     const leftUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
     leftUpperArm.position.set(-0.4, 1.3, 0);
-    leftUpperArm.rotation.z = Math.PI / 6;
+    leftUpperArm.rotation.z = -Math.PI / 6;
     leftUpperArm.castShadow = true;
     robotGroup.add(leftUpperArm);
     
     const leftLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
     leftLowerArm.position.set(-0.55, 1.0, 0);
-    leftLowerArm.rotation.z = Math.PI / 4;
+    leftLowerArm.rotation.z = -Math.PI / 4;
     leftLowerArm.castShadow = true;
     robotGroup.add(leftLowerArm);
     
@@ -465,13 +418,13 @@ function createRobotModel() {
     // Right arm
     const rightUpperArm = new THREE.Mesh(upperArmGeometry, limbsMaterial);
     rightUpperArm.position.set(0.4, 1.3, 0);
-    rightUpperArm.rotation.z = -Math.PI / 6;
+    rightUpperArm.rotation.z = Math.PI / 6;
     rightUpperArm.castShadow = true;
     robotGroup.add(rightUpperArm);
     
     const rightLowerArm = new THREE.Mesh(lowerArmGeometry, limbsMaterial);
     rightLowerArm.position.set(0.55, 1.0, 0);
-    rightLowerArm.rotation.z = -Math.PI / 4;
+    rightLowerArm.rotation.z = Math.PI / 4;
     rightLowerArm.castShadow = true;
     robotGroup.add(rightLowerArm);
     
@@ -606,66 +559,58 @@ function updateHumanoidPreview() {
     // If we have a custom character, don't update the default robot
     if (customCharacter) return;
     
-    // Get new color and style
+    // Get new color and style values
     const color = document.getElementById('llm-color').value;
     const style = document.getElementById('llm-style').value;
     
-    // Update materials based on style
-    let emissiveIntensity = 0;
-    let metalness = 0.2;
-    let roughness = 0.7;
+    // Get standardized materials
+    const materials = createStandardMaterials(color, style);
     
-    switch(style) {
-        case 'modern':
-            metalness = 0.6;
-            roughness = 0.2;
-            break;
-        case 'classic':
-            metalness = 0.1;
-            roughness = 0.9;
-            break;
-        case 'retro':
-            metalness = 0.3;
-            roughness = 0.8;
-            break;
-        case 'futuristic':
-            metalness = 0.8;
-            roughness = 0.1;
-            emissiveIntensity = 0.5;
-            break;
-    }
+    // Update stored material references
+    headMaterial = materials.headMaterial;
+    bodyMaterial = materials.bodyMaterial;
+    limbsMaterial = materials.limbsMaterial;
     
-    // Update materials
-    if (headMaterial) {
-        headMaterial.color.set(color);
-        headMaterial.emissive.set(color).multiplyScalar(0.3);
-        headMaterial.emissiveIntensity = emissiveIntensity;
-        headMaterial.metalness = metalness + 0.2;
-        headMaterial.roughness = roughness - 0.1;
-    }
-    
-    if (bodyMaterial) {
-        bodyMaterial.color.set(new THREE.Color(color).multiplyScalar(0.8));
-        bodyMaterial.emissive.set(color).multiplyScalar(0.2);
-        bodyMaterial.emissiveIntensity = emissiveIntensity;
-        bodyMaterial.metalness = metalness;
-        bodyMaterial.roughness = roughness;
-    }
-    
-    if (limbsMaterial) {
-        limbsMaterial.emissive.set(color).multiplyScalar(0.1);
-        limbsMaterial.emissiveIntensity = emissiveIntensity;
-        limbsMaterial.metalness = metalness + 0.3;
-        limbsMaterial.roughness = roughness + 0.1;
-    }
-    
-    // Update chest light color
-    if (robotModel) {
-        const chestLight = robotModel.children.find(c => c.geometry && c.geometry.type === 'CircleGeometry');
-        if (chestLight && chestLight.material) {
-            chestLight.material.color.set(new THREE.Color(color).multiplyScalar(1.5));
+    // Update all materials in the robot model
+    robotModel.traverse(child => {
+        if (child.isMesh) {
+            // Determine which material to use based on the mesh position or role
+            if (child.position.y > 1.7) {
+                // Head parts
+                child.material = materials.headMaterial;
+            } else if (child.position.y < 0.0) {
+                // Feet
+                child.material = materials.limbsMaterial;
+            } else if (child.geometry.type === 'CircleGeometry') {
+                // Chest light
+                child.material = materials.chestLightMaterial;
+            } else if (child.geometry.type === 'SphereGeometry') {
+                if (child.scale.x < 0.1) {
+                    // Antenna tip
+                    child.material = materials.antennaTipMaterial; 
+                } else if (child.position.y < 1.0) {
+                    // Hands
+                    child.material = materials.headMaterial;
+                } else if (child.position.z > 0.1) {
+                    // Eyes
+                    child.material = materials.eyeMaterial;
+                }
+            } else if (child.geometry.type === 'CylinderGeometry') {
+                // Arms, legs, neck
+                child.material = materials.limbsMaterial;
+            } else if (child.geometry.type === 'BoxGeometry') {
+                if (child.position.y > 1.0) {
+                    // Torso
+                    child.material = materials.bodyMaterial;
+                } else {
+                    // Hip or lower parts
+                    child.material = (child.position.y > 0.6) 
+                        ? materials.bodyMaterial 
+                        : materials.limbsMaterial;
+                }
+            }
         }
-    }
+    });
 }
 
 function updateSelectedMeshColor() {
@@ -750,25 +695,4 @@ function resetForm() {
     } else {
         updateHumanoidPreview();
     }
-}
-
-// Function to fully reset the humanoid preview
-function resetHumanoidPreview() {
-    const viewport = document.querySelector('.humanoid-viewport');
-    if (viewport) {
-        viewport.innerHTML = '';
-    }
-    
-    if (humanoidScene) {
-        // Remove all objects from the scene
-        while (humanoidScene.children.length > 0) {
-            const object = humanoidScene.children[0];
-            humanoidScene.remove(object);
-        }
-    }
-    
-    // Reset variables
-    robotModel = null;
-    customCharacter = null;
-    selectedMesh = null;
 }

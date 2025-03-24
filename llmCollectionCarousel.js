@@ -27,27 +27,17 @@ export function setupLLMCarousel(viewportElement, llms) {
         return;
     }
     
-    // Force viewport to be visible and have proper dimensions first
-    viewportElement.style.width = '100%';
-    viewportElement.style.height = '100%';
-    viewportElement.style.minWidth = '400px';
-    viewportElement.style.minHeight = '300px';
-    viewportElement.style.display = 'block';
+    // Initialize Three.js scene
+    initCarouselScene(viewportElement);
     
-    // Delay initialization to allow dimensions to be applied
-    setTimeout(() => {
-        // Initialize Three.js scene
-        initCarouselScene(viewportElement);
-        
-        // Add navigation arrows
-        addNavigationArrows(viewportElement);
-        
-        // Load initial models
-        updateCarouselModels();
-        
-        // Start animation
-        animateCarousel();
-    }, 50);
+    // Add navigation arrows
+    addNavigationArrows(viewportElement);
+    
+    // Load initial models
+    updateCarouselModels();
+    
+    // Start animation
+    animateCarousel();
 }
 
 function initCarouselScene(viewportElement) {

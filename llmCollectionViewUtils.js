@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import { createCustomCharacter } from './characterGenerator.js';
-import { characterStyleManager } from './characterStyleManager.js';
 
 // Handles model creation for the collection view
 export function createCollectionModels(llms, llmDataManager, createCustomCharacter) {
@@ -35,16 +33,14 @@ export function createCollectionModels(llms, llmDataManager, createCustomCharact
             // Create custom character from stored code
             try {
                 llmModel = createCustomCharacter(THREE, llm.customCharacterCode);
-                // Apply consistent styling
-                llmModel = characterStyleManager.applyConsistentStyling(THREE, llmModel, llm);
             } catch (error) {
                 console.error("Error creating custom character:", error);
                 // Create fallback model
-                llmModel = createStandardModel(THREE, llm);
+                llmModel = createFallbackModel(llm);
             }
         } else {
             // Create standard model based on stored properties
-            llmModel = createStandardModel(THREE, llm);
+            llmModel = createStandardModel(llm);
         }
         
         // Position the model
@@ -61,7 +57,7 @@ export function createCollectionModels(llms, llmDataManager, createCustomCharact
 }
 
 // Create a standard model for an LLM
-function createStandardModel(THREE, llm) {
+function createStandardModel(llm) {
     // Create a simple robot model based on the LLM properties
     const group = new THREE.Group();
     
@@ -80,27 +76,11 @@ function createStandardModel(THREE, llm) {
         headMaterial
     );
     head.position.y = 1.8;
-    head.name = 'head';
     group.add(head);
-    
-    // Eyes
-    const eyeGeometry = new THREE.SphereGeometry(0.06, 16, 16);
-    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-    
-    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.1, 0.05, 0.2);
-    leftEye.name = 'left-eye';
-    head.add(leftEye);
-    
-    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.1, 0.05, 0.2);
-    rightEye.name = 'right-eye';
-    head.add(rightEye);
     
     // Create body
     const bodyMaterial = new THREE.MeshStandardMaterial({
         color: color.clone().multiplyScalar(0.8),
-        emissive: color.clone().multiplyScalar(0.2),
         metalness: 0.5,
         roughness: 0.5
     });
@@ -110,72 +90,74 @@ function createStandardModel(THREE, llm) {
         bodyMaterial
     );
     body.position.y = 1.2;
-    body.name = 'body';
     group.add(body);
     
-    // Chest light
-    const chestLight = new THREE.Mesh(
-        new THREE.CircleGeometry(0.1, 32),
-        new THREE.MeshBasicMaterial({ 
-            color: color.clone().multiplyScalar(1.5) 
-        })
-    );
-    chestLight.position.set(0, 1.3, 0.16);
-    chestLight.rotation.x = Math.PI / 2;
-    chestLight.name = 'chest-light';
-    group.add(chestLight);
-    
-    // Create limbs
+    // Create simple limbs
     const limbsMaterial = new THREE.MeshStandardMaterial({
         color: 0x444444,
-        emissive: color.clone().multiplyScalar(0.1),
         metalness: 0.8,
         roughness: 0.2
     });
     
-    // Add simple arms 
-    const leftArm = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.07, 0.5),
+    // Add simple arms and legs
+    const arms = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 0.2, 0.2),
         limbsMaterial
     );
-    leftArm.position.set(-0.4, 1.3, 0);
-    leftArm.rotation.z = -Math.PI / 6;  // Corrected rotation direction
-    leftArm.name = 'left-upper-arm';
-    group.add(leftArm);
+    arms.position.y = 1.3;
+    group.add(arms);
     
-    const rightArm = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.07, 0.5),
+    const legs = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.15, 1),
         limbsMaterial
     );
-    rightArm.position.set(0.4, 1.3, 0);
-    rightArm.rotation.z = Math.PI / 6;  // Corrected rotation direction
-    rightArm.name = 'right-upper-arm';
-    group.add(rightArm);
+    legs.position.y = 0.5;
+    group.add(legs);
     
-    // Hip
-    const hip = new THREE.Mesh(
-        new THREE.BoxGeometry(0.35, 0.2, 0.3),
-        bodyMaterial
+    return group;
+}
+
+// Create a fallback model if the custom model fails
+function createFallbackModel(llm) {
+    // Very simple fallback model
+    const group = new THREE.Group();
+    
+    const color = new THREE.Color(llm.color || 0x3cb371);
+    
+    // Create body
+    const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.3, 1.7),
+        new THREE.MeshStandardMaterial({ color })
     );
-    hip.position.set(0, 0.8, 0);
-    hip.name = 'hip';
-    group.add(hip);
+    body.position.y = 0.85;
+    group.add(body);
     
-    // Legs
-    const upperLegGeometry = new THREE.CylinderGeometry(0.09, 0.08, 0.4);
+    // Add a nameplate
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
     
-    // Left leg
-    const leftLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
-    leftLeg.position.set(-0.15, 0.5, 0);
-    leftLeg.name = 'left-upper-leg';
-    group.add(leftLeg);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(llm.name, canvas.width / 2, canvas.height / 2 + 8);
     
-    // Right leg
-    const rightLeg = new THREE.Mesh(upperLegGeometry, limbsMaterial);
-    rightLeg.position.set(0.15, 0.5, 0);
-    rightLeg.name = 'right-upper-leg';
-    group.add(rightLeg);
+    const texture = new THREE.CanvasTexture(canvas);
+    const nameMaterial = new THREE.MeshBasicMaterial({ 
+        map: texture,
+        transparent: true
+    });
     
-    // Apply consistent styling
-    return characterStyleManager.applyConsistentStyling(THREE, group, llm);
+    const nameplate = new THREE.Mesh(
+        new THREE.PlaneGeometry(1, 0.25),
+        nameMaterial
+    );
+    nameplate.position.set(0, 2, 0);
+    nameplate.rotation.y = Math.PI;
+    group.add(nameplate);
+    
+    return group;
 }

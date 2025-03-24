@@ -11,6 +11,8 @@ export function saveLLMData() {
     const style = document.getElementById('llm-style').value;
     const customPrompt = document.getElementById('llm-custom-prompt').value;
     
+    console.log('Saving LLM with style:', style);
+    
     // Get attributes
     const attributes = attributeSystem.exportAttributes();
     
@@ -51,6 +53,7 @@ export function saveLLMData() {
                 llmData.customCharacterCode = existingLLM.customCharacterCode;
             }
             
+            console.log('Updating LLM with ID:', editId, 'Style:', llmData.style);
             llmDataManager.updateLLM(llmData);
         } else {
             console.error("Could not find LLM with ID:", editId);
@@ -59,6 +62,7 @@ export function saveLLMData() {
         }
     } else {
         // Save as new LLM
+        console.log('Adding new LLM with style:', llmData.style);
         llmDataManager.addLLM(llmData);
     }
     
