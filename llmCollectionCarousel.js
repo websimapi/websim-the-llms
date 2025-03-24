@@ -246,13 +246,11 @@ function addSelectionIndicator(model) {
     ring.position.y = -0.99; // Fixed position just above ground level
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
+    scene.add(ring); // Add to scene instead of model
     
     // Position the ring under the model
     ring.position.x = model.position.x;
     ring.position.z = model.position.z;
-    
-    // Add to scene instead of model
-    scene.add(ring);
     
     // Add a highlight effect
     const highlight = new THREE.PointLight(0x3cb371, 1, 3);
@@ -271,6 +269,35 @@ function addSelectionIndicator(model) {
     // Store a reference to the selection indicators
     model.userData.selectionIndicators = [ring, highlight, bottomLight];
     model.userData.selectionRing = ring; // Store direct reference to ring
+}
+
+// Function to select a model by ID
+export function selectModel(id) {
+    if (id === selectedModelId) return; // Already selected
+    
+    // Remove selection from previous model
+    clearSelection();
+    
+    // Set new selection
+    selectedModelId = id;
+    
+    // Find model with this ID
+    const selectedModel = llmModels.find(model => model.userData.id === id);
+    if (selectedModel) {
+        addSelectionIndicator(selectedModel);
+        
+        // Find the index of the selected LLM
+        const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
+        if (llmIndex !== -1 && llmIndex !== currentIndex) {
+            // Pan to the selected model if it's not the current one
+            currentIndex = llmIndex;
+            updateCarouselModels();
+            updateArrowVisibility();
+        }
+    }
+    
+    // Update list view highlighting
+    updateListSelection(id);
 }
 
 function clearSelection() {
@@ -301,35 +328,6 @@ function clearSelection() {
     });
     
     selectedModelId = null;
-}
-
-// Function to select a model by ID
-export function selectModel(id) {
-    if (id === selectedModelId) return; // Already selected
-    
-    // Remove selection from previous model
-    clearSelection();
-    
-    // Set new selection
-    selectedModelId = id;
-    
-    // Find model with this ID
-    const selectedModel = llmModels.find(model => model.userData.id === id);
-    if (selectedModel) {
-        addSelectionIndicator(selectedModel);
-        
-        // Find the index of the selected LLM
-        const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
-        if (llmIndex !== -1 && llmIndex !== currentIndex) {
-            // Pan to the selected model if it's not the current one
-            currentIndex = llmIndex;
-            updateCarouselModels();
-            updateArrowVisibility();
-        }
-    }
-    
-    // Update list view highlighting
-    updateListSelection(id);
 }
 
 // Update the list view to highlight selected item
@@ -382,10 +380,10 @@ function animateCarousel() {
             // Find the selection ring (now placed in scene)
             const ring = model.userData.selectionRing;
             if (ring) {
-                // Keep ring at fixed height and update x,z position
+                // Keep ring at fixed height but make sure it follows the model in x,z
                 ring.position.x = model.position.x;
                 ring.position.z = model.position.z;
-                ring.position.y = -0.99; // Keep at fixed height
+                ring.position.y = -0.99; // Keep fixed Y position
                 
                 // Pulse the ring size slightly
                 const pulseFactor = 1 + Math.sin(time * 2) * 0.05;

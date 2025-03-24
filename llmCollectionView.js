@@ -187,16 +187,13 @@ function handleViewportClick(event) {
         // Traverse up to find the parent model with userData
         while (model && (!model.userData || !model.userData.id)) {
             model = model.parent;
+            if (!model) break; // Guard against null if we reach the top
         }
         
         if (model && model.userData && model.userData.id) {
+            // Select the model that was clicked
             selectModel(model.userData.id);
-            
-            // Update the selected button state
-            const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-            if (editSelectedBtn) {
-                editSelectedBtn.disabled = false;
-            }
+            return; // Exit after selecting
         }
     }
 }
