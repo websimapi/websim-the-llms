@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { normalizeColorFormat } from './colorDataUtils.js';
 
 // Handles model creation for the collection view
 export function createCollectionModels(llms, llmDataManager, createCustomCharacter) {
@@ -62,9 +61,7 @@ function createStandardModel(llm) {
     // Create a simple robot model based on the LLM properties
     const group = new THREE.Group();
     
-    // Ensure color format is normalized
-    const colorStr = normalizeColorFormat(llm.color);
-    const color = new THREE.Color(colorStr);
+    const color = new THREE.Color(llm.color || 0x3cb371);
     
     // Create head
     const headMaterial = new THREE.MeshStandardMaterial({

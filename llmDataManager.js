@@ -22,6 +22,11 @@ export const llmDataManager = {
         llmData.id = Date.now() + Math.random().toString(36).substr(2, 9);
         llmData.createdAt = new Date().toISOString();
         
+        // Ensure color is stored in proper hex format
+        if (llmData.color && !llmData.color.startsWith('#')) {
+            llmData.color = '#' + llmData.color;
+        }
+        
         // Add to array
         this.createdLLMs.push(llmData);
         
@@ -61,6 +66,11 @@ export const llmDataManager = {
     updateLLM(llmData) {
         const index = this.createdLLMs.findIndex(llm => llm.id === llmData.id);
         if (index !== -1) {
+            // Ensure color is stored in proper hex format
+            if (llmData.color && !llmData.color.startsWith('#')) {
+                llmData.color = '#' + llmData.color;
+            }
+            
             this.createdLLMs[index] = llmData;
             this.saveToLocalStorage();
             return true;

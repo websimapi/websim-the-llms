@@ -4,6 +4,7 @@ import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
+import { normalizeColor, applyColorToModel } from './llmColorManager.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -53,11 +54,7 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Set form values from existing LLM if editing
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
-        
-        // Ensure color is in proper format for the color input
-        const color = llmToEdit.color || '#3cb371';
-        document.getElementById('llm-color').value = color.startsWith('#') ? color : '#' + color;
-        
+        document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
         document.getElementById('llm-style').value = llmToEdit.style || 'modern';
         document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
         
@@ -608,7 +605,8 @@ function updateHumanoidPreview() {
     if (customCharacter) return;
     
     // Get new color and style
-    const color = document.getElementById('llm-color').value;
+    const colorInput = document.getElementById('llm-color').value;
+    const color = normalizeColor(colorInput);
     const style = document.getElementById('llm-style').value;
     
     // Update materials based on style
@@ -670,7 +668,8 @@ function updateHumanoidPreview() {
 }
 
 function updateSelectedMeshColor() {
-    const color = document.getElementById('llm-color').value;
+    const colorInput = document.getElementById('llm-color').value;
+    const color = normalizeColor(colorInput);
     
     if (selectedMesh && selectedMesh.material) {
         // Update just the selected mesh's color

@@ -36,6 +36,16 @@ export function setupLLMCollectionView() {
         // Get all LLMs 
         const llms = llmDataManager.getAllLLMs();
         
+        // Ensure all LLMs have properly formatted colors
+        llms.forEach(llm => {
+            if (llm.color && !llm.color.startsWith('#')) {
+                llm.color = '#' + llm.color;
+            }
+            if (!llm.color) {
+                llm.color = '#3cb371'; // Default color
+            }
+        });
+        
         if (llms.length === 0) {
             // Show empty state
             llmList.innerHTML = `

@@ -1,4 +1,5 @@
 import { createCustomCharacter } from './characterGenerator.js';
+import { normalizeColor } from './llmColorManager.js';
 
 // Helper functions to create and render LLM characters
 export function renderLLMCharacter(THREE, llm) {
@@ -22,8 +23,9 @@ function createStandardModel(THREE, llm) {
     // Create a robot model based on the stored properties
     const group = new THREE.Group();
     
-    // Ensure color is properly applied from llm data or use default
-    const color = llm.color ? new THREE.Color(llm.color) : new THREE.Color(0x3cb371);
+    // Ensure color is in correct format
+    const colorStr = normalizeColor(llm.color || 0x3cb371);
+    const color = new THREE.Color(colorStr);
     
     // Create head
     const headMaterial = new THREE.MeshStandardMaterial({
