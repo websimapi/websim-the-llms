@@ -1,0 +1,11 @@
+/* New CSS file for styling the profile image section in the Create New LLMs UI */
+.profile-image-display {
+    margin-bottom: 15px;
+}
+
+.profile-image-label {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #3cb371;
+    margin-bottom: 5px;
+}

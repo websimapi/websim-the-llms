@@ -62,10 +62,11 @@ function addProfileImageToEditor() {
     const basicInfoGroup = document.querySelector('.settings-group:first-child');
     if (!basicInfoGroup) return;
     
-    // Create profile image container
+    // Create profile image container with a label indicating this is where the generated image will appear
     const profileImageContainer = document.createElement('div');
     profileImageContainer.className = 'profile-image-display';
     profileImageContainer.innerHTML = `
+        <div class="profile-image-label">Profile Image</div>
         <div class="profile-image-placeholder">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#555"/>
@@ -74,7 +75,7 @@ function addProfileImageToEditor() {
         <img class="profile-image hidden" alt="LLM Profile">
     `;
     
-    // Insert before the name input
+    // Insert the profile image container at the beginning of the Basic Information group
     const firstSettingItem = basicInfoGroup.querySelector('.setting-item');
     basicInfoGroup.insertBefore(profileImageContainer, firstSettingItem);
     
