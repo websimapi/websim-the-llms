@@ -28,8 +28,9 @@ export function applyColorToMesh(mesh, colorHex) {
         mesh.userData.hasUniqueInstance = true;
     }
     
-    // Apply the color
-    mesh.material.color.set(colorHex);
+    // Apply the color - fixed by importing THREE properly
+    const color = new THREE.Color(colorHex);
+    mesh.material.color.copy(color);
     
     // If the material has emissive property, update it with a toned down version
     if (mesh.material.emissive) {

@@ -59,18 +59,20 @@
 .axis-z { color: #5555ff; }
 
 .control-value {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: #3cb371;
-    min-width: 40px;
+    min-width: 60px;
     text-align: center;
-    padding: 2px 4px;
+    padding: 4px 6px;
     border-radius: 3px;
     transition: background-color 0.2s;
+    font-weight: bold;
 }
 
 .control-value:hover {
     background-color: rgba(60, 179, 113, 0.2);
     cursor: text;
+    box-shadow: 0 0 3px rgba(60, 179, 113, 0.5);
 }
 
 .no-selection-message {
@@ -92,4 +94,3 @@
         height: 20px;
     }
 }
-

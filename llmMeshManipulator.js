@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 let transformMode = 'none'; // 'none', 'rotate', 'position'
 let transformAxis = 'y'; // 'x', 'y', 'z'
-let transformStep = 0.1; // Step size for transformations
+let transformStep = 0.05; // Changed from 0.1 to 0.05 for finer control
 let transformMultiplier = 1; // For larger/smaller steps
 
 export function initMeshManipulator() {
@@ -145,15 +145,17 @@ function setupEditableValue(elementId, axis, mode) {
         const currentValue = parseFloat(this.textContent);
         const input = document.createElement('input');
         input.type = 'number';
-        input.step = '0.1';
+        input.step = '0.05'; 
         input.value = currentValue;
-        input.style.width = '50px';
+        input.style.width = '60px'; 
+        input.style.height = '24px'; 
+        input.style.fontSize = '14px'; 
         input.style.backgroundColor = '#333';
         input.style.color = '#3cb371';
         input.style.border = '1px solid #555';
         input.style.borderRadius = '4px';
         input.style.textAlign = 'center';
-        input.style.padding = '2px';
+        input.style.padding = '4px'; 
         
         // Replace the span with the input
         this.textContent = '';
