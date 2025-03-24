@@ -44,6 +44,21 @@ export function setupLLMCreationInterface(llmToEdit) {
                 attributeSystem.pointsSpent += value;
             }
         });
+        
+        // If there's a profile image URL, update the profile image display
+        if (llmToEdit.profileImageUrl) {
+            const statusElement = document.getElementById('generation-status');
+            if (statusElement) {
+                statusElement.dataset.profileImageUrl = llmToEdit.profileImageUrl;
+            }
+            
+            // Wait for profile image UI to be created before updating
+            setTimeout(() => {
+                import('./llmProfileImageUI.js').then(module => {
+                    module.updateProfileImageDisplay(llmToEdit.profileImageUrl);
+                });
+            }, 200);
+        }
     }
     
     renderAttributeGrid();

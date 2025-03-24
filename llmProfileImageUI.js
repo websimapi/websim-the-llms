@@ -52,6 +52,51 @@ export function setupProfileImageCapture() {
     
     // Add event handlers for preview panel
     setupPreviewPanelHandlers(previewContainer);
+    
+    // Add profile image display to the editor sidebar
+    addProfileImageToEditor();
+}
+
+// Add profile image display to the editor sidebar
+function addProfileImageToEditor() {
+    const basicInfoGroup = document.querySelector('.settings-group:first-child');
+    if (!basicInfoGroup) return;
+    
+    // Create profile image container
+    const profileImageContainer = document.createElement('div');
+    profileImageContainer.className = 'profile-image-display';
+    profileImageContainer.innerHTML = `
+        <div class="profile-image-placeholder">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#555"/>
+            </svg>
+        </div>
+        <img class="profile-image hidden" alt="LLM Profile">
+    `;
+    
+    // Insert before the name input
+    const firstSettingItem = basicInfoGroup.querySelector('.setting-item');
+    basicInfoGroup.insertBefore(profileImageContainer, firstSettingItem);
+    
+    // Check if we have a stored image URL
+    const statusElement = document.getElementById('generation-status');
+    if (statusElement && statusElement.dataset.profileImageUrl) {
+        updateProfileImageDisplay(statusElement.dataset.profileImageUrl);
+    }
+}
+
+// Update profile image display in the editor
+export function updateProfileImageDisplay(imageUrl) {
+    if (!imageUrl) return;
+    
+    const placeholder = document.querySelector('.profile-image-placeholder');
+    const profileImage = document.querySelector('.profile-image');
+    
+    if (placeholder && profileImage) {
+        profileImage.src = imageUrl;
+        profileImage.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+    }
 }
 
 // Handle camera button click
@@ -127,8 +172,18 @@ function setupPreviewPanelHandlers(container) {
     // Save button updates the form data but doesn't close the panel
     const saveButton = document.getElementById('save-profile-image');
     saveButton.addEventListener('click', () => {
-        // Simply store the current image URL in the form data
-        // It will be saved with the LLM when the Create/Save button is clicked
+        // Store the current image URL in the form data
+        const previewImage = document.getElementById('profile-image-preview');
+        if (previewImage && previewImage.src) {
+            const statusElement = document.getElementById('generation-status');
+            if (statusElement) {
+                statusElement.dataset.profileImageUrl = previewImage.src;
+            }
+            
+            // Update the profile image display in the editor
+            updateProfileImageDisplay(previewImage.src);
+        }
+        
         container.classList.add('saved');
         setTimeout(() => container.classList.remove('saved'), 1000);
     });
