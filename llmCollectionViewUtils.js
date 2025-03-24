@@ -1,3 +1,1 @@
-// This file is no longer needed as functionality has been moved
-__DELETE_ME__
-
+// This file is intentionally left empty as its functionality has been moved elsewhere
