@@ -1,8 +1,6 @@
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { attributeSystem } from './attributeSystem.js';
-import { modelAppearanceManager } from './modelAppearanceManager.js';
-import { storeModelAppearance, preserveExistingAppearance, clearModelState } from './llmAppearanceHelper.js';
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
@@ -24,8 +22,7 @@ export function saveLLMData() {
         style,
         customPrompt,
         attributes,
-        customCharacterCode: null,
-        appearanceData: null
+        customCharacterCode: null
     };
     
     // If we have a custom character, save its code
@@ -36,9 +33,6 @@ export function saveLLMData() {
     } else {
         console.log("No custom character code found to save");
     }
-    
-    // Store model appearance data
-    storeModelAppearance(llmData);
     
     // Check if we're in edit mode
     const createUI = document.getElementById('create-llm-ui');
@@ -57,9 +51,6 @@ export function saveLLMData() {
                 llmData.customCharacterCode = existingLLM.customCharacterCode;
             }
             
-            // Preserve existing appearance data if needed
-            preserveExistingAppearance(llmData, existingLLM);
-            
             llmDataManager.updateLLM(llmData);
         } else {
             console.error("Could not find LLM with ID:", editId);
@@ -70,9 +61,6 @@ export function saveLLMData() {
         // Save as new LLM
         llmDataManager.addLLM(llmData);
     }
-    
-    // Clear model state
-    clearModelState();
     
     // Close creation UI and show collection
     document.getElementById('create-llm-ui').classList.remove('active');

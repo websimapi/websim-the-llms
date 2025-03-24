@@ -5,16 +5,13 @@ import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
 
+let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
+let headMaterial, bodyMaterial, limbsMaterial;
 let customCharacter = null;
 let generatingCharacter = false;
 let humanoidMixer = null; // Initialize mixer as null
 let selectedMesh = null; // Track the currently selected mesh
-let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock; // Declare scene variables at global scope
-
-// Make models available to other modules
-window.currentRobotModel = null;
-window.currentCustomCharacter = null;
 
 export function setupLLMCreationInterface(llmToEdit) {
     // Clear previous generation state
@@ -23,12 +20,7 @@ export function setupLLMCreationInterface(llmToEdit) {
         statusElement.textContent = '';
         delete statusElement.dataset.generatedCode;
     }
-    
-    // Reset models and state
     customCharacter = null;
-    window.currentCustomCharacter = null;
-    window.currentRobotModel = null;
-    selectedMesh = null;
     
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
@@ -213,12 +205,10 @@ async function handleGenerateCharacter() {
         if (robotModel && robotModel.parent) {
             robotModel.parent.remove(robotModel);
             robotModel = null;
-            window.currentRobotModel = null;
         }
         
         // Create the new character
         customCharacter = createCustomCharacter(THREE, generatedCode);
-        window.currentCustomCharacter = customCharacter;
         humanoidScene.add(customCharacter);
         
         statusElement.textContent = "Character generated successfully!";
@@ -286,7 +276,6 @@ function initHumanoidPreview(llmToEdit) {
     if (llmToEdit && llmToEdit.customCharacterCode) {
         try {
             customCharacter = createCustomCharacter(THREE, llmToEdit.customCharacterCode);
-            window.currentCustomCharacter = customCharacter;
             humanoidScene.add(customCharacter);
             
             // Store the generated code for later use
@@ -350,7 +339,6 @@ function createRobotModel() {
     }
     
     // Create materials
-    let headMaterial, bodyMaterial, limbsMaterial;
     headMaterial = new THREE.MeshStandardMaterial({
         color: new THREE.Color(color),
         emissive: new THREE.Color(color).multiplyScalar(0.3),
@@ -545,8 +533,6 @@ function createRobotModel() {
     
     // Add robot to scene
     robotModel = robotGroup;
-    // Store global reference
-    window.currentRobotModel = robotModel;
     humanoidScene.add(robotModel);
 }
 
