@@ -22,6 +22,9 @@ export function setupLLMCreationInterface(llmToEdit) {
     }
     customCharacter = null;
     
+    // Reset the entire humanoid preview
+    resetHumanoidPreview();
+    
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
     
@@ -747,4 +750,25 @@ function resetForm() {
     } else {
         updateHumanoidPreview();
     }
+}
+
+// Function to fully reset the humanoid preview
+function resetHumanoidPreview() {
+    const viewport = document.querySelector('.humanoid-viewport');
+    if (viewport) {
+        viewport.innerHTML = '';
+    }
+    
+    if (humanoidScene) {
+        // Remove all objects from the scene
+        while (humanoidScene.children.length > 0) {
+            const object = humanoidScene.children[0];
+            humanoidScene.remove(object);
+        }
+    }
+    
+    // Reset variables
+    robotModel = null;
+    customCharacter = null;
+    selectedMesh = null;
 }
