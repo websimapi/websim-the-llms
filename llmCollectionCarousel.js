@@ -7,11 +7,13 @@ let currentIndex = 0;
 let llmModels = [];
 let scene, camera, renderer, animationId;
 let leftArrow, rightArrow;
+let selectedModelId = null; // Track selected model ID
 
 export function setupLLMCarousel(viewportElement, llms) {
     // Store LLMs and reset index
     carouselLLMs = [...llms];
     currentIndex = 0;
+    selectedModelId = null; // Reset selection when carousel initializes
     
     // Clear existing content and models
     viewportElement.innerHTML = '';
@@ -178,6 +180,11 @@ function updateCarouselModels() {
             model.rotation.y = position.rotation;
             model.userData = { id: llm.id, index: index };
             
+            // Add a selection indicator if this model is selected
+            if (llm.id === selectedModelId) {
+                addSelectionIndicator(model);
+            }
+            
             scene.add(model);
             llmModels.push(model);
         } catch (error) {
@@ -207,11 +214,90 @@ function displayEmptyState(viewportElement) {
     viewportElement.appendChild(emptyMessage);
 }
 
+function addSelectionIndicator(model) {
+    // Create a ring around the model
+    const geometry = new THREE.RingGeometry(1.5, 1.7, 32);
+    const material = new THREE.MeshBasicMaterial({ 
+        color: 0x3cb371,
+        side: THREE.DoubleSide
+    });
+    const ring = new THREE.Mesh(geometry, material);
+    ring.rotation.x = Math.PI / 2; // Flat on the ground
+    ring.position.y = -0.99; // Just above the floor
+    model.add(ring);
+    
+    // Add a highlight effect
+    const highlight = new THREE.PointLight(0x3cb371, 1, 3);
+    highlight.position.set(0, 1, 0);
+    model.add(highlight);
+    
+    // Store a reference to the selection indicators
+    model.userData.selectionIndicators = [ring, highlight];
+}
+
+// Function to select a model by ID
+export function selectModel(id) {
+    if (id === selectedModelId) return; // Already selected
+    
+    // Remove selection from previous model
+    clearSelection();
+    
+    // Set new selection
+    selectedModelId = id;
+    
+    // Find model with this ID
+    const selectedModel = llmModels.find(model => model.userData.id === id);
+    if (selectedModel) {
+        addSelectionIndicator(selectedModel);
+    }
+    
+    // Update list view highlighting
+    updateListSelection(id);
+}
+
+// Function to clear all selections
+function clearSelection() {
+    // Remove indicators from previously selected model
+    llmModels.forEach(model => {
+        if (model.userData.selectionIndicators) {
+            model.userData.selectionIndicators.forEach(indicator => {
+                model.remove(indicator);
+            });
+            delete model.userData.selectionIndicators;
+        }
+    });
+    
+    selectedModelId = null;
+}
+
+// Update the list view to highlight selected item
+function updateListSelection(id) {
+    // Remove previous highlights
+    document.querySelectorAll('.llm-list-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // Add highlight to selected item
+    const selectedItem = document.querySelector(`.llm-list-item[data-id="${id}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('selected');
+    }
+}
+
+// Get the ID of the currently selected model
+export function getSelectedModelId() {
+    return selectedModelId;
+}
+
 function animateCarousel() {
     if (!scene || !camera || !renderer) {
         console.error('Cannot animate: scene, camera, or renderer is missing');
         return;
     }
+    
+    // Make references available globally for the raycaster
+    window.carouselScene = scene;
+    window.carouselCamera = camera;
     
     animationId = requestAnimationFrame(animateCarousel);
     

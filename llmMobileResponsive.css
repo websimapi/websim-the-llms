@@ -93,6 +93,25 @@
         width: 30px;
         height: 30px;
     }
+    
+    /* Make selected item more obvious on mobile */
+    .llm-list-item.selected {
+        background-color: #2a3540;
+        border-left: 5px solid #3cb371;
+        transform: scale(1.02);
+    }
+    
+    /* Adjust the collection footer buttons for mobile */
+    .collection-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .collection-button {
+        width: 100%;
+        padding: 15px;
+        font-size: 16px;
+    }
 }
 
 /* Make color picker larger for better interaction */

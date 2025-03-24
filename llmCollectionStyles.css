@@ -49,6 +49,47 @@
     min-width: 80px;
 }
 
+/* Selection styling for LLM list */
+.llm-list-item {
+    background-color: #333;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.llm-list-item:hover {
+    background-color: #444;
+    transform: translateX(3px);
+}
+
+.llm-list-item.selected {
+    background-color: #2a3540;
+    border-left: 3px solid #3cb371;
+    box-shadow: 0 0 10px rgba(60, 179, 113, 0.3);
+}
+
+/* Styling for edit selected button */
+.collection-button.secondary {
+    background-color: #555;
+    margin-right: 10px;
+}
+
+.collection-button.secondary:hover {
+    background-color: #666;
+}
+
+.collection-button.secondary:disabled {
+    background-color: #444;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
 /* Fix for viewport rendering */
 .collection-viewport {
     position: relative;
@@ -65,4 +106,14 @@
     flex: 1;
     overflow: hidden;
     height: calc(100% - 120px);
+}
+
+/* Collection footer changes */
+.collection-footer {
+    padding: 15px;
+    background-color: #1a1a1a;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
 }

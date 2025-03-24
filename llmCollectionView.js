@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
-import { setupLLMCarousel, cleanupCarousel } from './llmCollectionCarousel.js';
+import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId } from './llmCollectionCarousel.js';
 
 let collectionAnimationId;
 
@@ -50,6 +50,7 @@ export function setupLLMCollectionView() {
                 // Create list item
                 const llmItem = document.createElement('div');
                 llmItem.className = 'llm-list-item';
+                llmItem.setAttribute('data-id', llm.id);
                 llmItem.innerHTML = `
                     <div class="llm-info">
                         <h3>${llm.name}</h3>
@@ -62,10 +63,25 @@ export function setupLLMCollectionView() {
                     </div>
                 `;
                 llmList.appendChild(llmItem);
+                
+                // Add click event to select LLM
+                llmItem.addEventListener('click', (e) => {
+                    // Don't trigger if clicking on a button
+                    if (e.target.tagName !== 'BUTTON') {
+                        const id = llmItem.getAttribute('data-id');
+                        selectModel(id);
+                    }
+                });
             });
             
             // Setup carousel
             setupLLMCarousel(collectionViewport, llms);
+            
+            // Add click event to viewport for model selection
+            collectionViewport.addEventListener('click', handleViewportClick);
+            
+            // Add edit selected button
+            addEditSelectedButton();
             
             // Add event listeners for buttons
             document.querySelectorAll('.llm-edit-btn').forEach(btn => {
@@ -130,6 +146,80 @@ function handleEditLLM(id) {
     if (collectionAnimationId) {
         cancelAnimationFrame(collectionAnimationId);
     }
+}
+
+// Handle clicks in the viewport area
+function handleViewportClick(event) {
+    const renderer = document.querySelector('.collection-viewport canvas');
+    if (!renderer) return;
+    
+    // Get normalized mouse coordinates
+    const rect = renderer.getBoundingClientRect();
+    const mouse = {
+        x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        y: -((event.clientY - rect.top) / rect.height) * 2 + 1
+    };
+    
+    // Create raycaster
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, window.carouselCamera);
+    
+    // Find intersections with models
+    const intersects = raycaster.intersectObjects(window.carouselScene.children, true);
+    
+    if (intersects.length > 0) {
+        // Find the model that was clicked
+        let model = intersects[0].object;
+        
+        // Traverse up to find the parent model with userData
+        while (model && (!model.userData || !model.userData.id)) {
+            model = model.parent;
+        }
+        
+        if (model && model.userData && model.userData.id) {
+            selectModel(model.userData.id);
+        }
+    }
+}
+
+// Add edit selected button
+function addEditSelectedButton() {
+    const footer = document.querySelector('.collection-footer');
+    
+    // Create edit selected button if it doesn't exist
+    if (!document.getElementById('edit-selected-llm-btn')) {
+        const editSelectedBtn = document.createElement('button');
+        editSelectedBtn.id = 'edit-selected-llm-btn';
+        editSelectedBtn.className = 'collection-button secondary';
+        editSelectedBtn.textContent = 'Edit Selected';
+        editSelectedBtn.disabled = true; // Initially disabled
+        
+        // Add click handler
+        editSelectedBtn.addEventListener('click', () => {
+            const selectedId = getSelectedModelId();
+            if (selectedId) {
+                handleEditLLM(selectedId);
+            }
+        });
+        
+        // Insert before the create new button
+        footer.insertBefore(editSelectedBtn, document.getElementById('create-new-llm-btn'));
+    }
+    
+    // Add selection change listener to update button state
+    const observer = new MutationObserver((mutations) => {
+        const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+        if (editSelectedBtn) {
+            const selectedId = getSelectedModelId();
+            editSelectedBtn.disabled = !selectedId;
+        }
+    });
+    
+    observer.observe(document.getElementById('llm-list'), { 
+        attributes: true, 
+        subtree: true,
+        attributeFilter: ['class']
+    });
 }
 
 function deleteLLM(id) {
