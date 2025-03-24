@@ -96,16 +96,6 @@ export function updatePointsDisplay() {
     }
 }
 
-// Add profile image to editor
-export function setupProfileImageUI() {
-    // Import and setup the profile image capture functionality
-    import('./llmProfileImageUI.js').then(module => {
-        module.setupProfileImageCapture();
-    }).catch(error => {
-        console.error("Error setting up profile image capture:", error);
-    });
-}
-
 // New function to reset form elements
 export function resetFormAttributes() {
     // Reset attributes
@@ -132,6 +122,16 @@ export function resetFormAttributes() {
         profileImage.classList.add('hidden');
         placeholder.classList.remove('hidden');
     }
+}
+
+// New function to initialize profile image UI
+export function setupProfileImageUI() {
+    // Import and setup the profile image capture functionality
+    import('./llmProfileImageUI.js').then(module => {
+        module.setupProfileImageCapture();
+    }).catch(error => {
+        console.error("Error setting up profile image capture:", error);
+    });
 }
 
 // Character generation handler - moved from llmCreationInterface.js
