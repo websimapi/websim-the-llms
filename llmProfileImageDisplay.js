@@ -7,6 +7,9 @@ export function setupProfileImageInAppearance() {
     const appearanceSection = document.querySelector('.settings-group:nth-child(4)');
     if (!appearanceSection) return;
     
+    // Check if profile image display already exists
+    if (appearanceSection.querySelector('.profile-image-display')) return;
+    
     // Create profile image display element
     const profileImageElement = document.createElement('div');
     profileImageElement.className = 'profile-image-display';
