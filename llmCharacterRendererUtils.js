@@ -98,9 +98,11 @@ export function serializeModelData(model) {
     return modelData;
 }
 
+// Enhanced version of serializeMaterial to include more properties
 export function serializeMaterial(material) {
     const materialData = {
-        type: material.type
+        type: material.type,
+        name: material.name || ''
     };
     
     // Store color properties if they exist
@@ -109,7 +111,10 @@ export function serializeMaterial(material) {
     if (material.specular) materialData.specular = '#' + material.specular.getHexString();
     
     // Store numeric properties
-    const numericProps = ['metalness', 'roughness', 'opacity', 'transparent', 'emissiveIntensity'];
+    const numericProps = [
+        'metalness', 'roughness', 'opacity', 'transparent', 
+        'emissiveIntensity', 'wireframe', 'flatShading'
+    ];
     numericProps.forEach(prop => {
         if (material[prop] !== undefined) materialData[prop] = material[prop];
     });
