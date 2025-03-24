@@ -7,6 +7,7 @@ import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { createRobotModel } from './llmModelCreationRenderer.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
+import { handleMeshSelection, updateSelectedMeshColor, createSimplifiedRobotModel } from './llmCreationInterfaceColors.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -47,7 +48,6 @@ export function setupLLMCreationInterface(llmToEdit) {
     
     // Add event listeners for form elements that should update the humanoid preview
     document.getElementById('llm-color').addEventListener('input', updateSelectedMeshColor);
-    document.getElementById('llm-style').addEventListener('change', updateHumanoidPreview);
     
     // Setup character generation button
     const generateBtn = document.getElementById('generate-character-btn');
@@ -57,7 +57,6 @@ export function setupLLMCreationInterface(llmToEdit) {
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
-        document.getElementById('llm-style').value = llmToEdit.style || 'modern';
         document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
         
         // Store the edit ID on the form
@@ -276,7 +275,9 @@ function initHumanoidPreview(llmToEdit) {
     viewport.appendChild(humanoidRenderer.domElement);
     
     // Add click event listener for mesh selection
-    humanoidRenderer.domElement.addEventListener('click', handleMeshSelection);
+    humanoidRenderer.domElement.addEventListener('click', (event) => {
+        handleMeshSelection(event, viewport, humanoidCamera, humanoidScene);
+    });
     
     // Setup lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -348,137 +349,53 @@ function initHumanoidPreview(llmToEdit) {
 function createDefaultRobot(llmToEdit) {
     // Get current selected color or color from edit data
     const color = llmToEdit?.color || document.getElementById('llm-color').value;
-    const style = llmToEdit?.style || document.getElementById('llm-style').value;
     
     // Create the robot model using the imported function
-    const result = createRobotModel(humanoidScene, color, style);
-    robotModel = result.model;
+    createSimplifiedRobotModel(humanoidScene, color).then(result => {
+        robotModel = result.model;
+        
+        // Store material references
+        headMaterial = result.materials.headMaterial;
+        bodyMaterial = result.materials.bodyMaterial;
+        limbsMaterial = result.materials.limbsMaterial;
+        
+        window.robotModel = robotModel;
+        
+        // Apply stored model data if editing and model data exists
+        if (llmToEdit && llmToEdit.modelData) {
+            import('./llmModelStorage.js').then(module => {
+                module.applyStoredModelData(robotModel, llmToEdit);
+            });
+        }
+    });
+}
+
+function updateSelectedMeshColor() {
+    const meshUpdated = updateSelectedMeshColor(window.selectedMesh);
     
-    // Store material references
-    headMaterial = result.materials.headMaterial;
-    bodyMaterial = result.materials.bodyMaterial;
-    limbsMaterial = result.materials.limbsMaterial;
-    
-    window.robotModel = robotModel;
-    
-    // Apply stored model data if editing and model data exists
-    if (llmToEdit && llmToEdit.modelData) {
-        import('./llmModelStorage.js').then(module => {
-            module.applyStoredModelData(robotModel, llmToEdit);
-        });
+    if (!meshUpdated) {
+        // If no mesh is selected, fall back to the original behavior
+        updateHumanoidPreview();
     }
 }
 
-function handleMeshSelection(event) {
-    const viewport = document.querySelector('.humanoid-viewport');
-    const rect = viewport.getBoundingClientRect();
-    
-    // Calculate mouse position in normalized device coordinates (-1 to +1)
-    const mouse = {
-        x: ((event.clientX - rect.left) / viewport.clientWidth) * 2 - 1,
-        y: -((event.clientY - rect.top) / viewport.clientHeight) * 2 + 1
-    };
-    
-    // Create a raycaster
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, humanoidCamera);
-    
-    // Get objects to test for intersection
-    const meshes = [];
-    if (robotModel) {
-        robotModel.traverse(child => {
-            if (child.isMesh) meshes.push(child);
-        });
-    }
-    if (customCharacter) {
-        customCharacter.traverse(child => {
-            if (child.isMesh) meshes.push(child);
-        });
-    }
-    
-    // Find intersections
-    const intersects = raycaster.intersectObjects(meshes);
-    
-    if (intersects.length > 0) {
-        // Unhighlight previous selection
-        if (selectedMesh && selectedMesh.userData.originalEmissive) {
-            selectedMesh.material.emissive.set(selectedMesh.userData.originalEmissive);
-            delete selectedMesh.userData.originalEmissive;
-        }
-        
-        // Select the new mesh
-        selectedMesh = intersects[0].object;
-        
-        // Store original emissive color and highlight the selection
-        if (!selectedMesh.userData.originalEmissive && selectedMesh.material.emissive) {
-            selectedMesh.userData.originalEmissive = selectedMesh.material.emissive.clone();
-            selectedMesh.material.emissive.set(0x333333);
-        }
-        
-        // Update color picker to match the selected mesh's color
-        if (selectedMesh.material.color) {
-            const hexColor = '#' + selectedMesh.material.color.getHexString();
-            document.getElementById('llm-color').value = hexColor;
-        }
-    } else {
-        // Unhighlight if clicked elsewhere
-        if (selectedMesh && selectedMesh.userData.originalEmissive) {
-            selectedMesh.material.emissive.set(selectedMesh.userData.originalEmissive);
-            delete selectedMesh.userData.originalEmissive;
-        }
-        selectedMesh = null;
-    }
-}
-
+// Updated to remove style dependency
 function updateHumanoidPreview() {
     if (!robotModel) return;
     
     // If we have a custom character, don't update the default robot
     if (customCharacter) return;
     
-    // Get new color and style values
+    // Get new color value
     const color = document.getElementById('llm-color').value;
-    const style = document.getElementById('llm-style').value;
     
     // Remove existing robot model
     if (robotModel.parent) {
         robotModel.parent.remove(robotModel);
     }
     
-    // Create a new robot with updated materials
-    const result = createRobotModel(humanoidScene, color, style);
-    robotModel = result.model;
-    window.robotModel = robotModel;
-    
-    // Update stored material references
-    headMaterial = result.materials.headMaterial;
-    bodyMaterial = result.materials.bodyMaterial;
-    limbsMaterial = result.materials.limbsMaterial;
-}
-
-function updateSelectedMeshColor() {
-    const color = document.getElementById('llm-color').value;
-    
-    if (selectedMesh && selectedMesh.material) {
-        // Update just the selected mesh's color
-        selectedMesh.material.color.set(color);
-        
-        // Also update emissive with a toned down version of the color
-        if (selectedMesh.material.emissive) {
-            // Store the highlight for selection state
-            if (!selectedMesh.userData.originalEmissive) {
-                selectedMesh.userData.originalEmissive = new THREE.Color(color).multiplyScalar(0.2);
-            } else {
-                selectedMesh.userData.originalEmissive.set(new THREE.Color(color).multiplyScalar(0.2));
-            }
-            
-            // Keep the highlight if it's selected
-            selectedMesh.material.emissive.set(0x333333);
-        }
-    } else {
-        // If no mesh is selected, fall back to the original behavior
-        updateHumanoidPreview();
-    }
+    // Create a new robot with updated color
+    createDefaultRobot({ color: color });
 }
 
 function animateHumanoid() {
@@ -519,7 +436,6 @@ function resetForm() {
     // Reset other form values
     document.getElementById('llm-model').selectedIndex = 0;
     document.getElementById('llm-color').value = '#3cb371';
-    document.getElementById('llm-style').selectedIndex = 0;
     document.getElementById('llm-custom-prompt').value = '';
     
     // Reset attributes

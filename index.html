@@ -115,6 +115,18 @@
                 </div>
                 
                 <div class="settings-group">
+                    <div class="settings-group-title">Custom Design</div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-custom-prompt">AI Generated Character</label>
+                        <textarea id="llm-custom-prompt" class="setting-input" placeholder="Describe your character (e.g., 'A sleek silver robot with blue glowing eyes and antenna')"></textarea>
+                    </div>
+                    <div class="setting-item">
+                        <button id="generate-character-btn" class="create-llm-button">Generate Character</button>
+                        <div id="generation-status" class="generation-status"></div>
+                    </div>
+                </div>
+                
+                <div class="settings-group">
                     <div class="settings-group-title">Attributes <span id="points-remaining" class="points-info">15 Points Remaining</span></div>
                     <div class="attribute-grid" id="attribute-grid">
                         <!-- Attribute slots will be generated here by JavaScript -->
@@ -128,23 +140,6 @@
                         <div class="color-picker-container">
                             <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
                         </div>
-                    </div>
-                    <div class="setting-item">
-                        <label class="setting-label" for="llm-style">Visual Style</label>
-                        <select id="llm-style" class="setting-select">
-                            <option value="modern">Modern</option>
-                            <option value="classic">Classic</option>
-                            <option value="retro">Retro</option>
-                            <option value="futuristic">Futuristic</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <label class="setting-label" for="llm-custom-prompt">Custom Design (AI Generated)</label>
-                        <textarea id="llm-custom-prompt" class="setting-input" placeholder="Describe your character (e.g., 'A sleek silver robot with blue glowing eyes and antenna')"></textarea>
-                    </div>
-                    <div class="setting-item">
-                        <button id="generate-character-btn" class="create-llm-button">Generate Character</button>
-                        <div id="generation-status" class="generation-status"></div>
                     </div>
                 </div>
                 

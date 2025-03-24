@@ -9,7 +9,8 @@ export function saveLLMData() {
     const name = document.getElementById('llm-name').value || `LLM-${Math.floor(Math.random() * 1000)}`;
     const model = document.getElementById('llm-model').value;
     const color = document.getElementById('llm-color').value;
-    const style = document.getElementById('llm-style').value;
+    // Removed style input, using a default consistent value
+    const style = 'modern'; 
     const customPrompt = document.getElementById('llm-custom-prompt').value;
     
     console.log('Saving LLM with style:', style);
