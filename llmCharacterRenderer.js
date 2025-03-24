@@ -1,5 +1,6 @@
 import { createCustomCharacter } from './characterGenerator.js';
 import { modelAppearanceManager } from './modelAppearanceManager.js';
+import { modelAppearanceHelper } from './modelAppearanceHelper.js';
 
 // Helper functions to create and render LLM characters
 export function renderLLMCharacter(THREE, llm) {
@@ -10,7 +11,7 @@ export function renderLLMCharacter(THREE, llm) {
             
             // Apply appearance data if available
             if (llm.appearanceData) {
-                modelAppearanceManager.applyAppearanceData(character, llm.appearanceData);
+                modelAppearanceHelper.applyAppearanceData(character, llm.appearanceData);
             }
             
             return character;
@@ -250,7 +251,7 @@ function createStandardModel(THREE, llm) {
     
     // Apply appearance data if available
     if (llm.appearanceData) {
-        modelAppearanceManager.applyAppearanceData(group, llm.appearanceData);
+        modelAppearanceHelper.applyAppearanceData(group, llm.appearanceData);
     }
     
     return group;
