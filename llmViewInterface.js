@@ -170,6 +170,11 @@ function displayLLMModel(llm) {
         viewModel = null;
     }
     
+    // Make sure we have valid color data
+    if (typeof llm.color === 'string' && !llm.color.startsWith('#')) {
+        llm.color = '#' + llm.color;
+    }
+    
     // Use the shared character renderer
     viewModel = renderLLMCharacter(THREE, llm);
     viewScene.add(viewModel);

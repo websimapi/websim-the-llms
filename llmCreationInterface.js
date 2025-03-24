@@ -21,8 +21,6 @@ export function setupLLMCreationInterface(llmToEdit) {
         delete statusElement.dataset.generatedCode;
     }
     customCharacter = null;
-    window.customCharacter = null;
-    window.robotModel = null;
     
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
@@ -55,7 +53,11 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Set form values from existing LLM if editing
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
-        document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
+        
+        // Ensure color is in proper format for the color input
+        const color = llmToEdit.color || '#3cb371';
+        document.getElementById('llm-color').value = color.startsWith('#') ? color : '#' + color;
+        
         document.getElementById('llm-style').value = llmToEdit.style || 'modern';
         document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
         
@@ -211,7 +213,6 @@ async function handleGenerateCharacter() {
         
         // Create the new character
         customCharacter = createCustomCharacter(THREE, generatedCode);
-        window.customCharacter = customCharacter; // Make globally accessible for saving
         humanoidScene.add(customCharacter);
         
         statusElement.textContent = "Character generated successfully!";
@@ -536,7 +537,6 @@ function createRobotModel() {
     
     // Add robot to scene
     robotModel = robotGroup;
-    window.robotModel = robotModel; // Make globally accessible for saving
     humanoidScene.add(robotModel);
 }
 

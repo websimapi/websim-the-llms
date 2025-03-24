@@ -1,19 +1,11 @@
 import { createCustomCharacter } from './characterGenerator.js';
-import { llmColorManager } from './llmColorManager.js';
 
 // Helper functions to create and render LLM characters
 export function renderLLMCharacter(THREE, llm) {
     if (llm.customCharacterCode) {
         // Create custom character from stored code
         try {
-            const model = createCustomCharacter(THREE, llm.customCharacterCode);
-            
-            // Apply stored mesh colors if available
-            if (llm.meshColors) {
-                llmColorManager.applyMeshColors(model, llm.meshColors);
-            }
-            
-            return model;
+            return createCustomCharacter(THREE, llm.customCharacterCode);
         } catch (error) {
             console.error("Error creating custom character:", error);
             // Fall back to standard model
@@ -21,14 +13,7 @@ export function renderLLMCharacter(THREE, llm) {
         }
     } else {
         // Create standard model
-        const model = createStandardModel(THREE, llm);
-        
-        // Apply stored mesh colors if available
-        if (llm.meshColors) {
-            llmColorManager.applyMeshColors(model, llm.meshColors);
-        }
-        
-        return model;
+        return createStandardModel(THREE, llm);
     }
 }
 
@@ -37,7 +22,8 @@ function createStandardModel(THREE, llm) {
     // Create a robot model based on the stored properties
     const group = new THREE.Group();
     
-    const color = new THREE.Color(llm.color || 0x3cb371);
+    // Ensure color is properly applied from llm data or use default
+    const color = llm.color ? new THREE.Color(llm.color) : new THREE.Color(0x3cb371);
     
     // Create head
     const headMaterial = new THREE.MeshStandardMaterial({
