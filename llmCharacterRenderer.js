@@ -40,8 +40,7 @@ function createStandardModel(THREE, llm) {
     
     // Get consistent materials based on LLM properties
     const color = llm.color || '#3cb371';
-    // Use consistent style value
-    const style = 'modern';
+    const style = 'modern'; 
     const materials = createStandardMaterials(color, style);
     
     // Create head

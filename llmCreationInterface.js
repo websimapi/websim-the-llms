@@ -7,7 +7,8 @@ import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { createRobotModel } from './llmModelCreationRenderer.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
-import { handleMeshSelection, updateSelectedMeshColor, createSimplifiedRobotModel } from './llmCreationInterfaceColors.js';
+// Import new helper functions
+import { updateSelectedMeshColor, resetCreationForm, handleGenerateCharacter } from './llmCreationUIHandler.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -47,16 +48,22 @@ export function setupLLMCreationInterface(llmToEdit) {
     updatePointsDisplay();
     
     // Add event listeners for form elements that should update the humanoid preview
-    document.getElementById('llm-color').addEventListener('input', handleColorChange);
+    const colorPicker = document.getElementById('llm-color');
+    colorPicker.addEventListener('input', (event) => updateSelectedMeshColor(selectedMesh, event));
     
     // Setup character generation button
     const generateBtn = document.getElementById('generate-character-btn');
-    generateBtn.addEventListener('click', handleGenerateCharacter);
+    generateBtn.addEventListener('click', async () => {
+        generatingCharacter = true;
+        const result = await handleGenerateCharacter(false);
+        generatingCharacter = false;
+    });
     
     // Set form values from existing LLM if editing
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
+        document.getElementById('llm-style').value = llmToEdit.style || 'modern';
         document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
         
         // Store the edit ID on the form
@@ -86,7 +93,7 @@ export function setupLLMCreationInterface(llmToEdit) {
     
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
-    resetButton.addEventListener('click', resetForm);
+    resetButton.addEventListener('click', resetCreationForm);
     
     // Wait a short moment for the UI to render before optimizing
     setTimeout(() => {
@@ -200,54 +207,6 @@ function updatePointsDisplay() {
     }
 }
 
-async function handleGenerateCharacter() {
-    if (generatingCharacter) return;
-    
-    const promptInput = document.getElementById('llm-custom-prompt');
-    const userPrompt = promptInput.value.trim();
-    const statusElement = document.getElementById('generation-status');
-    const generateBtn = document.getElementById('generate-character-btn');
-    
-    if (userPrompt.length < 5) {
-        statusElement.textContent = "Please enter a more detailed description";
-        return;
-    }
-    
-    generatingCharacter = true;
-    statusElement.textContent = "Generating character...";
-    generateBtn.disabled = true;
-    
-    try {
-        const generatedCode = await generateCharacterCode(userPrompt);
-        
-        // Store the generated code for later use
-        statusElement.dataset.generatedCode = generatedCode;
-        
-        // Remove previous custom character if it exists
-        if (customCharacter && customCharacter.parent) {
-            customCharacter.parent.remove(customCharacter);
-        }
-        
-        // Remove default robot if it exists
-        if (robotModel && robotModel.parent) {
-            robotModel.parent.remove(robotModel);
-            robotModel = null;
-        }
-        
-        // Create the new character
-        customCharacter = createCustomCharacter(THREE, generatedCode);
-        humanoidScene.add(customCharacter);
-        
-        statusElement.textContent = "Character generated successfully!";
-    } catch (error) {
-        console.error("Failed to generate character:", error);
-        statusElement.textContent = "Failed to generate character. Try again with a different description.";
-    } finally {
-        generatingCharacter = false;
-        generateBtn.disabled = false;
-    }
-}
-
 function initHumanoidPreview(llmToEdit) {
     const viewport = document.querySelector('.humanoid-viewport');
     
@@ -275,9 +234,7 @@ function initHumanoidPreview(llmToEdit) {
     viewport.appendChild(humanoidRenderer.domElement);
     
     // Add click event listener for mesh selection
-    humanoidRenderer.domElement.addEventListener('click', (event) => {
-        handleMeshSelection(event, viewport, humanoidCamera, humanoidScene);
-    });
+    humanoidRenderer.domElement.addEventListener('click', handleMeshSelection);
     
     // Setup lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -349,33 +306,85 @@ function initHumanoidPreview(llmToEdit) {
 function createDefaultRobot(llmToEdit) {
     // Get current selected color or color from edit data
     const color = llmToEdit?.color || document.getElementById('llm-color').value;
+    const style = llmToEdit?.style || document.getElementById('llm-style').value;
     
     // Create the robot model using the imported function
-    createSimplifiedRobotModel(humanoidScene, color).then(result => {
-        robotModel = result.model;
-        
-        // Store material references
-        headMaterial = result.materials.headMaterial;
-        bodyMaterial = result.materials.bodyMaterial;
-        limbsMaterial = result.materials.limbsMaterial;
-        
-        window.robotModel = robotModel;
-        
-        // Apply stored model data if editing and model data exists
-        if (llmToEdit && llmToEdit.modelData) {
-            import('./llmModelStorage.js').then(module => {
-                module.applyStoredModelData(robotModel, llmToEdit);
-            });
-        }
-    });
+    const result = createRobotModel(humanoidScene, color, style);
+    robotModel = result.model;
+    
+    // Store material references
+    headMaterial = result.materials.headMaterial;
+    bodyMaterial = result.materials.bodyMaterial;
+    limbsMaterial = result.materials.limbsMaterial;
+    
+    window.robotModel = robotModel;
+    
+    // Apply stored model data if editing and model data exists
+    if (llmToEdit && llmToEdit.modelData) {
+        import('./llmModelStorage.js').then(module => {
+            module.applyStoredModelData(robotModel, llmToEdit);
+        });
+    }
 }
 
-function handleColorChange() {
-    const meshUpdated = updateSelectedMeshColor(window.selectedMesh);
+function handleMeshSelection(event) {
+    const viewport = document.querySelector('.humanoid-viewport');
+    const rect = viewport.getBoundingClientRect();
     
-    if (!meshUpdated) {
-        // If no mesh is selected, fall back to the original behavior
-        updateHumanoidPreview();
+    // Calculate mouse position in normalized device coordinates (-1 to +1)
+    const mouse = {
+        x: ((event.clientX - rect.left) / viewport.clientWidth) * 2 - 1,
+        y: -((event.clientY - rect.top) / viewport.clientHeight) * 2 + 1
+    };
+    
+    // Create a raycaster
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, humanoidCamera);
+    
+    // Get objects to test for intersection
+    const meshes = [];
+    if (robotModel) {
+        robotModel.traverse(child => {
+            if (child.isMesh) meshes.push(child);
+        });
+    }
+    if (customCharacter) {
+        customCharacter.traverse(child => {
+            if (child.isMesh) meshes.push(child);
+        });
+    }
+    
+    // Find intersections
+    const intersects = raycaster.intersectObjects(meshes);
+    
+    if (intersects.length > 0) {
+        // Unhighlight previous selection
+        if (selectedMesh && selectedMesh.userData.originalEmissive) {
+            selectedMesh.material.emissive.set(selectedMesh.userData.originalEmissive);
+            delete selectedMesh.userData.originalEmissive;
+        }
+        
+        // Select the new mesh
+        selectedMesh = intersects[0].object;
+        
+        // Store original emissive color and highlight the selection
+        if (!selectedMesh.userData.originalEmissive && selectedMesh.material.emissive) {
+            selectedMesh.userData.originalEmissive = selectedMesh.material.emissive.clone();
+            selectedMesh.material.emissive.set(0x333333);
+        }
+        
+        // Update color picker to match the selected mesh's color
+        if (selectedMesh.material.color) {
+            const hexColor = '#' + selectedMesh.material.color.getHexString();
+            document.getElementById('llm-color').value = hexColor;
+        }
+    } else {
+        // Unhighlight if clicked elsewhere
+        if (selectedMesh && selectedMesh.userData.originalEmissive) {
+            selectedMesh.material.emissive.set(selectedMesh.userData.originalEmissive);
+            delete selectedMesh.userData.originalEmissive;
+        }
+        selectedMesh = null;
     }
 }
 
@@ -385,16 +394,24 @@ function updateHumanoidPreview() {
     // If we have a custom character, don't update the default robot
     if (customCharacter) return;
     
-    // Get new color value
+    // Get new color and style values
     const color = document.getElementById('llm-color').value;
+    const style = document.getElementById('llm-style').value;
     
     // Remove existing robot model
     if (robotModel.parent) {
         robotModel.parent.remove(robotModel);
     }
     
-    // Create a new robot with updated color
-    createDefaultRobot({ color: color });
+    // Create a new robot with updated materials
+    const result = createRobotModel(humanoidScene, color, style);
+    robotModel = result.model;
+    window.robotModel = robotModel;
+    
+    // Update stored material references
+    headMaterial = result.materials.headMaterial;
+    bodyMaterial = result.materials.bodyMaterial;
+    limbsMaterial = result.materials.limbsMaterial;
 }
 
 function animateHumanoid() {
@@ -426,31 +443,4 @@ function animateHumanoid() {
     }
     
     humanoidRenderer.render(humanoidScene, humanoidCamera);
-}
-
-function resetForm() {
-    // Reset name with random number
-    document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
-    
-    // Reset other form values
-    document.getElementById('llm-model').selectedIndex = 0;
-    document.getElementById('llm-color').value = '#3cb371';
-    document.getElementById('llm-custom-prompt').value = '';
-    
-    // Reset attributes
-    attributeSystem.initializeAttributes();
-    renderAttributeGrid();
-    updatePointsDisplay();
-    
-    // Reset humanoid
-    if (customCharacter && customCharacter.parent) {
-        customCharacter.parent.remove(customCharacter);
-        customCharacter = null;
-    }
-    
-    if (!robotModel) {
-        createDefaultRobot();
-    } else {
-        updateHumanoidPreview();
-    }
 }
