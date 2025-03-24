@@ -10,6 +10,7 @@ export function initMeshManipulator() {
     // Add event listeners to manipulation buttons
     setupRotationControls();
     setupPositionControls();
+    setupValueEditing();
     updateTransformUIState();
 }
 
@@ -117,6 +118,98 @@ function setupPositionControls() {
         updateTransformUIState();
         applyTransform();
     });
+}
+
+function setupValueEditing() {
+    // Make rotation value fields editable
+    setupEditableValue('rotation-x-value', 'x', 'rotate');
+    setupEditableValue('rotation-y-value', 'y', 'rotate');
+    setupEditableValue('rotation-z-value', 'z', 'rotate');
+    
+    // Make position value fields editable
+    setupEditableValue('position-x-value', 'x', 'position');
+    setupEditableValue('position-y-value', 'y', 'position');
+    setupEditableValue('position-z-value', 'z', 'position');
+}
+
+function setupEditableValue(elementId, axis, mode) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    // Add styling to indicate it's editable
+    element.style.cursor = 'text';
+    element.title = 'Click to edit value';
+    
+    element.addEventListener('click', function() {
+        // Create an input field
+        const currentValue = parseFloat(this.textContent);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = '0.1';
+        input.value = currentValue;
+        input.style.width = '50px';
+        input.style.backgroundColor = '#333';
+        input.style.color = '#3cb371';
+        input.style.border = '1px solid #555';
+        input.style.borderRadius = '4px';
+        input.style.textAlign = 'center';
+        input.style.padding = '2px';
+        
+        // Replace the span with the input
+        this.textContent = '';
+        this.appendChild(input);
+        input.focus();
+        input.select();
+        
+        // Handle input completion
+        function completeEdit() {
+            const newValue = parseFloat(input.value);
+            if (!isNaN(newValue)) {
+                applyManualValue(newValue, axis, mode);
+            }
+            element.textContent = isNaN(newValue) ? currentValue.toFixed(2) : newValue.toFixed(2);
+        }
+        
+        input.addEventListener('blur', completeEdit);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                completeEdit();
+                e.preventDefault();
+            } else if (e.key === 'Escape') {
+                element.textContent = currentValue.toFixed(2);
+                e.preventDefault();
+            }
+        });
+    });
+}
+
+function applyManualValue(value, axis, mode) {
+    const mesh = window.selectedMesh;
+    if (!mesh) return;
+    
+    if (mode === 'rotate') {
+        // Apply rotation
+        if (axis === 'x') {
+            mesh.rotation.x = value;
+        } else if (axis === 'y') {
+            mesh.rotation.y = value;
+        } else if (axis === 'z') {
+            mesh.rotation.z = value;
+        }
+    } 
+    else if (mode === 'position') {
+        // Apply position change
+        if (axis === 'x') {
+            mesh.position.x = value;
+        } else if (axis === 'y') {
+            mesh.position.y = value;
+        } else if (axis === 'z') {
+            mesh.position.z = value;
+        }
+    }
+    
+    // Store the transformation in mesh userData
+    storeTransformData(mesh);
 }
 
 function updateTransformUIState() {

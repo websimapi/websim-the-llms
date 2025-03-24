@@ -63,6 +63,14 @@
     color: #3cb371;
     min-width: 40px;
     text-align: center;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+}
+
+.control-value:hover {
+    background-color: rgba(60, 179, 113, 0.2);
+    cursor: text;
 }
 
 .no-selection-message {
