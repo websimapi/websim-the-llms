@@ -37,3 +37,14 @@
     }
 }
 
+/* LLM list item selection and transition styles */
+.llm-list-item {
+    transition: background-color 0.3s ease, transform 0.3s ease, border-left 0.3s ease;
+}
+
+.llm-list-item.selected {
+    background-color: #2a3540;
+    border-left: 3px solid #3cb371;
+    transform: translateX(5px);
+    box-shadow: 0 0 10px rgba(60, 179, 113, 0.3);
+}

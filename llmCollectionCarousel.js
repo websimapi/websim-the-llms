@@ -132,6 +132,11 @@ function navigateLeft() {
         currentIndex--;
         updateCarouselModels();
         updateArrowVisibility();
+        
+        // Select the model at the new current index
+        if (carouselLLMs[currentIndex]) {
+            selectModel(carouselLLMs[currentIndex].id);
+        }
     }
 }
 
@@ -140,6 +145,11 @@ function navigateRight() {
         currentIndex++;
         updateCarouselModels();
         updateArrowVisibility();
+        
+        // Select the model at the new current index
+        if (carouselLLMs[currentIndex]) {
+            selectModel(carouselLLMs[currentIndex].id);
+        }
     }
 }
 
@@ -220,6 +230,13 @@ function displayEmptyState(viewportElement) {
 }
 
 function addSelectionIndicator(model) {
+    // Remove any existing selection indicators first
+    if (model.userData.selectionIndicators) {
+        model.userData.selectionIndicators.forEach(indicator => {
+            model.remove(indicator);
+        });
+    }
+    
     // Create a ring around the model - now using DOM elements for better performance
     const ringGeometry = new THREE.RingGeometry(1.5, 1.7, 32);
     const ringMaterial = new THREE.MeshBasicMaterial({ 
@@ -346,11 +363,11 @@ function animateCarousel() {
             // Find the ring and lights
             model.userData.selectionIndicators.forEach(indicator => {
                 if (indicator.userData.isSelectionRing) {
-                    // Pulse the ring size slightly but keep it fixed relative to ground
+                    // Pulse the ring size slightly but keep it fixed at the same Y position
                     indicator.scale.x = indicator.scale.z = 1 + Math.sin(time * 2) * 0.05;
                     
-                    // Keep ring at a fixed height relative to ground
-                    indicator.position.y = -0.99 - model.position.y;
+                    // Keep ring at a fixed height relative to ground - don't use model.position.y
+                    indicator.position.y = -0.99;
                 }
                 
                 if (indicator.userData.isSelectionHighlight) {
