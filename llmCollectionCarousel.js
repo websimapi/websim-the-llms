@@ -310,11 +310,11 @@ function clearSelection() {
 export function selectModel(id) {
     if (id === selectedModelId) return; // Already selected
     
-    // Remove selection from previous model
-    clearSelection();
-    
     // Set new selection
     selectedModelId = id;
+    
+    // Clear any previous selection
+    clearSelection();
     
     // Find model with this ID
     const selectedModel = llmModels.find(model => model.userData.id === id);
@@ -346,6 +346,16 @@ function updateListSelection(id) {
     const selectedItem = document.querySelector(`.llm-list-item[data-id="${id}"]`);
     if (selectedItem) {
         selectedItem.classList.add('selected');
+    }
+    
+    // Ensure the model is actually highlighted in the scene
+    // Clear all existing selection effects first
+    clearSelection();
+    
+    // Find the model with this ID and reapply selection effects
+    const modelToSelect = llmModels.find(model => model.userData.id === id);
+    if (modelToSelect) {
+        addSelectionIndicator(modelToSelect);
     }
 }
 
