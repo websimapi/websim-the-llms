@@ -44,21 +44,6 @@ export function setupLLMCreationInterface(llmToEdit) {
                 attributeSystem.pointsSpent += value;
             }
         });
-        
-        // If there's a profile image URL, update the profile image display
-        if (llmToEdit.profileImageUrl) {
-            const statusElement = document.getElementById('generation-status');
-            if (statusElement) {
-                statusElement.dataset.profileImageUrl = llmToEdit.profileImageUrl;
-            }
-            
-            // Wait for profile image UI to be created before updating
-            setTimeout(() => {
-                import('./llmProfileImageUI.js').then(module => {
-                    module.updateProfileImageDisplay(llmToEdit.profileImageUrl);
-                });
-            }, 200);
-        }
     }
     
     renderAttributeGrid();
@@ -101,6 +86,13 @@ export function setupLLMCreationInterface(llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
         document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
+        
+        // Display profile image if available
+        if (llmToEdit.profileImageUrl) {
+            import('./llmProfileImageUI.js').then(module => {
+                module.updateProfileImageDisplay(llmToEdit.profileImageUrl);
+            });
+        }
         
         // Store the edit ID on the form
         const createUI = document.getElementById('create-llm-ui');

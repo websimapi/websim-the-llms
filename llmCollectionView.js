@@ -51,28 +51,15 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 const llmItem = document.createElement('div');
                 llmItem.className = 'llm-list-item';
                 llmItem.setAttribute('data-id', llm.id);
-                
-                // Create profile image element
-                let profileImageHtml = `
-                    <div class="list-profile-image-placeholder">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="#555"/>
-                        </svg>
-                    </div>`;
-                
-                // Use profile image if available
-                if (llm.profileImageUrl) {
-                    profileImageHtml = `<img src="${llm.profileImageUrl}" class="list-profile-image" alt="${llm.name}">`;
-                }
-                
                 llmItem.innerHTML = `
+                    <div class="llm-profile-img">
+                        ${llm.profileImageUrl ? `<img src="${llm.profileImageUrl}" alt="${llm.name}">` : 
+                        `<div class="profile-placeholder">${llm.name.charAt(0).toUpperCase()}</div>`}
+                    </div>
                     <div class="llm-info">
-                        ${profileImageHtml}
-                        <div class="llm-text-info">
-                            <h3>${llm.name}</h3>
-                            <p class="llm-type">${llm.model}</p>
-                            <p class="llm-created">Created: ${new Date(llm.createdAt).toLocaleDateString()}</p>
-                        </div>
+                        <h3>${llm.name}</h3>
+                        <p class="llm-type">${llm.model}</p>
+                        <p class="llm-created">Created: ${new Date(llm.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div class="llm-actions">
                         <button class="llm-edit-btn" data-id="${llm.id}">Edit</button>

@@ -114,14 +114,6 @@ export function resetFormAttributes() {
     if (previewContainer) {
         previewContainer.classList.add('hidden');
     }
-    
-    // Reset profile image display in editor
-    const profileImage = document.querySelector('.profile-image');
-    const placeholder = document.querySelector('.profile-image-placeholder');
-    if (profileImage && placeholder) {
-        profileImage.classList.add('hidden');
-        placeholder.classList.remove('hidden');
-    }
 }
 
 // New function to initialize profile image UI

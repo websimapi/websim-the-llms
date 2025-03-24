@@ -118,31 +118,3 @@
     justify-content: center;
     gap: 10px;
 }
-
-.llm-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.llm-text-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.llm-text-info h3 {
-    color: #3cb371;
-    margin: 0 0 5px 0;
-}
-
-.llm-type {
-    color: #aaa;
-    margin: 0 0 5px 0;
-    font-size: 0.9rem;
-}
-
-.llm-created {
-    color: #888;
-    margin: 0;
-    font-size: 0.8rem;
-}
