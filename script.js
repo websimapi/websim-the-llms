@@ -373,6 +373,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function handleViewportResize() {
+        const humanoidViewport = document.querySelector('.humanoid-viewport');
+        if (humanoidViewport && window.humanoidCamera && window.humanoidRenderer) {
+            const width = humanoidViewport.clientWidth;
+            const height = humanoidViewport.clientHeight;
+            
+            window.humanoidCamera.aspect = width / height;
+            window.humanoidCamera.updateProjectionMatrix();
+            window.humanoidRenderer.setSize(width, height);
+        }
+    }
+
+    window.addEventListener('resize', handleViewportResize);
+
     setupConsolePanel();
     setupUIInteractions();
 });

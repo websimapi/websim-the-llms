@@ -6,8 +6,6 @@ import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { createRobotModel } from './llmModelCreationRenderer.js';
-// Import the utility functions moved to the new file
-import { renderAttributeGrid, updatePointsDisplay, resetForm as resetFormUtil } from './llmCreationInterfaceUtils.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -72,8 +70,14 @@ export function setupLLMCreationInterface(llmToEdit) {
         createUI.removeAttribute('data-edit-id');
     }
     
+    // Make humanoidScene globally accessible for other modules
+    window.currentHumanoidScene = null;
+    
     // Initialize the humanoid preview
     initHumanoidPreview(llmToEdit);
+    
+    // Make humanoidScene globally accessible
+    window.currentHumanoidScene = humanoidScene;
     
     // Add event listener for create button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
@@ -83,63 +87,97 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
     resetButton.addEventListener('click', resetForm);
+}
+
+// Function to render the attribute grid
+function renderAttributeGrid() {
+    const gridContainer = document.getElementById('attribute-grid');
+    gridContainer.innerHTML = '';
     
-    // Add event listener for close button
-    const closeButton = document.querySelector('.create-llm-close');
-    closeButton.addEventListener('click', () => {
-        document.getElementById('create-llm-ui').classList.remove('active');
+    const attributesArray = attributeSystem.getAttributesArray();
+    
+    attributesArray.forEach(attr => {
+        const item = document.createElement('div');
+        item.className = 'attribute-item';
+        
+        const header = document.createElement('div');
+        header.className = 'attribute-header';
+        
+        const name = document.createElement('div');
+        name.className = 'attribute-name';
+        name.textContent = attr.name;
+        
+        const controls = document.createElement('div');
+        controls.className = 'attribute-controls';
+        
+        const decBtn = document.createElement('button');
+        decBtn.className = 'attribute-button';
+        decBtn.textContent = '-';
+        decBtn.disabled = attr.value <= 0;
+        decBtn.onclick = () => {
+            if (attributeSystem.decrementAttribute(attr.name)) {
+                renderAttributeGrid();
+                updatePointsDisplay();
+            }
+        };
+        
+        const value = document.createElement('span');
+        value.className = 'attribute-value-text';
+        value.textContent = attr.value;
+        
+        const incBtn = document.createElement('button');
+        incBtn.className = 'attribute-button';
+        incBtn.textContent = '+';
+        incBtn.disabled = attributeSystem.getRemainingPoints() <= 0 || 
+                           attr.value >= attributeSystem.maxPointsPerAttribute;
+        incBtn.onclick = () => {
+            if (attributeSystem.incrementAttribute(attr.name)) {
+                renderAttributeGrid();
+                updatePointsDisplay();
+            }
+        };
+        
+        controls.appendChild(decBtn);
+        controls.appendChild(value);
+        controls.appendChild(incBtn);
+        
+        header.appendChild(name);
+        header.appendChild(controls);
+        
+        const valueBar = document.createElement('div');
+        valueBar.className = 'attribute-value';
+        
+        const valueFill = document.createElement('div');
+        valueFill.className = 'attribute-fill';
+        valueFill.style.width = `${(attr.value / attributeSystem.maxPointsPerAttribute) * 100}%`;
+        
+        valueBar.appendChild(valueFill);
+        
+        const description = document.createElement('div');
+        description.className = 'attribute-description';
+        description.textContent = attr.description;
+        
+        item.appendChild(header);
+        item.appendChild(valueBar);
+        item.appendChild(description);
+        
+        gridContainer.appendChild(item);
     });
-    
-    // Add event listener for form reset events
-    document.addEventListener('resetLLMForm', handleResetForm);
-    
-    // Handle orientation change for mobile
-    window.addEventListener('orientationchange', handleOrientationChange);
 }
 
-// Reset form function now delegates to the utility function and handles the model reset
-function resetForm() {
-    resetFormUtil(); // Call the utility function
+// Function to update points display
+function updatePointsDisplay() {
+    const pointsDisplay = document.getElementById('points-remaining');
+    const remaining = attributeSystem.getRemainingPoints();
+    pointsDisplay.textContent = `${remaining} Points Remaining`;
     
-    // Reset humanoid
-    if (customCharacter && customCharacter.parent) {
-        customCharacter.parent.remove(customCharacter);
-        customCharacter = null;
-    }
-    
-    if (!robotModel) {
-        createDefaultRobot();
+    // Change color based on points remaining
+    if (remaining <= 3) {
+        pointsDisplay.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
+    } else if (remaining <= 7) {
+        pointsDisplay.style.backgroundColor = 'rgba(255, 165, 0, 0.2)';
     } else {
-        updateHumanoidPreview();
-    }
-}
-
-// Handle reset form event
-function handleResetForm() {
-    // Reset humanoid
-    if (customCharacter && customCharacter.parent) {
-        customCharacter.parent.remove(customCharacter);
-        customCharacter = null;
-    }
-    
-    if (!robotModel) {
-        createDefaultRobot();
-    } else {
-        updateHumanoidPreview();
-    }
-}
-
-// Handle orientation change for mobile devices
-function handleOrientationChange() {
-    if (humanoidCamera && humanoidRenderer) {
-        const viewport = document.querySelector('.humanoid-viewport');
-        if (viewport) {
-            setTimeout(() => {
-                humanoidCamera.aspect = viewport.clientWidth / viewport.clientHeight;
-                humanoidCamera.updateProjectionMatrix();
-                humanoidRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
-            }, 300); // Wait for the resize to complete
-        }
+        pointsDisplay.style.backgroundColor = 'rgba(60, 179, 113, 0.2)';
     }
 }
 
@@ -199,7 +237,6 @@ function initHumanoidPreview(llmToEdit) {
     
     // Setup Three.js scene
     humanoidScene = new THREE.Scene();
-    window.currentHumanoidScene = humanoidScene;
     humanoidScene.background = new THREE.Color(0x111111);
     
     // Setup camera
@@ -453,4 +490,32 @@ function animateHumanoid() {
     }
     
     humanoidRenderer.render(humanoidScene, humanoidCamera);
+}
+
+function resetForm() {
+    // Reset name with random number
+    document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
+    
+    // Reset other form values
+    document.getElementById('llm-model').selectedIndex = 0;
+    document.getElementById('llm-color').value = '#3cb371';
+    document.getElementById('llm-style').selectedIndex = 0;
+    document.getElementById('llm-custom-prompt').value = '';
+    
+    // Reset attributes
+    attributeSystem.initializeAttributes();
+    renderAttributeGrid();
+    updatePointsDisplay();
+    
+    // Reset humanoid
+    if (customCharacter && customCharacter.parent) {
+        customCharacter.parent.remove(customCharacter);
+        customCharacter = null;
+    }
+    
+    if (!robotModel) {
+        createDefaultRobot();
+    } else {
+        updateHumanoidPreview();
+    }
 }
