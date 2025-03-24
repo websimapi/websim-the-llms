@@ -159,6 +159,9 @@ function handleEditLLM(id) {
     if (collectionAnimationId) {
         cancelAnimationFrame(collectionAnimationId);
     }
+    
+    // Clean up carousel
+    cleanupCarousel();
 }
 
 // Handle clicks in the viewport area
@@ -209,7 +212,7 @@ function addEditSelectedButton() {
         editSelectedBtn.id = 'edit-selected-llm-btn';
         editSelectedBtn.className = 'collection-button secondary';
         editSelectedBtn.textContent = 'Edit Selected';
-        editSelectedBtn.disabled = true; // Initially disabled
+        editSelectedBtn.disabled = !getSelectedModelId(); // Initially disabled if no selection
         
         // Add click handler
         editSelectedBtn.addEventListener('click', () => {
@@ -223,20 +226,12 @@ function addEditSelectedButton() {
         footer.insertBefore(editSelectedBtn, document.getElementById('create-new-llm-btn'));
     }
     
-    // Add selection change listener to update button state
-    const observer = new MutationObserver((mutations) => {
-        const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-        if (editSelectedBtn) {
-            const selectedId = getSelectedModelId();
-            editSelectedBtn.disabled = !selectedId;
-        }
-    });
-    
-    observer.observe(document.getElementById('llm-list'), { 
-        attributes: true, 
-        subtree: true,
-        attributeFilter: ['class']
-    });
+    // Update button state with current selection status
+    const selectedId = getSelectedModelId();
+    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+    if (editSelectedBtn) {
+        editSelectedBtn.disabled = !selectedId;
+    }
 }
 
 function deleteLLM(id) {

@@ -333,6 +333,12 @@ export function selectModel(id) {
     
     // Update list view highlighting
     updateListSelection(id);
+    
+    // Update edit selected button state
+    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
+    if (editSelectedBtn) {
+        editSelectedBtn.disabled = !id;
+    }
 }
 
 // Update the list view to highlight selected item
@@ -349,7 +355,7 @@ function updateListSelection(id) {
     }
 }
 
-// Get the ID of the currently selected model
+// Export functionality for updating button state with selection changes
 export function getSelectedModelId() {
     return selectedModelId;
 }
