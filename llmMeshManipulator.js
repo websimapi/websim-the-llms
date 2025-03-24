@@ -182,9 +182,18 @@ function setupEditableValue(elementId, axis, mode) {
             element.textContent = newValue.toFixed(2);
         }
         
-        // Add click handler to the input to prevent propagation
+        // Add click handler to the input to prevent propagation and preserve value on second click
         input.addEventListener('click', function(e) {
             e.stopPropagation();
+            // Place cursor at clicked position rather than selecting all
+            if (this.selectionStart === 0 && this.selectionEnd === this.value.length) {
+                // First click already selected everything (default behavior)
+                // Do nothing, keep the selection
+            } else {
+                // This is a second or later click, just set the cursor position
+                const clickPosition = this.selectionStart;
+                this.setSelectionRange(clickPosition, clickPosition);
+            }
         });
         
         input.addEventListener('blur', completeEdit);

@@ -109,6 +109,11 @@ export function resetFormAttributes() {
         delete statusElement.dataset.profileImageUrl;
     }
     
+    // Reset profile image display
+    import('./llmProfileImageDisplay.js').then(module => {
+        module.clearProfileImageDisplay();
+    });
+    
     // Hide the preview if it's open
     const previewContainer = document.getElementById('profile-image-preview-container');
     if (previewContainer) {
@@ -128,6 +133,10 @@ export function setupProfileImageUI() {
 
 // New function to initialize profile image UI in the appearance tab
 export function setupProfileImageAppearance() {
+    // Check if profile image display already exists to prevent duplication
+    const existingDisplay = document.querySelector('.profile-image-display');
+    if (existingDisplay) return;
+    
     // Import and setup the profile image display in appearance tab
     import('./llmProfileImageDisplay.js').then(module => {
         module.setupProfileImageInAppearance();

@@ -55,6 +55,18 @@ export function updateProfileImageDisplay(imageUrl) {
     }
 }
 
+// New function to clear profile image display
+export function clearProfileImageDisplay() {
+    const placeholder = document.querySelector('.profile-image-placeholder');
+    const imageElement = document.querySelector('.profile-image');
+    
+    if (placeholder && imageElement) {
+        placeholder.style.display = 'block';
+        imageElement.src = '';
+        imageElement.style.display = 'none';
+    }
+}
+
 // Add profile images to the LLM list in the collection view
 export function addProfileImagesToLLMList() {
     // Find all list items
