@@ -40,7 +40,7 @@ function createStandardModel(THREE, llm) {
     
     // Get consistent materials based on LLM properties
     const color = llm.color || '#3cb371';
-    const style = 'modern'; 
+    const style = llm.style || 'modern';
     const materials = createStandardMaterials(color, style);
     
     // Create head
@@ -117,13 +117,13 @@ function createStandardModel(THREE, llm) {
     // Left arm
     const leftUpperArm = new THREE.Mesh(upperArmGeometry, materials.limbsMaterial);
     leftUpperArm.position.set(-0.4, 1.3, 0);
-    leftUpperArm.rotation.z = -Math.PI / 6;  
+    leftUpperArm.rotation.z = Math.PI / 6;  
     leftUpperArm.castShadow = true;
     group.add(leftUpperArm);
     
     const leftLowerArm = new THREE.Mesh(lowerArmGeometry, materials.limbsMaterial);
     leftLowerArm.position.set(-0.55, 1.0, 0);
-    leftLowerArm.rotation.z = -Math.PI / 4;  
+    leftLowerArm.rotation.z = Math.PI / 4;  
     leftLowerArm.castShadow = true;
     group.add(leftLowerArm);
     
@@ -138,13 +138,13 @@ function createStandardModel(THREE, llm) {
     // Right arm
     const rightUpperArm = new THREE.Mesh(upperArmGeometry, materials.limbsMaterial);
     rightUpperArm.position.set(0.4, 1.3, 0);
-    rightUpperArm.rotation.z = Math.PI / 6;  
+    rightUpperArm.rotation.z = -Math.PI / 6;  
     rightUpperArm.castShadow = true;
     group.add(rightUpperArm);
     
     const rightLowerArm = new THREE.Mesh(lowerArmGeometry, materials.limbsMaterial);
     rightLowerArm.position.set(0.55, 1.0, 0);
-    rightLowerArm.rotation.z = Math.PI / 4;  
+    rightLowerArm.rotation.z = -Math.PI / 4;  
     rightLowerArm.castShadow = true;
     group.add(rightLowerArm);
     

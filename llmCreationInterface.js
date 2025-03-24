@@ -7,8 +7,6 @@ import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { createRobotModel } from './llmModelCreationRenderer.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
-// Import new helper functions
-import { updateSelectedMeshColor, resetCreationForm, handleGenerateCharacter } from './llmCreationUIHandler.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -48,16 +46,12 @@ export function setupLLMCreationInterface(llmToEdit) {
     updatePointsDisplay();
     
     // Add event listeners for form elements that should update the humanoid preview
-    const colorPicker = document.getElementById('llm-color');
-    colorPicker.addEventListener('input', (event) => updateSelectedMeshColor(selectedMesh, event));
+    document.getElementById('llm-color').addEventListener('input', updateSelectedMeshColor);
+    document.getElementById('llm-style').addEventListener('change', updateHumanoidPreview);
     
     // Setup character generation button
     const generateBtn = document.getElementById('generate-character-btn');
-    generateBtn.addEventListener('click', async () => {
-        generatingCharacter = true;
-        const result = await handleGenerateCharacter(false);
-        generatingCharacter = false;
-    });
+    generateBtn.addEventListener('click', handleGenerateCharacter);
     
     // Set form values from existing LLM if editing
     if (llmToEdit) {
@@ -93,7 +87,7 @@ export function setupLLMCreationInterface(llmToEdit) {
     
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
-    resetButton.addEventListener('click', resetCreationForm);
+    resetButton.addEventListener('click', resetForm);
     
     // Wait a short moment for the UI to render before optimizing
     setTimeout(() => {
@@ -207,6 +201,54 @@ function updatePointsDisplay() {
     }
 }
 
+async function handleGenerateCharacter() {
+    if (generatingCharacter) return;
+    
+    const promptInput = document.getElementById('llm-custom-prompt');
+    const userPrompt = promptInput.value.trim();
+    const statusElement = document.getElementById('generation-status');
+    const generateBtn = document.getElementById('generate-character-btn');
+    
+    if (userPrompt.length < 5) {
+        statusElement.textContent = "Please enter a more detailed description";
+        return;
+    }
+    
+    generatingCharacter = true;
+    statusElement.textContent = "Generating character...";
+    generateBtn.disabled = true;
+    
+    try {
+        const generatedCode = await generateCharacterCode(userPrompt);
+        
+        // Store the generated code for later use
+        statusElement.dataset.generatedCode = generatedCode;
+        
+        // Remove previous custom character if it exists
+        if (customCharacter && customCharacter.parent) {
+            customCharacter.parent.remove(customCharacter);
+        }
+        
+        // Remove default robot if it exists
+        if (robotModel && robotModel.parent) {
+            robotModel.parent.remove(robotModel);
+            robotModel = null;
+        }
+        
+        // Create the new character
+        customCharacter = createCustomCharacter(THREE, generatedCode);
+        humanoidScene.add(customCharacter);
+        
+        statusElement.textContent = "Character generated successfully!";
+    } catch (error) {
+        console.error("Failed to generate character:", error);
+        statusElement.textContent = "Failed to generate character. Try again with a different description.";
+    } finally {
+        generatingCharacter = false;
+        generateBtn.disabled = false;
+    }
+}
+
 function initHumanoidPreview(llmToEdit) {
     const viewport = document.querySelector('.humanoid-viewport');
     
@@ -306,7 +348,7 @@ function initHumanoidPreview(llmToEdit) {
 function createDefaultRobot(llmToEdit) {
     // Get current selected color or color from edit data
     const color = llmToEdit?.color || document.getElementById('llm-color').value;
-    const style = llmToEdit?.style || document.getElementById('llm-style').value;
+    const style = llmToEdit?.style || 'modern'; // Default style
     
     // Create the robot model using the imported function
     const result = createRobotModel(humanoidScene, color, style);
@@ -389,29 +431,35 @@ function handleMeshSelection(event) {
 }
 
 function updateHumanoidPreview() {
-    if (!robotModel) return;
-    
-    // If we have a custom character, don't update the default robot
-    if (customCharacter) return;
-    
-    // Get new color and style values
+    // Import and use the function from the new module
+    import('./llmCreationUIUpdater.js').then(module => {
+        module.updateHumanoidPreviewStyle();
+    });
+}
+
+function updateSelectedMeshColor() {
     const color = document.getElementById('llm-color').value;
-    const style = document.getElementById('llm-style').value;
     
-    // Remove existing robot model
-    if (robotModel.parent) {
-        robotModel.parent.remove(robotModel);
+    if (selectedMesh && selectedMesh.material) {
+        // Update just the selected mesh's color
+        selectedMesh.material.color.set(color);
+        
+        // Also update emissive with a toned down version of the color
+        if (selectedMesh.material.emissive) {
+            // Store the highlight for selection state
+            if (!selectedMesh.userData.originalEmissive) {
+                selectedMesh.userData.originalEmissive = new THREE.Color(color).multiplyScalar(0.2);
+            } else {
+                selectedMesh.userData.originalEmissive.set(new THREE.Color(color).multiplyScalar(0.2));
+            }
+            
+            // Keep the highlight if it's selected
+            selectedMesh.material.emissive.set(0x333333);
+        }
+    } else {
+        // If no mesh is selected, fall back to the original behavior
+        updateHumanoidPreview();
     }
-    
-    // Create a new robot with updated materials
-    const result = createRobotModel(humanoidScene, color, style);
-    robotModel = result.model;
-    window.robotModel = robotModel;
-    
-    // Update stored material references
-    headMaterial = result.materials.headMaterial;
-    bodyMaterial = result.materials.bodyMaterial;
-    limbsMaterial = result.materials.limbsMaterial;
 }
 
 function animateHumanoid() {
@@ -444,3 +492,15 @@ function animateHumanoid() {
     
     humanoidRenderer.render(humanoidScene, humanoidCamera);
 }
+
+function resetForm() {
+    // Import and use the function from the new module
+    import('./llmCreationUIUpdater.js').then(module => {
+        module.resetCreationForm();
+    });
+}
+
+// Make key functions available to the window for use by other modules
+window.renderAttributeGrid = renderAttributeGrid;
+window.updatePointsDisplay = updatePointsDisplay;
+window.createDefaultRobot = createDefaultRobot;

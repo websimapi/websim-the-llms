@@ -4,9 +4,9 @@ import { createStandardMaterials } from './llmCharacterRendererUtils.js';
 import { applyStoredModelData } from './llmModelStorage.js';
 
 // This function is moved from llmCreationInterface.js to reduce file size
-export function createRobotModel(humanoidScene, color) {
-    // Get standardized materials - using fixed 'modern' style
-    const materials = createStandardMaterials(color, 'modern');
+export function createRobotModel(humanoidScene, color, style) {
+    // Get standardized materials
+    const materials = createStandardMaterials(color, style);
     
     // Create robot parts
     const robotGroup = new THREE.Group();
@@ -83,13 +83,13 @@ export function createRobotModel(humanoidScene, color) {
     // Left arm - fixed rotation
     const leftUpperArm = new THREE.Mesh(upperArmGeometry, materials.limbsMaterial);
     leftUpperArm.position.set(-0.4, 1.3, 0);
-    leftUpperArm.rotation.z = -Math.PI / 6;  
+    leftUpperArm.rotation.z = Math.PI / 6;  // Fixed rotation direction
     leftUpperArm.castShadow = true;
     robotGroup.add(leftUpperArm);
     
     const leftLowerArm = new THREE.Mesh(lowerArmGeometry, materials.limbsMaterial);
     leftLowerArm.position.set(-0.55, 1.0, 0);
-    leftLowerArm.rotation.z = -Math.PI / 4;  
+    leftLowerArm.rotation.z = Math.PI / 4;  // Fixed rotation direction
     leftLowerArm.castShadow = true;
     robotGroup.add(leftLowerArm);
     
@@ -104,13 +104,13 @@ export function createRobotModel(humanoidScene, color) {
     // Right arm - fixed rotation
     const rightUpperArm = new THREE.Mesh(upperArmGeometry, materials.limbsMaterial);
     rightUpperArm.position.set(0.4, 1.3, 0);
-    rightUpperArm.rotation.z = Math.PI / 6;  
+    rightUpperArm.rotation.z = -Math.PI / 6;  // Fixed rotation direction
     rightUpperArm.castShadow = true;
     robotGroup.add(rightUpperArm);
     
     const rightLowerArm = new THREE.Mesh(lowerArmGeometry, materials.limbsMaterial);
     rightLowerArm.position.set(0.55, 1.0, 0);
-    rightLowerArm.rotation.z = Math.PI / 4; 
+    rightLowerArm.rotation.z = -Math.PI / 4;  // Fixed rotation direction
     rightLowerArm.castShadow = true;
     robotGroup.add(rightLowerArm);
     
