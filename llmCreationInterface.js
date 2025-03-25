@@ -124,6 +124,9 @@ export function setupLLMCreationInterface(llmToEdit) {
     document.getElementById('llm-name').addEventListener('input', updateOverlayFromForm);
     document.getElementById('llm-model').addEventListener('change', updateOverlayFromForm);
     
+    // Call updateOverlayFromForm immediately to sync UI state
+    setTimeout(updateOverlayFromForm, 100);
+    
     // Add event listener for create button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
     createLLMButton.addEventListener('click', saveLLMData);
