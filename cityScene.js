@@ -241,50 +241,80 @@ function addCityNameText(scene) {
     rightPillar.receiveShadow = true;
     scene.add(rightPillar);
     
-    // Create sign board
+    // Create sign board textures - one with text, one without
     const loader = new THREE.TextureLoader();
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 128;
-    const context = canvas.getContext('2d');
     
-    // Wood texture background
-    context.fillStyle = '#8B4513';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    // Create text canvas for front and back
+    const canvasWithText = document.createElement('canvas');
+    canvasWithText.width = 512;
+    canvasWithText.height = 128;
+    const contextWithText = canvasWithText.getContext('2d');
     
-    // Add wood grain effect
-    context.strokeStyle = '#6B3100';
-    context.lineWidth = 2;
-    for (let i = 0; i < 10; i++) {
-        context.beginPath();
-        context.moveTo(0, i * 15);
-        context.bezierCurveTo(
-            canvas.width * 0.3, i * 15 + (Math.random() * 10 - 5),
-            canvas.width * 0.7, i * 15 + (Math.random() * 10 - 5),
-            canvas.width, i * 15
-        );
-        context.stroke();
-    }
+    // Create blank canvas for sides
+    const canvasBlank = document.createElement('canvas');
+    canvasBlank.width = 512;
+    canvasBlank.height = 128;
+    const contextBlank = canvasBlank.getContext('2d');
     
-    // Text with border
-    context.fillStyle = 'white';
-    context.font = 'bold 60px Arial';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.strokeStyle = 'black';
-    context.lineWidth = 4;
-    context.strokeText(cityData.name, canvas.width / 2, canvas.height / 2);
-    context.fillText(cityData.name, canvas.width / 2, canvas.height / 2);
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: false,
-        side: THREE.DoubleSide
+    // Wood texture background for both canvases
+    [contextWithText, contextBlank].forEach(context => {
+        // Wood background
+        context.fillStyle = '#8B4513';
+        context.fillRect(0, 0, canvasWithText.width, canvasWithText.height);
+        
+        // Add wood grain effect
+        context.strokeStyle = '#6B3100';
+        context.lineWidth = 2;
+        for (let i = 0; i < 10; i++) {
+            context.beginPath();
+            context.moveTo(0, i * 15);
+            context.bezierCurveTo(
+                canvasWithText.width * 0.3, i * 15 + (Math.random() * 10 - 5),
+                canvasWithText.width * 0.7, i * 15 + (Math.random() * 10 - 5),
+                canvasWithText.width, i * 15
+            );
+            context.stroke();
+        }
     });
     
+    // Text with border - only on the text canvas
+    contextWithText.fillStyle = 'white';
+    contextWithText.font = 'bold 60px Arial';
+    contextWithText.textAlign = 'center';
+    contextWithText.textBaseline = 'middle';
+    contextWithText.strokeStyle = 'black';
+    contextWithText.lineWidth = 4;
+    contextWithText.strokeText(cityData.name, canvasWithText.width / 2, canvasWithText.height / 2);
+    contextWithText.fillText(cityData.name, canvasWithText.width / 2, canvasWithText.height / 2);
+    
+    // Create textures
+    const textureWithText = new THREE.CanvasTexture(canvasWithText);
+    const textureBlank = new THREE.CanvasTexture(canvasBlank);
+    
+    // Create materials for different sides
+    const frontBackMaterial = new THREE.MeshBasicMaterial({
+        map: textureWithText,
+        side: THREE.FrontSide
+    });
+    
+    const sideMaterial = new THREE.MeshBasicMaterial({
+        map: textureBlank,
+        side: THREE.FrontSide
+    });
+    
+    // Create materials array for BoxGeometry
+    const materials = [
+        sideMaterial,       // right side
+        sideMaterial,       // left side
+        sideMaterial,       // top side
+        sideMaterial,       // bottom side
+        frontBackMaterial,  // front side
+        frontBackMaterial   // back side
+    ];
+    
+    // Create box with different materials per face
     const geometry = new THREE.BoxGeometry(20, 5, 0.5);
-    const sign = new THREE.Mesh(geometry, material);
+    const sign = new THREE.Mesh(geometry, materials);
     sign.position.set(0, 8.5, -30);
     sign.castShadow = true;
     scene.add(sign);
