@@ -125,8 +125,6 @@ function updateVoiceList() {
         for (let i = 0; i < voiceSelect.options.length; i++) {
             if (voiceSelect.options[i].value === voiceUri) {
                 voiceSelect.selectedIndex = i;
-                // Enable the test button
-                document.getElementById('test-voice-btn').disabled = false;
                 break;
             }
         }
@@ -174,17 +172,19 @@ function setupVoiceSelectionListeners() {
     if (showAllCheckbox && showAllButton) {
         // Update button state based on checkbox state
         showAllButton.addEventListener('click', () => {
-            showAllCheckbox.checked = !showAllCheckbox.checked;
-            showAllLanguages = showAllCheckbox.checked;
-            
-            // Update button style
-            if (showAllCheckbox.checked) {
-                showAllButton.classList.add('enabled');
-            } else {
-                showAllButton.classList.remove('enabled');
+            if (showAllCheckbox) {
+                showAllCheckbox.checked = !showAllCheckbox.checked;
+                showAllLanguages = showAllCheckbox.checked;
+                
+                // Update button style
+                if (showAllCheckbox.checked) {
+                    showAllButton.classList.add('enabled');
+                } else {
+                    showAllButton.classList.remove('enabled');
+                }
+                
+                updateVoiceList();
             }
-            
-            updateVoiceList();
         });
     }
 }
