@@ -193,8 +193,12 @@ function createCitySign() {
     stoneTexture.wrapS = stoneTexture.wrapT = THREE.RepeatWrapping;
     stoneTexture.repeat.set(1, 4);
     
-    const pillarMaterial = materials.stone.clone();
-    pillarMaterial.map = stoneTexture;
+    const pillarMaterial = new THREE.MeshStandardMaterial({
+        color: 0x808080,
+        roughness: 0.8,
+        metalness: 0.2,
+        map: stoneTexture
+    });
     
     // Left pillar
     const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
