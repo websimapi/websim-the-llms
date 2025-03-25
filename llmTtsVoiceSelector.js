@@ -206,7 +206,7 @@ export function loadTTSVoiceSelection(llm) {
     if (!llm || !llm.voice) return;
     
     // Wait for voices to be loaded
-    const checkVoices = () => {
+    function checkVoices() {
         if (availableVoices.length === 0) {
             // Try again in a moment
             setTimeout(checkVoices, 100);
@@ -227,13 +227,16 @@ export function loadTTSVoiceSelection(llm) {
                         statusElement.dataset.selectedVoice = llm.voice.uri;
                     }
                     
-                    // Enable test button
-                    document.getElementById('test-voice-btn').disabled = false;
+                    // Enable test button if it exists
+                    const testButton = document.getElementById('test-voice-btn');
+                    if (testButton) {
+                        testButton.disabled = false;
+                    }
                     break;
                 }
             }
         }
-    };
+    }
     
     checkVoices();
 }
