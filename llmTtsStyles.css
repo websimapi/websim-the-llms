@@ -1,0 +1,79 @@
+/* Styles for TTS voice selector */
+.tts-voice-selector {
+    margin-top: 15px;
+    border-top: 1px solid rgba(60, 179, 113, 0.3);
+    padding-top: 15px;
+}
+
+.voice-test-container {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 10px;
+}
+
+#test-voice-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background-color: #3cb371;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+#test-voice-btn:hover:not(:disabled) {
+    background-color: #2a8c5a;
+    transform: scale(1.05);
+}
+
+#test-voice-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+#test-voice-btn:disabled {
+    background-color: #555;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.show-all-languages {
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+}
+
+.show-all-label {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.setting-checkbox {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 768px) {
+    #test-voice-btn {
+        padding: 10px 15px;
+        font-size: 1rem;
+    }
+    
+    .setting-checkbox {
+        width: 22px;
+        height: 22px;
+    }
+    
+    .show-all-label {
+        font-size: 1rem;
+    }
+}

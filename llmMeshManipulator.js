@@ -143,6 +143,9 @@ function setupEditableValue(elementId, axis, mode) {
     element.addEventListener('click', function(event) {
         // If an input is already active, don't create a new one
         if (this.querySelector('input')) {
+            // Just focus on the existing input
+            const existingInput = this.querySelector('input');
+            existingInput.focus();
             return;
         }
         

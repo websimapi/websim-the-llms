@@ -2,6 +2,7 @@ import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { attributeSystem } from './attributeSystem.js';
 import { storeModelData } from './llmModelStorage.js';
+import { saveTTSVoiceSelection } from './llmTtsVoiceSelector.js';
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
@@ -43,6 +44,9 @@ export function saveLLMData() {
         llmData.profileImageUrl = statusElement.dataset.profileImageUrl;
         console.log("Saved profile image URL");
     }
+    
+    // Save TTS voice selection if available
+    llmData = saveTTSVoiceSelection(llmData);
     
     // Store current model data - this handles colors and other properties
     // Get the current robot or custom model from the scene

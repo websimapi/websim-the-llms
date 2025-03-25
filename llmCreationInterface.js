@@ -11,6 +11,9 @@ import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGe
 import { prepareModelForIndividualColoring, applyColorToMesh } from './llmMeshColorManager.js';
 import { initMeshManipulator, updateManipulationDisplays } from './llmMeshManipulator.js';
 import { setGlobalReferences, setModels, setSelectedMesh } from './threeJSGlobals.js';
+import { setupLLMCreationInterface } from './llmCreationInterface.js';
+import { setupProfileImageInAppearance } from './llmProfileImageDisplay.js';
+import { initializeAllComponents } from './llmSetupHelpers.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -27,6 +30,7 @@ export function setupLLMCreationInterface(llmToEdit) {
         statusElement.textContent = '';
         delete statusElement.dataset.generatedCode;
         delete statusElement.dataset.profileImageUrl;
+        delete statusElement.dataset.selectedVoice;
     }
     customCharacter = null;
     
@@ -122,45 +126,15 @@ export function setupLLMCreationInterface(llmToEdit) {
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
     resetButton.addEventListener('click', resetForm);
     
-    // Setup profile image UI with camera button
-    import('./llmCreationInterfaceCompact.js').then(module => {
-        module.setupProfileImageUI();
-        module.setupProfileImageAppearance();
-        
-        // After setting up the profile image UI, load the LLM's profile image if editing
-        if (llmToEdit && llmToEdit.profileImageUrl) {
-            // Use a small timeout to ensure the UI is ready
-            setTimeout(() => {
-                import('./llmProfileImageDisplay.js').then(displayModule => {
-                    displayModule.updateProfileImageDisplay(llmToEdit.profileImageUrl);
-                    
-                    // Store the URL in status element for when saving
-                    if (statusElement) {
-                        statusElement.dataset.profileImageUrl = llmToEdit.profileImageUrl;
-                    }
-                });
-            }, 100);
-        }
-    });
+    // Add TTS style file
+    const ttsStylesheet = document.createElement('link');
+    ttsStylesheet.rel = 'stylesheet';
+    ttsStylesheet.href = 'llmTtsStyles.css';
+    document.head.appendChild(ttsStylesheet);
     
-    // Wait a short moment for the UI to render before optimizing
-    setTimeout(() => {
-        // Set up tooltips and optimize height for desktop (now moved to the imported file)
-        import('./llmAttributeTooltips.js').then(module => {
-            module.setupAttributeTooltips();
-            module.optimizeUIHeight();
-        });
-    }, 100);
-    
-    // Initialize mesh manipulator after UI setup
-    setTimeout(() => {
-        initMeshManipulator();
-        
-        // Initial state - hide manipulation controls until something is selected
-        const manipulationControls = document.querySelector('.manipulation-controls');
-        if (manipulationControls) manipulationControls.style.display = 'none';
-    }, 200);
-    
+    // Initialize all components using the new helper
+    initializeAllComponents(llmToEdit);
+
     // Handle window resize for optimizing UI height
     window.addEventListener('resize', () => {
         import('./llmAttributeTooltips.js').then(module => {

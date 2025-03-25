@@ -85,7 +85,13 @@ export function setupLLMCollectionView(selectLLMId = null) {
             
             // Add profile images to the list items
             import('./llmProfileImageDisplay.js').then(module => {
-                module.addProfileImagesToLLMList();
+                if (typeof module.addProfileImagesToLLMList === 'function') {
+                    module.addProfileImagesToLLMList();
+                } else {
+                    console.error('addProfileImagesToLLMList function not found in module');
+                }
+            }).catch(error => {
+                console.error('Error importing llmProfileImageDisplay module:', error);
             });
             
             // Add click event to viewport for model selection

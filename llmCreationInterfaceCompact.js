@@ -120,6 +120,7 @@ export function resetFormAttributes() {
     const statusElement = document.getElementById('generation-status');
     if (statusElement) {
         delete statusElement.dataset.profileImageUrl;
+        delete statusElement.dataset.selectedVoice;
     }
     
     // Reset profile image display
@@ -129,6 +130,13 @@ export function resetFormAttributes() {
     const previewContainer = document.getElementById('profile-image-preview-container');
     if (previewContainer) {
         previewContainer.classList.add('hidden');
+    }
+    
+    // Reset voice selection if available
+    const voiceSelect = document.getElementById('llm-tts-voice');
+    if (voiceSelect) {
+        voiceSelect.selectedIndex = 0;
+        document.getElementById('test-voice-btn').disabled = true;
     }
 }
 
