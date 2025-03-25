@@ -58,3 +58,13 @@ export function getModels() {
 export function checkGlobalsAvailable() {
     return Boolean(currentHumanoidScene && humanoidCamera && humanoidRenderer);
 }
+
+// Add safety check for emissive property
+export function safeSetEmissive(material, color, intensity = 0.3) {
+    if (material && material.emissive) {
+        material.emissive.set(color);
+        if (material.emissiveIntensity !== undefined) {
+            material.emissiveIntensity = intensity;
+        }
+    }
+}

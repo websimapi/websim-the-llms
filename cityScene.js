@@ -8,7 +8,7 @@ import { createInfiniteTerrain } from './infiniteTerrain.js';
 import { CameraBoundaryController } from './cameraBoundaryController.js';
 import { createDistanceMist } from './terrainUtils.js';
 import { setupUIInteractions, setupConsolePanel } from './citySceneUI.js';
-import { initPlotHoverUI } from './plotHoverUI.js';
+import { initPlotHoverInfo } from './plotHoverInfo.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -72,9 +72,6 @@ function initCityScene() {
         2000
     );
     
-    // Make camera globally accessible for the hover system
-    window.cityCamera = camera;
-    
     // Set initial camera position further out for cinematic intro
     camera.position.set(50, 30, 50);
     camera.lookAt(0, 0, 0);
@@ -119,9 +116,6 @@ function initCityScene() {
     // Create building lots from cityData
     createBuildingLots(scene);
     
-    // Initialize plot hover UI
-    initPlotHoverUI();
-    
     // Update orbit controls settings
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -143,6 +137,9 @@ function initCityScene() {
     let introStartTime = Date.now();
     let introComplete = false;
     let audioFadeStarted = false;
+    
+    // Initialize plot hover info after the scene is ready
+    initPlotHoverInfo(camera, scene, renderer);
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -205,20 +202,13 @@ function initCityScene() {
 function createBuildingLots(scene) {
     const lots = cityData.lots;
     
-    // Create array to store plot references
-    const plotObjects = [];
-    
     lots.forEach(lot => {
         // Create plot outline with construction elements instead of box geometry
         const plotOutline = createPlotOutline(lot, scene);
         plotOutline.userData = { type: 'lot', id: lot.id };
         
-        // Add to plot objects array
-        plotObjects.push(plotOutline);
+        // No need to add to scene as createPlotOutline already does this
     });
-    
-    // Store plot objects globally for hover detection
-    window.cityPlots = plotObjects;
     
     // Add city name text
     addCityNameText(scene);
