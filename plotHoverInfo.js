@@ -4,7 +4,6 @@ import { safeSetEmissive } from './threeJSGlobals.js';
 
 let raycaster, mouse, camera, scene, renderer;
 let infoPanel, activePlotId;
-let plots = []; // Store references to all plot groups for more efficient lookups
 
 // Initialize hover functionality
 export function initPlotHoverInfo(mainCamera, mainScene, mainRenderer) {
@@ -20,15 +19,19 @@ export function initPlotHoverInfo(mainCamera, mainScene, mainRenderer) {
     // Create info panel HTML element
     createInfoPanel();
     
-    // Find and store all plot objects in the scene
-    collectPlots();
-    
     // Add event listeners
     const canvas = renderer.domElement;
     canvas.addEventListener('mousemove', onMouseMove);
     canvas.addEventListener('mouseleave', hideInfoPanel);
-    canvas.addEventListener('touchstart', onTouchStart); // Add touch support for mobile
-    canvas.addEventListener('touchend', hideInfoPanel);
+    
+    // Add touch event handling for mobile
+    canvas.addEventListener('touchstart', onTouchStart);
+    canvas.addEventListener('touchend', onTouchEnd);
+    
+    // Expose handlers globally for other modules
+    window.plotHoverHandlers = {
+        onTouchStart: onTouchStart
+    };
     
     // Start checking for plot hovers
     checkPlotHovers();
@@ -40,16 +43,6 @@ function createInfoPanel() {
     infoPanel.className = 'plot-info-panel';
     infoPanel.style.display = 'none';
     document.body.appendChild(infoPanel);
-}
-
-// Find and store all plot objects in the scene
-function collectPlots() {
-    plots = [];
-    scene.traverse(obj => {
-        if (obj.userData && obj.userData.type === 'lot') {
-            plots.push(obj);
-        }
-    });
 }
 
 // Handle mouse movement
@@ -64,25 +57,6 @@ function onMouseMove(event) {
     // Update info panel position to follow cursor
     infoPanel.style.left = `${event.clientX + 15}px`;
     infoPanel.style.top = `${event.clientY + 15}px`;
-}
-
-// Handle touch events for mobile
-function onTouchStart(event) {
-    if (event.touches.length === 0) return;
-    
-    const touch = event.touches[0];
-    const canvas = renderer.domElement;
-    const rect = canvas.getBoundingClientRect();
-    
-    mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
-    
-    // Position the panel a bit above the touch point to avoid finger occlusion
-    infoPanel.style.left = `${touch.clientX}px`;
-    infoPanel.style.top = `${touch.clientY - 120}px`; // Position above finger
-    
-    // Check for plot at touch position
-    checkForPlotAtPointer(true); // true = is touch event
 }
 
 // Hide the info panel
@@ -142,78 +116,90 @@ function checkPlotHovers() {
     
     if (!scene || !camera) return;
     
-    // Only check on mousemove, not every frame for performance
-    if (infoPanel.style.display === 'none' && !activePlotId) {
-        return;
-    }
-    
-    checkForPlotAtPointer();
-}
-
-// Check for plot at current pointer position
-function checkForPlotAtPointer(isTouch = false) {
     // Update the picking ray
     raycaster.setFromCamera(mouse, camera);
     
-    // First, do a broad test against plot group bounding boxes for efficiency
-    const intersects = raycaster.intersectObjects(plots, true);
+    // Find all plot objects in the scene
+    const plotObjects = [];
+    scene.traverse(obj => {
+        if (obj.userData && obj.userData.type === 'lot') {
+            plotObjects.push(obj);
+        }
+    });
     
-    if (intersects.length > 0) {
-        // Determine which plot was hit (may be a child object)
-        let plotObject = null;
-        let plotId = null;
-        
-        // First try to get the userData directly from the intersected object
-        if (intersects[0].object.userData && intersects[0].object.userData.type === 'lot') {
-            plotObject = intersects[0].object;
-            plotId = plotObject.userData.id;
-        } else {
-            // If the intersected object doesn't have the userData, traverse up the parent chain
-            let currentObj = intersects[0].object;
-            while (currentObj && !plotId) {
-                if (currentObj.userData && currentObj.userData.type === 'lot') {
-                    plotObject = currentObj;
-                    plotId = currentObj.userData.id;
-                    break;
-                }
-                currentObj = currentObj.parent;
+    // First try direct hits on the plot outlines
+    let intersects = raycaster.intersectObjects(plotObjects, true);
+    
+    // If no hits, check against the plot bounding boxes, which are larger
+    if (intersects.length === 0) {
+        // Create a box for each plot to check against
+        for (const plot of plotObjects) {
+            // Create a bounding box if not already created
+            if (!plot.userData.boundingBox) {
+                const box = new THREE.Box3().setFromObject(plot);
+                // Store the box in userData
+                plot.userData.boundingBox = box;
+            }
+            
+            // Check if ray intersects the bounding box
+            if (plot.userData.boundingBox.intersectsRay(raycaster.ray)) {
+                // Create a fake intersection with the plot
+                intersects.push({
+                    object: plot,
+                    distance: raycaster.ray.origin.distanceTo(plot.position)
+                });
+                break; // Only need one hit
             }
         }
+    }
+    
+    if (intersects.length > 0) {
+        // Find the actual plot parent object (not the construction tape or cones)
+        let plot = intersects[0].object;
         
-        if (plotId) {
+        // Traverse up to find the parent plot
+        while (plot && (!plot.userData || plot.userData.type !== 'lot')) {
+            plot = plot.parent;
+            if (!plot) break; // Safety check
+        }
+        
+        if (plot && plot.userData && plot.userData.id) {
             // If we're hovering over a different plot, reset the previous one
-            if (activePlotId && activePlotId !== plotId) {
+            if (activePlotId && activePlotId !== plot.userData.id) {
                 const previousPlot = findPlotObject(activePlotId);
                 if (previousPlot) {
                     resetPlotHighlight(previousPlot);
                 }
             }
             
-            // If it's a new plot or a touch event, update the display
-            if (plotId !== activePlotId || isTouch) {
-                // Highlight the current plot
-                highlightPlot(plotObject);
-                
-                // Show info panel
-                showInfoPanel(plotObject);
-                
-                // Store current active plot ID
-                activePlotId = plotId;
-            }
+            // Highlight the current plot
+            highlightPlot(plot);
+            
+            // Show info panel
+            showInfoPanel(plot);
+            
+            // Store current active plot ID
+            activePlotId = plot.userData.id;
             
             return; // Exit early
         }
-    } else {
-        // If no intersections, hide panel
-        if (infoPanel.style.display !== 'none') {
-            hideInfoPanel();
-        }
+    }
+    
+    // If no intersections, hide panel
+    if (infoPanel.style.display !== 'none') {
+        hideInfoPanel();
     }
 }
 
 // Find a plot object by ID
 function findPlotObject(id) {
-    return plots.find(plot => plot.userData && plot.userData.id === id);
+    let foundPlot = null;
+    scene.traverse(obj => {
+        if (obj.userData && obj.userData.type === 'lot' && obj.userData.id === id) {
+            foundPlot = obj;
+        }
+    });
+    return foundPlot;
 }
 
 // Highlight a plot
@@ -266,4 +252,40 @@ function resetPlotHighlight(plot) {
 // Helper to capitalize first letter
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+// New function to handle touch events
+function onTouchStart(event) {
+    // Prevent default behavior
+    if (event.cancelable) {
+        event.preventDefault();
+    }
+    
+    // Use the first touch point
+    if (event.touches && event.touches.length > 0) {
+        const touch = event.touches[0];
+        
+        // Update mouse position
+        const canvas = renderer.domElement;
+        const rect = canvas.getBoundingClientRect();
+        
+        mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        // Position panel near touch point
+        infoPanel.style.left = `${touch.clientX + 15}px`;
+        infoPanel.style.top = `${touch.clientY + 15}px`;
+        
+        // Force an immediate check for plot intersection
+        checkPlotHovers();
+        
+        // For mobile, we'll keep the panel visible until touch end
+        // No need to do anything else here
+    }
+}
+
+// Handle touch end
+function onTouchEnd(event) {
+    // Keep panel visible for a short time to allow reading
+    setTimeout(hideInfoPanel, 3000);
 }

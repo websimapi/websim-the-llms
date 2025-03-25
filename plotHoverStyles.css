@@ -61,25 +61,3 @@
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 5px;
 }
-
-/* Add mobile-specific styles for the hover panel */
-@media screen and (max-width: 768px) {
-    .plot-info-panel {
-        width: 280px;
-        font-size: 1.1rem;
-        padding: 0;
-    }
-    
-    .plot-info-header {
-        padding: 10px;
-        font-size: 1.2rem;
-    }
-    
-    .plot-info-content {
-        padding: 12px;
-    }
-    
-    .plot-info-row {
-        margin-bottom: 8px;
-    }
-}

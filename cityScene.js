@@ -141,6 +141,9 @@ function initCityScene() {
     // Initialize plot hover info after the scene is ready
     initPlotHoverInfo(camera, scene, renderer);
     
+    // Add touch support for mobile devices
+    renderer.domElement.addEventListener('touchstart', handleTouchStart);
+    
     // Handle window resize
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -197,6 +200,26 @@ function initCityScene() {
     }
     
     animate();
+}
+
+// New function to handle touch events for mobile devices
+function handleTouchStart(event) {
+    event.preventDefault();
+    
+    if (event.touches.length === 1) {
+        const touch = event.touches[0];
+        
+        // Forward the touch as a mock mouse event to the plot hover system
+        const mockEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        };
+        
+        // Trigger the same events as mouse hover
+        if (window.plotHoverHandlers && window.plotHoverHandlers.onTouchStart) {
+            window.plotHoverHandlers.onTouchStart(mockEvent);
+        }
+    }
 }
 
 function createBuildingLots(scene) {
