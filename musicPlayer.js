@@ -4,8 +4,8 @@ import { config } from './config.js';
 let bgAudio;
 let musicVolume = 0; // 0-4 (OFF, 25%, 50%, 75%, 100%)
 let musicPlayerInitialized = false;
-let longPressTimer;
-let customAudioFile = null;
+let currentMusicTrack = 'LLMs Morning Oasis - Sonauto.wav';
+let customMusicSelected = false;
 
 export function setupMusicPlayer() {
     // Create the music player UI
@@ -47,22 +47,21 @@ function createMusicPlayerUI() {
     toggleButton.appendChild(volumeDots);
     container.appendChild(toggleButton);
     
-    // Create advanced player container (hidden by default)
-    const advancedPlayer = document.createElement('div');
-    advancedPlayer.className = 'advanced-music-player hidden';
-    advancedPlayer.innerHTML = `
-        <div class="advanced-player-header">Music Player</div>
-        <div class="advanced-player-content">
-            <input type="file" id="custom-audio-file" accept="audio/*" class="custom-audio-input">
-            <label for="custom-audio-file" class="custom-audio-label">Select Music File</label>
-            <div class="now-playing-info">No file selected</div>
-        </div>
-        <div class="advanced-player-footer">
-            <button class="close-advanced-player">Close</button>
+    // Create music selector menu (initially hidden)
+    const musicMenu = document.createElement('div');
+    musicMenu.className = 'music-menu hidden';
+    musicMenu.innerHTML = `
+        <div class="music-menu-header">Select Music</div>
+        <div class="music-menu-options">
+            <button class="music-option default-track">Default Music</button>
+            <label class="music-option custom-track">
+                Custom Music
+                <input type="file" accept="audio/*" class="custom-music-input">
+            </label>
         </div>
     `;
     
-    container.appendChild(advancedPlayer);
+    container.appendChild(musicMenu);
     
     // Add to body
     document.body.appendChild(container);
@@ -87,12 +86,12 @@ function initializeAudio() {
     }
     
     // Initialize new audio element
-    bgAudio = new Audio('LLMs Morning Oasis - Sonauto.wav');
+    bgAudio = new Audio(currentMusicTrack);
     bgAudio.loop = true;
     bgAudio.volume = 0; // Start with volume at 0
     
     // Use configured initial volume if available
-    if (config.music && config.music.defaultVolume) {
+    if (config.music && config.music.defaultVolume !== undefined) {
         musicVolume = config.music.defaultVolume;
         updateVolumeState();
     }
@@ -106,41 +105,91 @@ function initializeAudio() {
 function setupEventListeners() {
     // Toggle button changes volume
     const toggleButton = document.querySelector('.music-toggle-button');
-    
-    // Normal click changes volume
     toggleButton.addEventListener('click', changeVolumeState);
     
-    // Right click or long press opens advanced player
+    // Context menu (right click) or long press opens music selector
     toggleButton.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        showAdvancedPlayer();
+        toggleMusicMenu();
     });
     
-    // Setup long press for mobile
-    toggleButton.addEventListener('touchstart', (e) => {
+    // Long press for mobile
+    let longPressTimer;
+    toggleButton.addEventListener('touchstart', () => {
         longPressTimer = setTimeout(() => {
-            showAdvancedPlayer();
-        }, 800); // 800ms long press
+            toggleMusicMenu();
+        }, 800); // 800ms for long press
     });
     
     toggleButton.addEventListener('touchend', () => {
         clearTimeout(longPressTimer);
     });
     
-    toggleButton.addEventListener('touchmove', () => {
-        clearTimeout(longPressTimer);
-    });
-    
-    // Setup advanced player controls
-    const closeAdvancedBtn = document.querySelector('.close-advanced-player');
-    if (closeAdvancedBtn) {
-        closeAdvancedBtn.addEventListener('click', hideAdvancedPlayer);
+    // Default track selection
+    const defaultTrackBtn = document.querySelector('.default-track');
+    if (defaultTrackBtn) {
+        defaultTrackBtn.addEventListener('click', () => {
+            changeTrack('LLMs Morning Oasis - Sonauto.wav');
+            toggleMusicMenu();
+        });
     }
     
-    // Setup file input change handler
-    const fileInput = document.getElementById('custom-audio-file');
-    if (fileInput) {
-        fileInput.addEventListener('change', handleFileSelect);
+    // Custom track selection
+    const customTrackInput = document.querySelector('.custom-music-input');
+    if (customTrackInput) {
+        customTrackInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const objectURL = URL.createObjectURL(file);
+                changeTrack(objectURL, true);
+                toggleMusicMenu();
+            }
+        });
+    }
+    
+    // Click outside closes menu
+    document.addEventListener('click', (e) => {
+        const musicMenu = document.querySelector('.music-menu');
+        const toggleButton = document.querySelector('.music-toggle-button');
+        
+        if (!musicMenu.classList.contains('hidden') && 
+            !musicMenu.contains(e.target) && 
+            !toggleButton.contains(e.target)) {
+            musicMenu.classList.add('hidden');
+        }
+    });
+}
+
+function toggleMusicMenu() {
+    const musicMenu = document.querySelector('.music-menu');
+    musicMenu.classList.toggle('hidden');
+}
+
+function changeTrack(trackSrc, isCustom = false) {
+    // Remember current volume and playing state
+    const wasPlaying = !bgAudio.paused;
+    const currentVolume = bgAudio.volume;
+    
+    // Stop current audio
+    bgAudio.pause();
+    
+    // Update source
+    currentMusicTrack = trackSrc;
+    customMusicSelected = isCustom;
+    
+    // Create new audio element
+    bgAudio = new Audio(trackSrc);
+    bgAudio.loop = true;
+    bgAudio.volume = currentVolume;
+    
+    // Update global reference
+    window.bgAudio = bgAudio;
+    
+    // Resume playback if it was playing
+    if (wasPlaying) {
+        bgAudio.play().catch(err => {
+            console.error("Error playing audio:", err);
+        });
     }
 }
 
@@ -161,21 +210,17 @@ function updateVolumeState() {
         default: actualVolume = 0; // OFF
     }
     
-    // Apply volume to current audio
-    if (bgAudio) {
-        bgAudio.volume = actualVolume;
-        
-        // Start playback if at non-zero volume and paused
-        if (musicVolume > 0 && bgAudio.paused) {
-            bgAudio.play().catch(err => {
-                console.error("Error playing audio:", err);
-                // Reset volume if playback failed
-                musicVolume = 0;
-                bgAudio.volume = 0;
-            });
-        } else if (musicVolume === 0) {
-            bgAudio.pause();
-        }
+    // Apply volume and start playing if needed
+    bgAudio.volume = actualVolume;
+    if (musicVolume > 0 && bgAudio.paused) {
+        bgAudio.play().catch(err => {
+            console.error("Error playing audio:", err);
+            // Reset volume if playback failed
+            musicVolume = 0;
+            bgAudio.volume = 0;
+        });
+    } else if (musicVolume === 0) {
+        bgAudio.pause();
     }
     
     // Update UI
@@ -185,8 +230,6 @@ function updateVolumeState() {
 function updateVolumeUI() {
     const toggleButton = document.querySelector('.music-toggle-button');
     const volumeDots = document.querySelectorAll('.volume-dot');
-    
-    if (!toggleButton) return;
     
     // Update button class based on volume level
     toggleButton.classList.remove('muted', 'volume-25', 'volume-50', 'volume-75', 'volume-100', 'playing');
@@ -211,65 +254,67 @@ function updateVolumeUI() {
     });
 }
 
-function showAdvancedPlayer() {
-    const advancedPlayer = document.querySelector('.advanced-music-player');
-    if (advancedPlayer) {
-        advancedPlayer.classList.remove('hidden');
+// New global functions for other modules to use
+export function playMusic() {
+    if (bgAudio && musicVolume > 0) {
+        bgAudio.play().catch(err => {
+            console.error("Error playing audio:", err);
+        });
     }
 }
 
-function hideAdvancedPlayer() {
-    const advancedPlayer = document.querySelector('.advanced-music-player');
-    if (advancedPlayer) {
-        advancedPlayer.classList.add('hidden');
-    }
-}
-
-function handleFileSelect(event) {
-    const files = event.target.files;
-    if (files.length === 0) return;
-    
-    const file = files[0];
-    const fileURL = URL.createObjectURL(file);
-    
-    // Update now playing info
-    const nowPlayingInfo = document.querySelector('.now-playing-info');
-    if (nowPlayingInfo) {
-        nowPlayingInfo.textContent = `Now playing: ${file.name}`;
-    }
-    
-    // Stop current audio
+export function pauseMusic() {
     if (bgAudio) {
         bgAudio.pause();
     }
-    
-    // Create new audio with selected file
-    bgAudio = new Audio(fileURL);
-    bgAudio.loop = true;
-    window.bgAudio = bgAudio;
-    
-    // Apply current volume setting
-    updateVolumeState();
-    
-    // Start playback if volume is not 0
-    if (musicVolume > 0) {
-        bgAudio.play().catch(err => {
-            console.error("Error playing custom audio:", err);
-        });
-    }
-    
-    // Store the custom file
-    customAudioFile = fileURL;
 }
 
-// Export additional functions for global access
-export function getVolumeState() {
-    return musicVolume;
+export function fadeInMusic(duration = 5000) {
+    if (!bgAudio || musicVolume === 0) return;
+    
+    const targetVolume = [0, 0.25, 0.5, 0.75, 1.0][musicVolume];
+    bgAudio.volume = 0;
+    
+    const fadeSteps = 50; // More steps for smoother transition
+    const volumeStep = targetVolume / fadeSteps;
+    const intervalTime = duration / fadeSteps;
+    
+    bgAudio.play().catch(err => {
+        console.error("Error playing audio:", err);
+        return;
+    });
+    
+    const fadeInterval = setInterval(() => {
+        if (bgAudio.volume < (targetVolume - volumeStep)) {
+            bgAudio.volume += volumeStep;
+        } else {
+            bgAudio.volume = targetVolume;
+            clearInterval(fadeInterval);
+        }
+    }, intervalTime);
+    
+    // Update music player UI
+    updateVolumeUI();
 }
 
-export function setVolumeState(volume) {
-    if (volume >= 0 && volume <= 4) {
-        musicVolume = volume;
-        updateVolumeState();
-    }
+export function fadeOutMusic(duration = 3000) {
+    if (!bgAudio || bgAudio.volume === 0) return;
+    
+    const startVolume = bgAudio.volume;
+    const fadeSteps = 50; 
+    const volumeStep = startVolume / fadeSteps;
+    const intervalTime = duration / fadeSteps;
+    
+    const fadeInterval = setInterval(() => {
+        if (bgAudio.volume > volumeStep) {
+            bgAudio.volume -= volumeStep;
+        } else {
+            bgAudio.volume = 0;
+            bgAudio.pause();
+            clearInterval(fadeInterval);
+        }
+    }, intervalTime);
+    
+    // Update music player UI
+    document.querySelector('.music-toggle-button').classList.remove('playing');
 }

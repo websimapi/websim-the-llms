@@ -61,78 +61,75 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingLLMToggle.checked = useLLMTips;
     });
     
-    // Setup audio
-    bgAudio = new Audio('LLMs Morning Oasis - Sonauto.wav');
-    bgAudio.loop = true;
-    bgAudio.volume = 0; // Start with volume at 0
-    
-    // Fade in audio function
-    function fadeInAudio(duration = 5000) {
-        const targetVolume = 1.0;
-        const fadeSteps = 50; // More steps for smoother transition
-        const volumeStep = targetVolume / fadeSteps;
-        const intervalTime = duration / fadeSteps;
+    // Start experience button
+    startButton.addEventListener('click', () => {
+        startOverlay.style.display = 'none';
+        loadingScreen.style.display = 'flex';
+        // Use the new music player functions
+        import('./musicPlayer.js').then(module => {
+            module.fadeInMusic(config.music.fadeInDuration || 5000);
+        });
+        startLoading();
         
-        const fadeInterval = setInterval(() => {
-            if (bgAudio.volume < (targetVolume - volumeStep)) {
-                bgAudio.volume += volumeStep;
-            } else {
-                bgAudio.volume = targetVolume;
-                clearInterval(fadeInterval);
-            }
-        }, intervalTime);
-        
-        // Update music player UI if it exists
-        setTimeout(() => {
-            const jukeboxIcon = document.querySelector('.jukebox-icon');
-            if (jukeboxIcon) {
-                jukeboxIcon.classList.add('playing');
-                document.querySelectorAll('.volume-bar').forEach(bar => {
-                    bar.classList.add('active');
-                });
-            }
-        }, 100);
-    }
-    
-    // Make fadeInAudio globally accessible
-    window.fadeInAudio = fadeInAudio;
-
-    // Fade out audio function
-    function fadeOutAudio(duration = 3000) {
-        const startVolume = bgAudio.volume;
-        const fadeSteps = 50; // More steps for smoother transition
-        const volumeStep = startVolume / fadeSteps;
-        const intervalTime = duration / fadeSteps;
-        
-        const fadeInterval = setInterval(() => {
-            if (bgAudio.volume > volumeStep) {
-                bgAudio.volume -= volumeStep;
-            } else {
-                bgAudio.volume = 0;
-                bgAudio.pause();
-                clearInterval(fadeInterval);
-            }
-        }, intervalTime);
-    }
-    
-    // Make fadeOutAudio globally accessible
-    window.fadeOutAudio = fadeOutAudio;
-
-    // Improved function to set volume from anywhere in the app
-    window.setMusicVolume = function(volume) {
-        // Access the music player's setVolumeState if available
-        if (typeof setVolumeState === 'function') {
-            setVolumeState(volume);
+        // Start the tip fetching based on toggle state
+        if (useLLMTips) {
+            startLLMTipFetch();
         } else {
-            // Import the music player module if needed
-            import('./musicPlayer.js').then(module => {
-                if (typeof module.setVolumeState === 'function') {
-                    module.setVolumeState(volume);
-                }
-            }).catch(err => console.error("Error importing music player:", err));
+            // Change tip every 3 seconds if using preset tips
+            setInterval(setRandomTip, 3000);
         }
-    };
-
+    });
+    
+    // Add play button click handler
+    playButton.addEventListener('click', () => {
+        startOverlay.style.display = 'none';
+        loadingScreen.style.display = 'flex';
+        // Use the new music player functions
+        import('./musicPlayer.js').then(module => {
+            module.fadeInMusic(config.music.fadeInDuration || 5000);
+        });
+        startLoading();
+        
+        // Start the tip fetching based on toggle state
+        if (useLLMTips) {
+            startLLMTipFetch();
+        } else {
+            // Change tip every 3 seconds if using preset tips
+            setInterval(setRandomTip, 3000);
+        }
+    });
+    
+    // Skip button click handler
+    skipButton.addEventListener('click', () => {
+        clearInterval(loadingInterval);
+        if (tipFetchInterval) {
+            clearInterval(tipFetchInterval);
+        }
+        
+        // Use the new fadeOutMusic function
+        import('./musicPlayer.js').then(module => {
+            module.fadeOutMusic(config.music.fadeOutDuration || 3000);
+        });
+        
+        completeLoading();
+    });
+    
+    // Function to complete loading and show game
+    function completeLoading() {
+        // Clear the tip fetch interval when loading completes
+        if (tipFetchInterval) {
+            clearInterval(tipFetchInterval);
+        }
+        
+        // Use the new fadeOutMusic function
+        import('./musicPlayer.js').then(module => {
+            module.fadeOutMusic(config.music.fadeOutDuration || 3000);
+        });
+        
+        loadingScreen.style.display = 'none';
+        gameContainer.classList.remove('hidden');
+    }
+    
     // Randomly select a tip from config
     function setRandomTip() {
         const randomIndex = Math.floor(Math.random() * config.loadingTips.length);
@@ -204,62 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         setRandomTip();
     }
-    
-    // Function to complete loading and show game
-    function completeLoading() {
-        // Clear the tip fetch interval when loading completes
-        if (tipFetchInterval) {
-            clearInterval(tipFetchInterval);
-        }
-        
-        fadeOutAudio();
-        loadingScreen.style.display = 'none';
-        gameContainer.classList.remove('hidden');
-    }
-    
-    // Start experience button
-    startButton.addEventListener('click', () => {
-        startOverlay.style.display = 'none';
-        loadingScreen.style.display = 'flex';
-        bgAudio.play();
-        fadeInAudio(); // Start fade in effect
-        startLoading();
-        
-        // Start the tip fetching based on toggle state
-        if (useLLMTips) {
-            startLLMTipFetch();
-        } else {
-            // Change tip every 3 seconds if using preset tips
-            setInterval(setRandomTip, 3000);
-        }
-    });
-    
-    // Add play button click handler
-    playButton.addEventListener('click', () => {
-        startOverlay.style.display = 'none';
-        loadingScreen.style.display = 'flex';
-        bgAudio.play();
-        fadeInAudio(); // Start fade in effect
-        startLoading();
-        
-        // Start the tip fetching based on toggle state
-        if (useLLMTips) {
-            startLLMTipFetch();
-        } else {
-            // Change tip every 3 seconds if using preset tips
-            setInterval(setRandomTip, 3000);
-        }
-    });
-    
-    // Skip button click handler
-    skipButton.addEventListener('click', () => {
-        clearInterval(loadingInterval);
-        if (tipFetchInterval) {
-            clearInterval(tipFetchInterval);
-        }
-        fadeOutAudio();
-        completeLoading();
-    });
     
     let loadingInterval;
     

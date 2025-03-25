@@ -154,16 +154,11 @@ function initCityScene() {
                 // Start fading audio halfway through the animation
                 if (progress > 0.3 && !audioFadeStarted) {
                     audioFadeStarted = true;
-                    const audio = document.querySelector('audio');
-                    if (audio) {
-                        // Access the fadeOutAudio function from the window object
-                        if (typeof window.fadeOutAudio === 'function') {
-                            window.fadeOutAudio(3000);
-                        } else {
-                            // Fallback if function isn't available
-                            audio.volume = 0;
-                        }
-                    }
+                    
+                    // Use the new music player module
+                    import('./musicPlayer.js').then(module => {
+                        module.fadeOutMusic(3000);
+                    });
                 }
             } else {
                 introComplete = true;
@@ -240,9 +235,6 @@ function addCityNameText(scene) {
     rightPillar.castShadow = true;
     rightPillar.receiveShadow = true;
     scene.add(rightPillar);
-    
-    // Create sign board textures - one with text, one without
-    const loader = new THREE.TextureLoader();
     
     // Create text canvas for front and back
     const canvasWithText = document.createElement('canvas');
