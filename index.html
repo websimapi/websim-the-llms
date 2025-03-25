@@ -14,20 +14,11 @@
     <link rel="stylesheet" href="llmProfileImageStyles.css">
     <link rel="stylesheet" href="musicPlayerStyles.css">
     <link rel="stylesheet" href="musicPlayerToggle.css">
-    <link rel="stylesheet" href="plotHoverStyles.css">
-    <link rel="stylesheet" href="modelBadgeStyles.css">
-    <link rel="stylesheet" href="llmFormLayoutStyles.css">
-    <link rel="stylesheet" href="confirmationModalStyles.css">
-    <link rel="stylesheet" href="droneTransportStyles.css">
-    <link rel="stylesheet" href="plotCoinStyles.css">
-    <link rel="stylesheet" href="llmTtsStyles.css">
-    <link rel="stylesheet" href="assetsUIStyles.css">
     <script type="importmap">
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/",
-        "marked": "https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.esm.js"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/"
       }
     }
     </script>
@@ -82,33 +73,6 @@
                         <path d="M12.5,20.75h1v1.5h-1V20.75z" fill="#333"/>
                     </svg>
                 </button>
-                <!-- New Assets UI Button -->
-                <button class="menu-button assets-ui-btn">
-                     <svg class="asset-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="56" height="56">
-                         <defs>
-                             <linearGradient id="boxGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                 <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
-                                 <stop offset="100%" style="stop-color:#e0e0e0;stop-opacity:1" />
-                             </linearGradient>
-                             <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
-                                <feGaussianBlur in="SourceAlpha" stdDeviation="1"/>
-                                <feOffset dx="1" dy="1" result="offsetblur"/>
-                                <feFlood flood-color="rgba(0,0,0,0.5)"/>
-                                <feComposite in2="offsetblur" operator="in"/>
-                                <feMerge>
-                                    <feMergeNode/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                             </filter>
-                         </defs>
-                         <g filter="url(#dropShadow)">
-                             <!-- Box Base -->
-                             <rect x="4" y="10" width="16" height="10" rx="1" ry="1" fill="url(#boxGradient)" stroke="#cccccc" stroke-width="0.5"/>
-                             <!-- Box Lid -->
-                             <path class="lid" d="M 4 10 L 4 8 Q 4 7, 5 7 L 19 7 Q 20 7, 20 8 L 20 10 Z" fill="url(#boxGradient)" stroke="#cccccc" stroke-width="0.5"/>
-                         </g>
-                    </svg>
-                </button>
             </div>
             
             <div id="console-panel" class="hidden">
@@ -117,13 +81,12 @@
                     <button class="console-close">&times;</button>
                 </div>
                 <div class="console-buttons">
-                    <button class="console-button" id="toggle-grid">Toggle Grid</button> 
-                    <button class="console-button" id="export-data">Export Data</button> 
-                    <button class="console-button" id="import-data">Import Data</button>
+                    <button class="console-button" id="export-data">Export City Data</button>
+                    <button class="console-button" id="import-data">Import City Data</button>
                 </div>
                 <div class="console-content">
-                    <p>Press ~ to toggle this console (if not typing in an input field).</p>
-                    <p>Use the buttons above to import or export city data.</p>
+                    <p>Press ~ to toggle this console</p>
+                    <p>Use the buttons above to import or export city data</p>
                 </div>
             </div>
             
@@ -142,141 +105,93 @@
                 <div class="settings-group">
                     <div class="settings-group-title">Basic Information</div>
                     <div class="setting-item">
-                        <div class="name-input-container"> 
-                            <label class="setting-label" for="llm-name">Name</label>
-                            <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
-                        </div>
+                        <label class="setting-label" for="llm-name">Name</label>
+                        <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
                     </div>
                     <div class="setting-item">
-                        <!-- Hidden select for form compatibility -->
-                        <select id="llm-model" class="setting-select" style="display: none;">
+                        <label class="setting-label" for="llm-model">Model Type</label>
+                        <select id="llm-model" class="setting-select">
                             <option value="assistant">Assistant</option>
                             <option value="creator">Creator</option>
                             <option value="researcher">Researcher</option>
                             <option value="companion">Companion</option>
-                            <option value="humanoid">Humanoid</option>
                         </select>
-                        <!-- New badge container -->
-                        <div class="model-badge-container">
-                            <label class="model-badge assistant">
-                                <input type="radio" name="model-type" value="assistant" class="model-badge-input" checked>
-                                <div class="model-badge-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-                                        <path d="M19 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h4l3 3 3-3h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 16h-4.83l-1.17 1.17-1.17-1.17H5V4h14v14z"/>
-                                        <path d="M11 15h2v2h-2zm0-8h2v6h-2z"/>
-                                    </svg>
-                                </div>
-                                <span class="model-badge-label">Assistant</span>
-                            </label>
-                            <label class="model-badge creator">
-                                <input type="radio" name="model-type" value="creator" class="model-badge-input">
-                                <div class="model-badge-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-                                        <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z"/>
-                                    </svg>
-                                </div>
-                                <span class="model-badge-label">Creator</span>
-                            </label>
-                            <label class="model-badge researcher">
-                                <input type="radio" name="model-type" value="researcher" class="model-badge-input">
-                                <div class="model-badge-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-                                        <path d="M9.5 16c-1.93 0-3.5-1.57-3.5-3.5S7.57 9 9.5 9s3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zm5.5-1l5 5-1.5 1.5-5-5V15l-0.03-0.03c-1.45 1.28-3.36 2.03-5.47 2.03-4.56 0-8.25-3.69-8.25-8.25s3.69-8.25 8.25-8.25S17 4.19 17 8.75c0 2.11-0.76 4.02-2.05 5.47L15 14.24z"/>
-                                    </svg>
-                                </div>
-                                <span class="model-badge-label">Researcher</span>
-                            </label>
-                            <label class="model-badge companion">
-                                <input type="radio" name="model-type" value="companion" class="model-badge-input">
-                                <div class="model-badge-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21.71.33 1.47.33 2.26 0 4.41-3.59 8-8 8z"/>
-                                    </svg>
-                                </div>
-                                <span class="model-badge-label">Companion</span>
-                            </label>
-                            <label class="model-badge humanoid">
-                                <input type="radio" name="model-type" value="humanoid" class="model-badge-input">
-                                <div class="model-badge-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-                                        <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
-                                    </svg>
-                                </div>
-                                <span class="model-badge-label">Humanoid</span>
-                            </label>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-color">Color (click on any body part to select it)</label>
+                        <div class="color-picker-container">
+                            <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
+                            <span id="selected-mesh-name" class="selected-mesh-name hidden">No part selected</span>
+                        </div>
+                        
+                        <div class="no-selection-message">Select a body part to manipulate it</div>
+                        
+                        <div class="manipulation-controls">
+                            <!-- Rotation Controls -->
+                            <div class="control-group">
+                                <span class="control-group-label">Rotation:</span>
+                                
+                                <!-- X Axis -->
+                                <button id="rotate-x-minus" class="control-button axis-x">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
+                                </button>
+                                <span id="rotation-x-value" class="control-value">0.00</span>
+                                <button id="rotate-x-plus" class="control-button axis-x">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
+                                </button>
+                                
+                                <!-- Y Axis -->
+                                <button id="rotate-y-minus" class="control-button axis-y">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
+                                </button>
+                                <span id="rotation-y-value" class="control-value">0.00</span>
+                                <button id="rotate-y-plus" class="control-button axis-y">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
+                                </button>
+                                
+                                <!-- Z Axis -->
+                                <button id="rotate-z-minus" class="control-button axis-z">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
+                                </button>
+                                <span id="rotation-z-value" class="control-value">0.00</span>
+                                <button id="rotate-z-plus" class="control-button axis-z">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z
+                                </button>
+                            </div>
+                            
+                            <!-- Position Controls -->
+                            <div class="control-group">
+                                <span class="control-group-label">Position:</span>
+                                
+                                <!-- X Axis -->
+                                <button id="position-x-minus" class="control-button axis-x">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
+                                </button>
+                                <span id="position-x-value" class="control-value">0.00</span>
+                                <button id="position-x-plus" class="control-button axis-x">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
+                                </button>
+                                
+                                <!-- Y Axis -->
+                                <button id="position-y-minus" class="control-button axis-y">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
+                                </button>
+                                <span id="position-y-value" class="control-value">0.00</span>
+                                <button id="position-y-plus" class="control-button axis-y">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
+                                </button>
+                                
+                                <!-- Z Axis -->
+                                <button id="position-z-minus" class="control-button axis-z">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
+                                </button>
+                                <span id="position-z-value" class="control-value">0.00</span>
+                                <button id="position-z-plus" class="control-button axis-z">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="settings-group"> 
-                     <div class="settings-group-title">Appearance</div>
-                     <div class="setting-item">
-                         <label class="setting-label" for="llm-color">Base Color & Part Editor</label>
-                         <div class="color-picker-container">
-                             <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
-                             <span id="selected-mesh-name" class="selected-mesh-name hidden">No part selected</span>
-                         </div>
-                         <div class="no-selection-message">Select a body part to manipulate it</div>
-                         <div class="manipulation-controls">
-                             <!-- Rotation Controls -->
-                             <div class="control-group">
-                                 <span class="control-group-label">Rotation:</span>
-                                 <!-- X -->
-                                 <button id="rotate-x-minus" class="control-button axis-x" title="Rotate X Down">
-                                     <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
-                                 </button>
-                                 <span id="rotation-x-value" class="control-value">0.00</span>
-                                 <button id="rotate-x-plus" class="control-button axis-x" title="Rotate X Up">
-                                     <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
-                                 </button>
-                                 <!-- Y -->
-                                 <button id="rotate-y-minus" class="control-button axis-y" title="Rotate Y Left">
-                                     <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"/></svg>
-                                 </button>
-                                 <span id="rotation-y-value" class="control-value">0.00</span>
-                                 <button id="rotate-y-plus" class="control-button axis-y" title="Rotate Y Right">
-                                     <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg>
-                                 </button>
-                                 <!-- Z -->
-                                 <button id="rotate-z-minus" class="control-button axis-z" title="Rotate Z Counter-Clockwise">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.84 18.25 4.59 15H8v-2H2v6h2v-3.59l3.25 3.25L8.66 20l3.5-3.5 3.5 3.5 1.41-1.41-3.5-3.5 3.5-3.5-1.41-1.41-3.5 3.5-3.5-3.5L7.24 4l3.5 3.5L14.24 4l1.41 1.41-3.5 3.5 3.5 3.5-1.41 1.41-3.5-3.5-3.5 3.5-1.42-1.41z"/></svg>
-                                 </button>
-                                 <span id="rotation-z-value" class="control-value">0.00</span>
-                                 <button id="rotate-z-plus" class="control-button axis-z" title="Rotate Z Clockwise">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.16 18.25 19.41 15H16v-2h6v6h-2v-3.59l-3.25 3.25L15.34 20l-3.5-3.5-3.5 3.5-1.41-1.41 3.5-3.5-3.5-3.5 1.41-1.41 3.5 3.5 3.5-3.5L16.76 4l-3.5 3.5L9.76 4 8.34 5.41l3.5 3.5-3.5 3.5 1.41 1.41 3.5-3.5 3.5 3.5 1.42-1.41z"/></svg>
-                                 </button>
-                             </div>
-                             <!-- Position Controls -->
-                             <div class="control-group">
-                                 <span class="control-group-label">Position:</span>
-                                 <!-- X -->
-                                 <button id="position-x-minus" class="control-button axis-x" title="Move Left">
-                                     <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"/></svg>
-                                 </button>
-                                 <span id="position-x-value" class="control-value">0.00</span>
-                                 <button id="position-x-plus" class="control-button axis-x" title="Move Right">
-                                     <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg>
-                                 </button>
-                                 <!-- Y -->
-                                 <button id="position-y-minus" class="control-button axis-y" title="Move Down">
-                                      <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
-                                 </button>
-                                 <span id="position-y-value" class="control-value">0.00</span>
-                                 <button id="position-y-plus" class="control-button axis-y" title="Move Up">
-                                      <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
-                                 </button>
-                                 <!-- Z -->
-                                 <button id="position-z-minus" class="control-button axis-z" title="Move Backward">
-                                      <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
-                                 </button>
-                                 <span id="position-z-value" class="control-value">0.00</span>
-                                 <button id="position-z-plus" class="control-button axis-z" title="Move Forward">
-                                      <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
-                                 </button>
-                             </div>
-                         </div>
-                     </div>
-                     <!-- TTS Voice Selector inserted here by JS -->
                 </div>
 
                 <div class="settings-group">
@@ -285,22 +200,21 @@
                         <label class="setting-label" for="llm-custom-prompt">AI Generated Character Description</label>
                         <textarea id="llm-custom-prompt" class="setting-input" placeholder="Describe your character (e.g., 'A sleek silver robot with blue glowing eyes and antenna')"></textarea>
                     </div>
-                    <div class="setting-item generation-controls">
+                    <div class="setting-item">
                         <button id="generate-character-btn" class="create-llm-button">Generate Character</button>
-                        <button id="restore-robot-design-btn" class="create-llm-button secondary icon-button" title="Restore Default Robot">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                                <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/>
-                            </svg>
-                        </button>
                         <div id="generation-status" class="generation-status"></div>
                     </div>
                 </div>
-
+                
                 <div class="settings-group">
                     <div class="settings-group-title">Attributes <span id="points-remaining" class="points-info">15 Points Remaining</span></div>
                     <div class="attribute-grid" id="attribute-grid">
                         <!-- Attribute slots will be generated here by JavaScript -->
                     </div>
+                </div>
+                
+                <div class="settings-group">
+                    <div class="settings-group-title">Appearance</div>
                 </div>
                 
                 <div class="create-llm-actions">
@@ -333,7 +247,7 @@
             </div>
             
             <div class="collection-footer">
-                <!-- Button removed as we're now using the list item approach -->
+                <button id="create-new-llm-btn" class="collection-button">Create New LLM</button>
             </div>
         </div>
         
@@ -396,11 +310,7 @@
             </div>
             
             <div class="button-arc">
-                <button id="credits-button" class="circle-button arc-button-2">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
-                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                    </svg>
-                </button>
+                <button class="circle-button arc-button-2"></button>
                 <button class="circle-button arc-button-1"></button>
                 <button class="circle-button main-button" id="play-button">
                     <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="white">
@@ -423,43 +333,9 @@
         </div>
     </div>
     
-    <div id="credits-panel" class="hidden">
-        <div class="credits-header">
-            <div class="credits-title">Credits</div>
-            <button class="credits-close">&times;</button>
-        </div>
-        <div class="credits-content">
-            <!-- Markdown content will be loaded here -->
-            <div class="loading-credits">Loading...</div>
-        </div>
-        <a target="_blank" href="https://jam.pieter.com" style="font-family: 'system-ui', sans-serif; position: fixed; bottom: -1px; right: -1px; padding: 7px; font-size: 14px; font-weight: bold; background: #fff; color: #000; text-decoration: none; z-index: 10; border-top-left-radius: 12px; z-index: 10000; border: 1px solid #fff;">🕹️ Vibe Jam 2025</a>
-    </div>
-    
-    <!-- Confirmation Modal Structure -->
-    <div id="confirmation-modal" class="confirmation-modal">
-        <div class="confirmation-modal-content">
-            <h3 class="confirmation-modal-title">Confirm Action</h3>
-            <p id="confirmation-message" class="confirmation-modal-message">Are you sure?</p>
-            <div class="confirmation-modal-actions">
-                <button id="cancel-action-btn" class="confirmation-modal-button cancel">Cancel</button>
-                <button id="confirm-action-btn" class="confirmation-modal-button confirm">Confirm</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/",
-        "marked": "https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.esm.js"
-      }
-    }
-    </script>
     <script type="module" src="config.js"></script>
     <script type="module" src="script.js"></script>
     <script type="module" src="cityScene.js"></script>
-    <script type="module" src="plotConstructionElements.js"></script>
     <script type="module" src="characterGenerator.js"></script>
     <script type="module" src="llmCharacterRenderer.js"></script>
     <script type="module" src="llmModelCreationRenderer.js"></script>
@@ -471,31 +347,7 @@
     <script type="module" src="saveLLMData.js"></script>
     <script type="module" src="llmMeshManipulator.js"></script>
     <script type="module" src="musicPlayer.js"></script>
-    <script type="module" src="confirmationModal.js"></script>
-    <script type="module" src="llmDroneTransport.js"></script>
-    <script type="module" src="advancedLighting.js"></script>
-    <script type="module" src="attributeSystem.js"></script>
-    <script type="module" src="cameraBoundaryController.js"></script>
-    <script type="module" src="cityData.js"></script>
-    <script type="module" src="citySceneUI.js"></script>
-    <script type="module" src="infiniteTerrain.js"></script>
-    <script type="module" src="llmAttributeTooltips.js"></script>
-    <script type="module" src="llmCharacterRendererUtils.js"></script>
-    <script type="module" src="llmCollectionCarousel.js"></script>
-    <script type="module" src="llmCollectionViewUtils.js"></script>
-    <script type="module" src="llmCreationInterfaceCompact.js"></script>
-    <script type="module" src="llmDataManager.js"></script>
-    <script type="module" src="llmModelStorage.js"></script>
-    <script type="module" src="llmProfileImageDisplay.js"></script>
-    <script type="module" src="llmProfileImageGenerator.js"></script>
-    <script type="module" src="llmProfileImageUI.js"></script>
-    <script type="module" src="llmSetupHelpers.js"></script>
-    <script type="module" src="llmTtsVoiceSelector.js"></script>
-    <script type="module" src="modelAttributeDefaults.js"></script>
-    <script type="module" src="modelBadgeSelector.js"></script>
-    <script type="module" src="plotHoverInfo.js"></script>
-    <script type="module" src="terrainUtils.js"></script>
-    <script type="module" src="assetsUIManager.js"></script>
+    <script type="module" src="skyboxManager.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
