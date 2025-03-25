@@ -20,7 +20,7 @@ export function saveLLMData() {
     const attributes = attributeSystem.exportAttributes();
     
     // Create LLM data object
-    const llmData = {
+    let llmData = {
         name,
         model,
         color,
