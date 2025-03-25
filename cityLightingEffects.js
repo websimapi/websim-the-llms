@@ -111,6 +111,11 @@ export function setupPostProcessing(scene, camera, renderer) {
             } else {
                 renderer.render(scene, camera);
             }
+        },
+        resize: (width, height) => {
+            if (composer) {
+                composer.setSize(width, height);
+            }
         }
     };
 }

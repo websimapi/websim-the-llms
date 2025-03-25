@@ -70,7 +70,7 @@ function initCityScene() {
     camera.position.set(50, 30, 50);
     camera.lookAt(0, 0, 0);
     
-    // Create renderer
+    // Setup improved renderer settings
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
@@ -94,7 +94,7 @@ function initCityScene() {
     // Setup enhanced lighting using our new module
     const lighting = setupCityLighting(scene);
     
-    // Create ground plane
+    // Create ground plane with improved texture
     const groundGeometry = new THREE.PlaneGeometry(100, 100, 64, 64);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x7cfc00,
