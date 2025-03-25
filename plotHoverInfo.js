@@ -179,18 +179,24 @@ function highlightPlot(plot) {
                 };
             }
             
+            // Make sure emissive property exists before setting it
+            if (!child.material.emissive) {
+                child.material.emissive = new THREE.Color(0x000000);
+                child.material.emissiveIntensity = 0;
+            }
+            
             // Highlight based on mesh type
             if (child.name && child.name.includes('tape')) {
                 // Brighten the construction tape
-                child.material.emissive = new THREE.Color(0xffff00);
+                child.material.emissive.set(0xffff00);
                 child.material.emissiveIntensity = 0.3;
             } else if (child.name && child.name.includes('cone')) {
                 // Brighten the cones
-                child.material.emissive = new THREE.Color(0xff5500);
+                child.material.emissive.set(0xff5500);
                 child.material.emissiveIntensity = 0.5;
             } else if (child.name && child.name.includes('pole')) {
                 // Slightly brighten the poles
-                child.material.emissive = new THREE.Color(0x8B4513);
+                child.material.emissive.set(0x8B4513);
                 child.material.emissiveIntensity = 0.2;
             }
         }
