@@ -101,13 +101,11 @@ function initializeAudio() {
         musicVolume = config.music.defaultVolume;
     }
     
-    // Always start playing (even when muted)
-    bgAudio.play().catch(err => {
-        console.error("Error playing audio:", err);
-    });
+    // Force preload the audio file even when muted
+    bgAudio.load();
     
-    // Update volume based on settings
-    updateVolumeState();
+    // Don't auto-play, just update volume state UI
+    updateVolumeUI();
     
     // Store it globally for other modules
     window.bgAudio = bgAudio;
@@ -210,6 +208,11 @@ function changeVolumeState() {
     // Cycle through volume states
     musicVolume = (musicVolume + 1) % 5;
     updateVolumeState();
+    
+    // Ensure the audio is loaded even when toggling from muted
+    if (!bgAudio.readyState) {
+        bgAudio.load();
+    }
 }
 
 function updateVolumeState() {
