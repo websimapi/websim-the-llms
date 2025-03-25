@@ -13,7 +13,6 @@ import { initMeshManipulator, updateManipulationDisplays } from './llmMeshManipu
 import { setGlobalReferences, setModels, setSelectedMesh } from './threeJSGlobals.js';
 import { setupProfileImageInAppearance } from './llmProfileImageDisplay.js';
 import { initializeAllComponents } from './llmSetupHelpers.js';
-import { createNameModelOverlay, updateOverlayFromForm, makeOverlayInputsPrimary } from './llmCreationOverlays.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -40,33 +39,7 @@ export function setupLLMCreationInterface(llmToEdit) {
     });
     
     // Setup default values for the form
-    // Set form values from existing LLM if editing
-    if (llmToEdit) {
-        const nameInput = document.getElementById('llm-name');
-        const modelSelect = document.getElementById('llm-model');
-        const colorInput = document.getElementById('llm-color');
-        const customPromptInput = document.getElementById('llm-custom-prompt');
-        
-        // Add null checks to prevent errors when elements don't exist yet
-        if (nameInput) nameInput.value = llmToEdit.name || `LLM-${Math.floor(Math.random() * 1000)}`;
-        if (modelSelect) modelSelect.value = llmToEdit.model || 'assistant';
-        if (colorInput) colorInput.value = llmToEdit.color || '#3cb371';
-        if (customPromptInput) customPromptInput.value = llmToEdit.customPrompt || '';
-        
-        // Store the edit ID on the form
-        const createUI = document.getElementById('create-llm-ui');
-        if (createUI) {
-            createUI.setAttribute('data-edit-mode', 'true');
-            createUI.setAttribute('data-edit-id', llmToEdit.id);
-        }
-    } else {
-        // Clear edit mode flags if not editing
-        const createUI = document.getElementById('create-llm-ui');
-        if (createUI) {
-            createUI.removeAttribute('data-edit-mode');
-            createUI.removeAttribute('data-edit-id');
-        }
-    }
+    document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
     
     // Initialize attribute system
     attributeSystem.initializeAttributes();
@@ -85,68 +58,72 @@ export function setupLLMCreationInterface(llmToEdit) {
     renderAttributeGrid();
     updatePointsDisplay();
     
-    // Initialize the humanoid preview
-    initHumanoidPreview(llmToEdit);
-    
     // Add event listeners for form elements that should update the humanoid preview
-    const colorInput = document.getElementById('llm-color');
-    if (colorInput) colorInput.addEventListener('input', updateSelectedMeshColor);
+    document.getElementById('llm-color').addEventListener('input', updateSelectedMeshColor);
     
     // Setup character generation button
     const generateBtn = document.getElementById('generate-character-btn');
-    if (generateBtn) {
-        generateBtn.addEventListener('click', () => {
-            // Using the moved handleGenerateCharacter function with a callback for state
-            handleGenerateCharacter(generatingCharacter, (state) => {
-                generatingCharacter = state;
-            }).then(result => {
-                if (result && result.success) {
-                    // Remove previous custom character if it exists
-                    if (customCharacter && customCharacter.parent) {
-                        customCharacter.parent.remove(customCharacter);
-                    }
-                    
-                    // Remove default robot if it exists
-                    if (robotModel && robotModel.parent) {
-                        robotModel.parent.remove(robotModel);
-                        robotModel = null;
-                    }
-                    
-                    // Create the new character
-                    customCharacter = createCustomCharacter(THREE, result.code);
-                    humanoidScene.add(customCharacter);
-                    
-                    const statusElement = document.getElementById('generation-status');
-                    statusElement.textContent = "Character generated successfully!";
+    generateBtn.addEventListener('click', () => {
+        // Using the moved handleGenerateCharacter function with a callback for state
+        handleGenerateCharacter(generatingCharacter, (state) => {
+            generatingCharacter = state;
+        }).then(result => {
+            if (result && result.success) {
+                // Remove previous custom character if it exists
+                if (customCharacter && customCharacter.parent) {
+                    customCharacter.parent.remove(customCharacter);
                 }
-            });
+                
+                // Remove default robot if it exists
+                if (robotModel && robotModel.parent) {
+                    robotModel.parent.remove(robotModel);
+                    robotModel = null;
+                }
+                
+                // Create the new character
+                customCharacter = createCustomCharacter(THREE, result.code);
+                humanoidScene.add(customCharacter);
+                
+                const statusElement = document.getElementById('generation-status');
+                statusElement.textContent = "Character generated successfully!";
+            }
         });
+    });
+    
+    // Set form values from existing LLM if editing
+    if (llmToEdit) {
+        document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
+        document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
+        document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
+        
+        // Store the edit ID on the form
+        const createUI = document.getElementById('create-llm-ui');
+        createUI.setAttribute('data-edit-mode', 'true');
+        createUI.setAttribute('data-edit-id', llmToEdit.id);
+    } else {
+        // Clear edit mode flags if not editing
+        const createUI = document.getElementById('create-llm-ui');
+        createUI.removeAttribute('data-edit-mode');
+        createUI.removeAttribute('data-edit-id');
     }
     
     // Make humanoidScene globally accessible for other modules
+    window.currentHumanoidScene = null;
+    
+    // Initialize the humanoid preview
+    initHumanoidPreview(llmToEdit);
+    
+    // Make humanoidScene globally accessible
     window.currentHumanoidScene = humanoidScene;
-    
-    // Add the name and model type overlay
-    createNameModelOverlay();
-    
-    // Make overlay inputs primary and ensure form data syncing
-    makeOverlayInputsPrimary();
-    
-    document.getElementById('llm-name')?.addEventListener('input', updateOverlayFromForm);
-    document.getElementById('llm-model')?.addEventListener('change', updateOverlayFromForm);
     
     // Add event listener for create button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
-    if (createLLMButton) {
-        createLLMButton.addEventListener('click', saveLLMData);
-        createLLMButton.textContent = llmToEdit ? 'Save LLM' : 'Create LLM';
-    }
+    createLLMButton.addEventListener('click', saveLLMData);
+    createLLMButton.textContent = llmToEdit ? 'Save LLM' : 'Create LLM';
     
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
-    if (resetButton) {
-        resetButton.addEventListener('click', resetForm);
-    }
+    resetButton.addEventListener('click', resetForm);
     
     // Add TTS style file
     const ttsStylesheet = document.createElement('link');
@@ -437,9 +414,7 @@ function updateHumanoidPreview() {
 }
 
 function updateSelectedMeshColor() {
-    // Get color from the new UI overlay or fall back to hidden input
-    const colorOverlay = document.querySelector('.color-input-overlay');
-    const color = colorOverlay ? colorOverlay.value : document.getElementById('llm-color').value;
+    const color = document.getElementById('llm-color').value;
     
     if (selectedMesh && selectedMesh.material) {
         // Use the color manager to apply color only to the selected mesh

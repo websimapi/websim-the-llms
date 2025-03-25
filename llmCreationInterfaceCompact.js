@@ -151,12 +151,10 @@ export function setupProfileImageUI() {
 }
 
 // New function to initialize profile image UI in the appearance tab
-export function setupProfileImageInAppearance() {
+export function setupProfileImageAppearance() {
     // Import and setup the profile image display in appearance tab
     import('./llmProfileImageDisplay.js').then(module => {
-        if (module && typeof module.setupProfileImageInAppearance === 'function') {
-            module.setupProfileImageInAppearance();
-        }
+        module.setupProfileImageInAppearance();
     }).catch(error => {
         console.error("Error setting up profile image appearance:", error);
     });

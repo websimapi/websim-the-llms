@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { config } from './config.js';
 import { cityData } from './cityData.js';
+import { setupCityLighting, setupShadows, setupPostProcessing } from './cityLightingEffects.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -72,6 +73,12 @@ function initCityScene() {
     // Create renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Softer shadows
+    renderer.physicallyCorrectLights = true;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
     cityViewElement.appendChild(renderer.domElement);
     
     // Add orbit controls
@@ -84,17 +91,11 @@ function initCityScene() {
     controls.maxPolarAngle = Math.PI / 2.5;
     controls.enabled = false; // Disable controls during intro animation
     
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(10, 20, 10);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
+    // Setup enhanced lighting using our new module
+    const lighting = setupCityLighting(scene);
     
     // Create ground plane
-    const groundGeometry = new THREE.PlaneGeometry(100, 100);
+    const groundGeometry = new THREE.PlaneGeometry(100, 100, 64, 64);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x7cfc00,
         roughness: 0.8,
@@ -111,6 +112,12 @@ function initCityScene() {
     
     // Create building lots from cityData
     createBuildingLots(scene);
+    
+    // Apply shadows to all objects
+    setupShadows(scene);
+    
+    // Setup post-processing for better visual quality
+    const postProcessing = setupPostProcessing(scene, camera, renderer);
     
     // Setup console toggling
     setupConsoleToggle();
@@ -129,6 +136,11 @@ function initCityScene() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        
+        // Update post-processing on resize if available
+        if (postProcessing.resize) {
+            postProcessing.resize(window.innerWidth, window.innerHeight);
+        }
     });
     
     // Animation loop
@@ -166,9 +178,18 @@ function initCityScene() {
             }
         } else {
             controls.update();
+            
+            // Update lighting based on time
+            const time = Date.now() * 0.001;
+            lighting.updateLighting(time);
         }
         
-        renderer.render(scene, camera);
+        // Use post-processing render if available, otherwise use standard renderer
+        if (postProcessing && postProcessing.render) {
+            postProcessing.render();
+        } else {
+            renderer.render(scene, camera);
+        }
     }
     
     animate();
@@ -187,17 +208,20 @@ function createBuildingLots(scene) {
     const lots = cityData.lots;
     
     lots.forEach(lot => {
-        // Create a lot as a raised platform
+        // Create a lot as a raised platform with improved materials
         const lotGeometry = new THREE.BoxGeometry(lot.width, 0.2, lot.height);
         const lotMaterial = new THREE.MeshStandardMaterial({ 
             color: lot.available ? 0xffeb3b : 0xbdbdbd,
             roughness: 0.7,
-            metalness: 0.2
+            metalness: 0.2,
+            emissive: lot.available ? 0x554400 : 0x111111,
+            emissiveIntensity: 0.1
         });
         
         const lotMesh = new THREE.Mesh(lotGeometry, lotMaterial);
         lotMesh.position.set(lot.x, 0.1, lot.z);
         lotMesh.receiveShadow = true;
+        lotMesh.castShadow = true;
         lotMesh.userData = { type: 'lot', id: lot.id };
         scene.add(lotMesh);
         
@@ -207,6 +231,13 @@ function createBuildingLots(scene) {
         const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
         wireframe.position.copy(lotMesh.position);
         scene.add(wireframe);
+        
+        // Add a point light above each available lot for highlighting
+        if (lot.available) {
+            const pointLight = new THREE.PointLight(0xffeb3b, 0.3, 10);
+            pointLight.position.set(lot.x, 1.5, lot.z);
+            scene.add(pointLight);
+        }
     });
     
     // Add city name text

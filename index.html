@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="llmProfileImageStyles.css">
     <link rel="stylesheet" href="musicPlayerStyles.css">
     <link rel="stylesheet" href="musicPlayerToggle.css">
-    <link rel="stylesheet" href="llmCreationOverlays.css">
     <script type="importmap">
     {
       "imports": {
@@ -106,6 +105,25 @@
                 <div class="settings-group">
                     <div class="settings-group-title">Basic Information</div>
                     <div class="setting-item">
+                        <label class="setting-label" for="llm-name">Name</label>
+                        <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-model">Model Type</label>
+                        <select id="llm-model" class="setting-select">
+                            <option value="assistant">Assistant</option>
+                            <option value="creator">Creator</option>
+                            <option value="researcher">Researcher</option>
+                            <option value="companion">Companion</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label" for="llm-color">Color (click on any body part to select it)</label>
+                        <div class="color-picker-container">
+                            <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
+                            <span id="selected-mesh-name" class="selected-mesh-name hidden">No part selected</span>
+                        </div>
+                        
                         <div class="no-selection-message">Select a body part to manipulate it</div>
                         
                         <div class="manipulation-controls">
@@ -329,7 +347,6 @@
     <script type="module" src="saveLLMData.js"></script>
     <script type="module" src="llmMeshManipulator.js"></script>
     <script type="module" src="musicPlayer.js"></script>
-    <script type="module" src="llmCreationOverlays.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
