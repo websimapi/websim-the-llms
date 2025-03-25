@@ -131,20 +131,12 @@ function updateVoiceList() {
     }
 }
 
-// Setup event listeners for voice selection
+// Set up event listeners for voice selection
 function setupVoiceSelectionListeners() {
     // Voice selection change
     const voiceSelect = document.getElementById('llm-tts-voice');
     if (voiceSelect) {
-        // Initialize speech synthesis on first interaction - for mobile compatibility
-        voiceSelect.addEventListener('touchstart', function() {
-            // Only initialize once
-            if (!window.speechSynthesisInitialized) {
-                initializeSpeechSynthesis();
-                window.speechSynthesisInitialized = true;
-            }
-        }, { once: true });
-        
+        // Initialize speech synthesis on first click
         voiceSelect.addEventListener('mousedown', function() {
             // Only initialize once
             if (!window.speechSynthesisInitialized) {
@@ -163,12 +155,6 @@ function setupVoiceSelectionListeners() {
                 const statusElement = document.getElementById('generation-status');
                 if (statusElement) {
                     statusElement.dataset.selectedVoice = selectedVoiceUri;
-                }
-                
-                // Initialize speech synthesis if not already done (for mobile)
-                if (!window.speechSynthesisInitialized) {
-                    initializeSpeechSynthesis();
-                    window.speechSynthesisInitialized = true;
                 }
                 
                 // Automatically play a sample without needing to click test button
@@ -214,12 +200,6 @@ function speakSample() {
     const llmModel = document.getElementById('llm-model').value;
     let sampleText = `Hello, I'm ${llmName}, your new ${llmModel} LLM.`;
     
-    // For mobile compatibility, make sure synthesis is initialized
-    if (!window.speechSynthesisInitialized) {
-        initializeSpeechSynthesis();
-        window.speechSynthesisInitialized = true;
-    }
-    
     // Create utterance with selected voice
     const utterance = new SpeechSynthesisUtterance(sampleText);
     utterance.voice = selectedVoice;
@@ -255,7 +235,7 @@ export function saveTTSVoiceSelection(llmData) {
 export function loadTTSVoiceSelection(llm) {
     if (!llm || !llm.voice) return;
     
-    // Initialize speech synthesis for mobile compatibility
+    // Initialize speech synthesis
     initializeSpeechSynthesis();
     window.speechSynthesisInitialized = true;
     

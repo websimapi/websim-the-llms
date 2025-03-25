@@ -345,3 +345,14 @@ export function fadeOutMusic(duration = 3000) {
     // Update music player UI
     document.querySelector('.music-toggle-button').classList.remove('playing');
 }
+
+export function setMusicVolumeLevel(volumeLevel) {
+    // Set the volume level (0-4)
+    musicVolume = volumeLevel;
+    
+    // Update the volume state
+    updateVolumeState();
+    
+    // Save to localStorage
+    localStorage.setItem('musicVolume', volumeLevel);
+}
