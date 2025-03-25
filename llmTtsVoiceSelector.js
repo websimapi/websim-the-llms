@@ -6,6 +6,13 @@ let selectedVoice = null;
 let showAllLanguages = false;
 let userLanguage = navigator.language || 'en-US';
 
+// Initialize speech synthesis on first user interaction with the page
+function initializeSpeechSynthesis() {
+    const initUtterance = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(initUtterance);
+    window.speechSynthesis.cancel(); // Cancel immediately
+}
+
 // Initialize the TTS voice selector
 export function setupTTSVoiceSelector() {
     // Create the UI elements for voice selection
@@ -129,6 +136,15 @@ function setupVoiceSelectionListeners() {
     // Voice selection change
     const voiceSelect = document.getElementById('llm-tts-voice');
     if (voiceSelect) {
+        // Initialize speech synthesis on first click
+        voiceSelect.addEventListener('mousedown', function() {
+            // Only initialize once
+            if (!window.speechSynthesisInitialized) {
+                initializeSpeechSynthesis();
+                window.speechSynthesisInitialized = true;
+            }
+        }, { once: true });
+        
         voiceSelect.addEventListener('change', () => {
             const selectedVoiceUri = voiceSelect.value;
             if (selectedVoiceUri) {
@@ -141,11 +157,8 @@ function setupVoiceSelectionListeners() {
                     statusElement.dataset.selectedVoice = selectedVoiceUri;
                 }
                 
-                // Always speak a sample when a voice is selected
-                // Make sure this is called even on the first selection
-                setTimeout(() => {
-                    speakSample();
-                }, 100);
+                // Automatically play a sample without needing to click test button
+                speakSample();
             } else {
                 selectedVoice = null;
             }
@@ -208,6 +221,10 @@ export function saveTTSVoiceSelection(llmData) {
 export function loadTTSVoiceSelection(llm) {
     if (!llm || !llm.voice) return;
     
+    // Initialize speech synthesis
+    initializeSpeechSynthesis();
+    window.speechSynthesisInitialized = true;
+    
     // Wait for voices to be loaded
     function checkVoices() {
         if (availableVoices.length === 0) {
@@ -228,12 +245,6 @@ export function loadTTSVoiceSelection(llm) {
                     const statusElement = document.getElementById('generation-status');
                     if (statusElement) {
                         statusElement.dataset.selectedVoice = llm.voice.uri;
-                    }
-                    
-                    // Enable test button if it exists
-                    const testButton = document.getElementById('test-voice-btn');
-                    if (testButton) {
-                        testButton.disabled = false;
                     }
                     break;
                 }
