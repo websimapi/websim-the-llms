@@ -325,6 +325,9 @@ export function fadeInMusic(duration = 5000) {
 }
 
 export function fadeOutMusic(duration = 3000) {
+    console.log("Music continues playing - fade out disabled");
+    
+    /* 
     if (!bgAudio || bgAudio.volume === 0) return;
     
     const startVolume = bgAudio.volume;
@@ -344,4 +347,5 @@ export function fadeOutMusic(duration = 3000) {
     
     // Update music player UI
     document.querySelector('.music-toggle-button').classList.remove('playing');
+    */
 }

@@ -107,10 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(tipFetchInterval);
         }
         
-        // Use the new fadeOutMusic function
-        import('./musicPlayer.js').then(module => {
-            module.fadeOutMusic(config.music.fadeOutDuration || 3000);
-        });
+        // Comment out the fade out to allow music to continue playing
+        // import('./musicPlayer.js').then(module => {
+        //     module.fadeOutMusic(config.music.fadeOutDuration || 3000);
+        // });
         
         completeLoading();
     });
@@ -122,10 +122,10 @@ document.addEventListener('DOMContentLoaded', () => {
             clearInterval(tipFetchInterval);
         }
         
-        // Use the new fadeOutMusic function
-        import('./musicPlayer.js').then(module => {
-            module.fadeOutMusic(config.music.fadeOutDuration || 3000);
-        });
+        // Comment out the fade out to allow music to continue playing
+        // import('./musicPlayer.js').then(module => {
+        //     module.fadeOutMusic(config.music.fadeOutDuration || 3000);
+        // });
         
         loadingScreen.style.display = 'none';
         gameContainer.classList.remove('hidden');

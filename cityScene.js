@@ -156,7 +156,7 @@ function initCityScene() {
                 camera.position.z = 50 * (1 - progress) + targetZ * progress;
                 camera.lookAt(0, 0, 0);
                 
-                // Start fading audio halfway through the animation
+                /*
                 if (progress > 0.3 && !audioFadeStarted) {
                     audioFadeStarted = true;
                     
@@ -165,6 +165,7 @@ function initCityScene() {
                         module.fadeOutMusic(3000);
                     });
                 }
+                */
             } else {
                 introComplete = true;
                 controls.enabled = true; // Enable controls after intro
