@@ -207,9 +207,18 @@ function highlightPlot(plot) {
 function resetPlotHighlight(plot) {
     plot.traverse(child => {
         if (child.isMesh && child.userData.originalMaterial) {
-            // Reset to original material properties instead of material object
-            child.material.emissive.copy(child.userData.originalMaterial.emissive || new THREE.Color(0x000000));
-            child.material.emissiveIntensity = child.userData.originalMaterial.emissiveIntensity || 0;
+            // Only set emissive properties if the material exists and has an emissive property
+            if (child.material) {
+                // Create emissive property if it doesn't exist
+                if (!child.material.emissive) {
+                    child.material.emissive = new THREE.Color(0x000000);
+                    child.material.emissiveIntensity = 0;
+                } else {
+                    // Reset to original material properties
+                    child.material.emissive.copy(child.userData.originalMaterial.emissive || new THREE.Color(0x000000));
+                    child.material.emissiveIntensity = child.userData.originalMaterial.emissiveIntensity || 0;
+                }
+            }
         }
     });
 }

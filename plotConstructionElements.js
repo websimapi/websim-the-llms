@@ -81,7 +81,7 @@ function createSideWithPoles(group, sideLength, zPos, xPos, rotation, width, tap
     // Create tape segment
     const tape = new THREE.Mesh(
         new THREE.PlaneGeometry(width, tapeHeight),
-        tapeMaterial
+        tapeMaterial.clone() // Clone the material to prevent shared material issues
     );
     tape.position.set(xPos, tapeElevation, zPos);
     tape.rotation.y = rotation;
@@ -152,7 +152,7 @@ export function createConstructionCones(width, depth, position) {
     // Create and position detailed cones
     conePositions.forEach(pos => {
         // Create cone body
-        const cone = new THREE.Mesh(coneGeometry, orangeMaterial);
+        const cone = new THREE.Mesh(coneGeometry, orangeMaterial.clone()); // Clone the material
         cone.position.set(pos.x, coneHeight/2, pos.z);
         cone.castShadow = true;
         cone.name = "cone_marker";
