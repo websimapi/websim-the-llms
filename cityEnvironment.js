@@ -129,7 +129,7 @@ function getSkyColor(elevation) {
 
 function setupWater(renderer) {
     // Create water geometry
-    const waterGeometry = new THREE.PlaneGeometry(5000, 5000);
+    const waterGeometry = new THREE.PlaneGeometry(5000, 2500);
     
     // Create water with reflection and refraction
     water = new Water(
@@ -150,16 +150,16 @@ function setupWater(renderer) {
     
     water.rotation.x = -Math.PI / 2;
     water.position.y = -1;
-    water.position.z = 70; // Position in front of the city
+    water.position.z = 200; // Moved further south of the city
     
     environmentScene.add(water);
 }
 
 function setupTerrain() {
-    // Create mountain terrain in the background
+    // Create mountain terrain in the background (north)
     createMountains();
     
-    // Create beach terrain connecting to water
+    // Create beach terrain connecting to water (south)
     createBeach();
 }
 
@@ -210,7 +210,7 @@ function createMountains() {
     
     // Create the mountain mesh
     mountainMesh = new THREE.Mesh(mountainGeometry, mountainMaterial);
-    mountainMesh.position.z = -400; // Place behind the city
+    mountainMesh.position.z = -400; // Place to the north of the city
     mountainMesh.position.y = -1; // Align with ground
     mountainMesh.rotation.x = -Math.PI / 2;
     mountainMesh.receiveShadow = true;
@@ -251,7 +251,7 @@ function createBeach() {
     
     // Create the beach mesh
     beachMesh = new THREE.Mesh(beachGeometry, beachMaterial);
-    beachMesh.position.z = 0; // Between city center and water
+    beachMesh.position.z = 70; // Moved to the south of the city
     beachMesh.position.y = -1; // Align with ground level
     beachMesh.rotation.x = -Math.PI / 2;
     beachMesh.receiveShadow = true;

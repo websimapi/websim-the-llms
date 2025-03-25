@@ -125,6 +125,7 @@ function updateVoiceList() {
         for (let i = 0; i < voiceSelect.options.length; i++) {
             if (voiceSelect.options[i].value === voiceUri) {
                 voiceSelect.selectedIndex = i;
+                selectedVoice = availableVoices.find(voice => voice.voiceURI === voiceUri);
                 break;
             }
         }
