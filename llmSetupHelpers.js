@@ -16,7 +16,7 @@ function setupUIComponents() {
     // Set up profile image UI
     import('./llmCreationInterfaceCompact.js').then(module => {
         module.setupProfileImageUI();
-        module.setupProfileImageAppearance();
+        module.setupProfileImageInAppearance();
     });
     
     // Set up TTS voice selector
