@@ -279,7 +279,6 @@ function createMusicToggle() {
     });
 }
 
-// New global functions for other modules to use
 export function playMusic() {
     if (bgAudio && musicVolume > 0) {
         bgAudio.play().catch(err => {
@@ -346,13 +345,8 @@ export function fadeOutMusic(duration = 3000) {
     document.querySelector('.music-toggle-button').classList.remove('playing');
 }
 
-export function setMusicVolumeLevel(volumeLevel) {
-    // Set the volume level (0-4)
-    musicVolume = volumeLevel;
-    
-    // Update the volume state
+export function setVolumeLevel(level) {
+    // Set volume (0-4)
+    musicVolume = level;
     updateVolumeState();
-    
-    // Save to localStorage
-    localStorage.setItem('musicVolume', volumeLevel);
 }

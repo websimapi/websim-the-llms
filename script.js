@@ -6,7 +6,6 @@ import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { setupMusicPlayer } from './musicPlayer.js';
-import { initializeSettings } from './settingsMenu.js';
 
 let bgAudio;
 let musicVolume;
@@ -22,9 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup music player UI
     setupMusicPlayer();
-    
-    // Initialize settings menu
-    initializeSettings();
+
+    import('./settingsMenu.js').then(module => {
+        module.setupSettingsMenu();
+    }).catch(error => {
+        console.error("Error setting up settings menu:", error);
+    });
 
     const startOverlay = document.getElementById('start-overlay');
     const startButton = document.getElementById('start-button');
