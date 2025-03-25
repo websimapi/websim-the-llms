@@ -1,6 +1,14 @@
 import * as THREE from 'three';
 import { cityData } from './cityData.js';
 
+// Export the plotHoverUI object for global access before using it
+export const plotHoverUI = {
+    init: initPlotHoverUI,
+    scene: null,
+    camera: null,
+    renderer: null
+};
+
 let hoverInfoElement;
 let currentHoveredPlot = null;
 let raycaster;
@@ -184,11 +192,3 @@ function hideHoverInfo() {
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
-
-// Export the plotHoverUI object for global access
-export const plotHoverUI = {
-    init: initPlotHoverUI,
-    scene: null,
-    camera: null,
-    renderer: null
-};
