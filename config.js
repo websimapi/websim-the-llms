@@ -28,4 +28,4 @@ export const config = {
         fadeInDuration: 5000,
         fadeOutDuration: 3000
     }
-}
+};

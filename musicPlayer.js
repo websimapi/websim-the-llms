@@ -4,6 +4,8 @@ import { config } from './config.js';
 let bgAudio;
 let musicVolume = 0; // 0-4 (OFF, 25%, 50%, 75%, 100%)
 let musicPlayerInitialized = false;
+let longPressTimer;
+let customAudioFile = null;
 
 export function setupMusicPlayer() {
     // Create the music player UI
@@ -44,6 +46,23 @@ function createMusicPlayerUI() {
     
     toggleButton.appendChild(volumeDots);
     container.appendChild(toggleButton);
+    
+    // Create advanced player container (hidden by default)
+    const advancedPlayer = document.createElement('div');
+    advancedPlayer.className = 'advanced-music-player hidden';
+    advancedPlayer.innerHTML = `
+        <div class="advanced-player-header">Music Player</div>
+        <div class="advanced-player-content">
+            <input type="file" id="custom-audio-file" accept="audio/*" class="custom-audio-input">
+            <label for="custom-audio-file" class="custom-audio-label">Select Music File</label>
+            <div class="now-playing-info">No file selected</div>
+        </div>
+        <div class="advanced-player-footer">
+            <button class="close-advanced-player">Close</button>
+        </div>
+    `;
+    
+    container.appendChild(advancedPlayer);
     
     // Add to body
     document.body.appendChild(container);
@@ -87,7 +106,42 @@ function initializeAudio() {
 function setupEventListeners() {
     // Toggle button changes volume
     const toggleButton = document.querySelector('.music-toggle-button');
+    
+    // Normal click changes volume
     toggleButton.addEventListener('click', changeVolumeState);
+    
+    // Right click or long press opens advanced player
+    toggleButton.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        showAdvancedPlayer();
+    });
+    
+    // Setup long press for mobile
+    toggleButton.addEventListener('touchstart', (e) => {
+        longPressTimer = setTimeout(() => {
+            showAdvancedPlayer();
+        }, 800); // 800ms long press
+    });
+    
+    toggleButton.addEventListener('touchend', () => {
+        clearTimeout(longPressTimer);
+    });
+    
+    toggleButton.addEventListener('touchmove', () => {
+        clearTimeout(longPressTimer);
+    });
+    
+    // Setup advanced player controls
+    const closeAdvancedBtn = document.querySelector('.close-advanced-player');
+    if (closeAdvancedBtn) {
+        closeAdvancedBtn.addEventListener('click', hideAdvancedPlayer);
+    }
+    
+    // Setup file input change handler
+    const fileInput = document.getElementById('custom-audio-file');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
 }
 
 function changeVolumeState() {
@@ -107,17 +161,21 @@ function updateVolumeState() {
         default: actualVolume = 0; // OFF
     }
     
-    // Apply volume and start playing if needed
-    bgAudio.volume = actualVolume;
-    if (musicVolume > 0 && bgAudio.paused) {
-        bgAudio.play().catch(err => {
-            console.error("Error playing audio:", err);
-            // Reset volume if playback failed
-            musicVolume = 0;
-            bgAudio.volume = 0;
-        });
-    } else if (musicVolume === 0) {
-        bgAudio.pause();
+    // Apply volume to current audio
+    if (bgAudio) {
+        bgAudio.volume = actualVolume;
+        
+        // Start playback if at non-zero volume and paused
+        if (musicVolume > 0 && bgAudio.paused) {
+            bgAudio.play().catch(err => {
+                console.error("Error playing audio:", err);
+                // Reset volume if playback failed
+                musicVolume = 0;
+                bgAudio.volume = 0;
+            });
+        } else if (musicVolume === 0) {
+            bgAudio.pause();
+        }
     }
     
     // Update UI
@@ -127,6 +185,8 @@ function updateVolumeState() {
 function updateVolumeUI() {
     const toggleButton = document.querySelector('.music-toggle-button');
     const volumeDots = document.querySelectorAll('.volume-dot');
+    
+    if (!toggleButton) return;
     
     // Update button class based on volume level
     toggleButton.classList.remove('muted', 'volume-25', 'volume-50', 'volume-75', 'volume-100', 'playing');
@@ -149,4 +209,67 @@ function updateVolumeUI() {
             dot.classList.remove('active');
         }
     });
+}
+
+function showAdvancedPlayer() {
+    const advancedPlayer = document.querySelector('.advanced-music-player');
+    if (advancedPlayer) {
+        advancedPlayer.classList.remove('hidden');
+    }
+}
+
+function hideAdvancedPlayer() {
+    const advancedPlayer = document.querySelector('.advanced-music-player');
+    if (advancedPlayer) {
+        advancedPlayer.classList.add('hidden');
+    }
+}
+
+function handleFileSelect(event) {
+    const files = event.target.files;
+    if (files.length === 0) return;
+    
+    const file = files[0];
+    const fileURL = URL.createObjectURL(file);
+    
+    // Update now playing info
+    const nowPlayingInfo = document.querySelector('.now-playing-info');
+    if (nowPlayingInfo) {
+        nowPlayingInfo.textContent = `Now playing: ${file.name}`;
+    }
+    
+    // Stop current audio
+    if (bgAudio) {
+        bgAudio.pause();
+    }
+    
+    // Create new audio with selected file
+    bgAudio = new Audio(fileURL);
+    bgAudio.loop = true;
+    window.bgAudio = bgAudio;
+    
+    // Apply current volume setting
+    updateVolumeState();
+    
+    // Start playback if volume is not 0
+    if (musicVolume > 0) {
+        bgAudio.play().catch(err => {
+            console.error("Error playing custom audio:", err);
+        });
+    }
+    
+    // Store the custom file
+    customAudioFile = fileURL;
+}
+
+// Export additional functions for global access
+export function getVolumeState() {
+    return musicVolume;
+}
+
+export function setVolumeState(volume) {
+    if (volume >= 0 && volume <= 4) {
+        musicVolume = volume;
+        updateVolumeState();
+    }
 }
