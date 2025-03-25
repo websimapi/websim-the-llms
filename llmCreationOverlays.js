@@ -221,12 +221,17 @@ export function makeOverlayInputsPrimary() {
         nameInput = document.createElement('input');
         nameInput.type = 'hidden';
         nameInput.id = 'llm-name';
-        document.querySelector('.create-llm-sidebar').appendChild(nameInput);
+        const sidebar = document.querySelector('.create-llm-sidebar');
+        if (sidebar) {
+            sidebar.appendChild(nameInput);
+        }
     }
         
     // Ensure the name input reflects overlay changes
     overlayNameInput.addEventListener('input', (e) => {
-        nameInput.value = e.target.value;
+        if (nameInput) {
+            nameInput.value = e.target.value;
+        }
     });
     
     // Similar setup for model type (handled by existing selectModelType function)
@@ -237,11 +242,16 @@ export function makeOverlayInputsPrimary() {
         colorInput = document.createElement('input');
         colorInput.type = 'hidden';
         colorInput.id = 'llm-color';
-        document.querySelector('.create-llm-sidebar').appendChild(colorInput);
+        const sidebar = document.querySelector('.create-llm-sidebar');
+        if (sidebar) {
+            sidebar.appendChild(colorInput);
+        }
     }
         
     colorInputOverlay.addEventListener('input', (e) => {
-        colorInput.value = e.target.value;
+        if (colorInput) {
+            colorInput.value = e.target.value;
+        }
     });
 }
 

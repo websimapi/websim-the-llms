@@ -89,36 +89,39 @@ export function setupLLMCreationInterface(llmToEdit) {
     initHumanoidPreview(llmToEdit);
     
     // Add event listeners for form elements that should update the humanoid preview
-    document.getElementById('llm-color').addEventListener('input', updateSelectedMeshColor);
+    const colorInput = document.getElementById('llm-color');
+    if (colorInput) colorInput.addEventListener('input', updateSelectedMeshColor);
     
     // Setup character generation button
     const generateBtn = document.getElementById('generate-character-btn');
-    generateBtn.addEventListener('click', () => {
-        // Using the moved handleGenerateCharacter function with a callback for state
-        handleGenerateCharacter(generatingCharacter, (state) => {
-            generatingCharacter = state;
-        }).then(result => {
-            if (result && result.success) {
-                // Remove previous custom character if it exists
-                if (customCharacter && customCharacter.parent) {
-                    customCharacter.parent.remove(customCharacter);
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            // Using the moved handleGenerateCharacter function with a callback for state
+            handleGenerateCharacter(generatingCharacter, (state) => {
+                generatingCharacter = state;
+            }).then(result => {
+                if (result && result.success) {
+                    // Remove previous custom character if it exists
+                    if (customCharacter && customCharacter.parent) {
+                        customCharacter.parent.remove(customCharacter);
+                    }
+                    
+                    // Remove default robot if it exists
+                    if (robotModel && robotModel.parent) {
+                        robotModel.parent.remove(robotModel);
+                        robotModel = null;
+                    }
+                    
+                    // Create the new character
+                    customCharacter = createCustomCharacter(THREE, result.code);
+                    humanoidScene.add(customCharacter);
+                    
+                    const statusElement = document.getElementById('generation-status');
+                    statusElement.textContent = "Character generated successfully!";
                 }
-                
-                // Remove default robot if it exists
-                if (robotModel && robotModel.parent) {
-                    robotModel.parent.remove(robotModel);
-                    robotModel = null;
-                }
-                
-                // Create the new character
-                customCharacter = createCustomCharacter(THREE, result.code);
-                humanoidScene.add(customCharacter);
-                
-                const statusElement = document.getElementById('generation-status');
-                statusElement.textContent = "Character generated successfully!";
-            }
+            });
         });
-    });
+    }
     
     // Make humanoidScene globally accessible for other modules
     window.currentHumanoidScene = humanoidScene;
@@ -132,18 +135,26 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Update overlay when form elements change
     updateOverlayFromForm();
     
+    const nameInput = document.getElementById('llm-name');
+    const modelInput = document.getElementById('llm-model');
+    if (nameInput) nameInput.addEventListener('input', updateOverlayFromForm);
+    if (modelInput) modelInput.addEventListener('change', updateOverlayFromForm);
+    
     // Add event listener to form elements to update overlay
-    document.getElementById('llm-name').addEventListener('input', updateOverlayFromForm);
-    document.getElementById('llm-model').addEventListener('change', updateOverlayFromForm);
+    // Removed these lines as per plan
     
     // Add event listener for create button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
-    createLLMButton.addEventListener('click', saveLLMData);
-    createLLMButton.textContent = llmToEdit ? 'Save LLM' : 'Create LLM';
+    if (createLLMButton) {
+        createLLMButton.addEventListener('click', saveLLMData);
+        createLLMButton.textContent = llmToEdit ? 'Save LLM' : 'Create LLM';
+    }
     
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
-    resetButton.addEventListener('click', resetForm);
+    if (resetButton) {
+        resetButton.addEventListener('click', resetForm);
+    }
     
     // Add TTS style file
     const ttsStylesheet = document.createElement('link');
@@ -501,4 +512,46 @@ function resetForm() {
     } else {
         updateHumanoidPreview();
     }
+}
+
+function updateOverlayFromForm() {
+    const nameInput = document.querySelector('.overlay-name-input');
+    const modelTypeIcon = document.querySelector('.model-type-icon');
+    const brushTip = document.querySelector('.brush-tip');
+    const colorInputOverlay = document.querySelector('.color-input-overlay');
+    
+    const llmNameInput = document.getElementById('llm-name');
+    const llmModelInput = document.getElementById('llm-model');
+    const llmColorInput = document.getElementById('llm-color');
+    
+    if (nameInput && llmNameInput) {
+        nameInput.value = llmNameInput.value;
+    }
+    
+    const currentModel = llmModelInput ? llmModelInput.value : 'assistant';
+    if (modelTypeIcon) {
+        const modelTypeIcons = {
+            assistant: '<i class="fas fa-robot"></i>',
+            // Add more model types here
+        };
+        modelTypeIcon.innerHTML = modelTypeIcons[currentModel] || modelTypeIcons.assistant;
+    }
+    
+    const currentColor = llmColorInput ? llmColorInput.value : '#3cb371';
+    if (brushTip) {
+        brushTip.style.backgroundColor = currentColor;
+    }
+    if (colorInputOverlay) {
+        colorInputOverlay.value = currentColor;
+    }
+    
+    // Update selected option in dropdown
+    const options = document.querySelectorAll('.model-type-option');
+    options.forEach(option => {
+        if (option.getAttribute('data-value') === currentModel) {
+            option.classList.add('selected');
+        } else {
+            option.classList.remove('selected');
+        }
+    });
 }
