@@ -16,6 +16,9 @@ export function setupMusicPlayer() {
     
     // Add event listeners
     setupEventListeners();
+    
+    // Create and setup toggle triangle
+    createMusicToggle();
 }
 
 function createMusicPlayerUI() {
@@ -250,6 +253,28 @@ function updateVolumeUI() {
             dot.classList.add('active');
         } else {
             dot.classList.remove('active');
+        }
+    });
+}
+
+function createMusicToggle() {
+    // Create toggle triangle
+    const toggleTriangle = document.createElement('div');
+    toggleTriangle.className = 'music-toggle-triangle';
+    document.body.appendChild(toggleTriangle);
+    
+    // Add click handler
+    toggleTriangle.addEventListener('click', () => {
+        const musicControl = document.querySelector('.music-control-container');
+        if (musicControl) {
+            const isVisible = !musicControl.classList.contains('hidden');
+            if (isVisible) {
+                musicControl.classList.add('hidden');
+                toggleTriangle.classList.add('hidden');
+            } else {
+                musicControl.classList.remove('hidden');
+                toggleTriangle.classList.remove('hidden');
+            }
         }
     });
 }

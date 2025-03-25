@@ -4,6 +4,13 @@
     bottom: 20px;
     right: 20px;
     z-index: 2000;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.music-control-container.hidden {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
 }
 
 .music-toggle-button {
