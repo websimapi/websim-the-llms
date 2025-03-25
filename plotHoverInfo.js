@@ -171,9 +171,12 @@ function highlightPlot(plot) {
     // Find construction tape material
     plot.traverse(child => {
         if (child.isMesh) {
-            // Store original material for reset
+            // Store original material properties for reset
             if (!child.userData.originalMaterial) {
-                child.userData.originalMaterial = child.material.clone();
+                child.userData.originalMaterial = {
+                    emissive: child.material.emissive ? child.material.emissive.clone() : new THREE.Color(0x000000),
+                    emissiveIntensity: child.material.emissiveIntensity || 0
+                };
             }
             
             // Highlight based on mesh type
@@ -198,8 +201,9 @@ function highlightPlot(plot) {
 function resetPlotHighlight(plot) {
     plot.traverse(child => {
         if (child.isMesh && child.userData.originalMaterial) {
-            // Reset to original material
-            child.material.copy(child.userData.originalMaterial);
+            // Reset to original material properties instead of material object
+            child.material.emissive.copy(child.userData.originalMaterial.emissive || new THREE.Color(0x000000));
+            child.material.emissiveIntensity = child.userData.originalMaterial.emissiveIntensity || 0;
         }
     });
 }
