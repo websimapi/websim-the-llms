@@ -36,8 +36,8 @@ function createMusicPlayerUI() {
     const volumeDots = document.createElement('div');
     volumeDots.className = 'volume-dots';
     
-    // Add 5 volume dots
-    for (let i = 0; i < 5; i++) {
+    // Add 4 volume dots
+    for (let i = 0; i < 4; i++) {
         const dot = document.createElement('div');
         dot.className = 'volume-dot';
         dot.setAttribute('data-level', i);
