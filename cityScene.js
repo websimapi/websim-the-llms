@@ -5,6 +5,7 @@ import { cityData } from './cityData.js';
 import { setupSceneLighting } from './advancedLighting.js';
 import { createPlotOutline } from './plotConstructionElements.js';
 import { createInfiniteTerrain } from './infiniteTerrain.js';
+import { CameraBoundaryController } from './cameraBoundaryController.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -93,7 +94,7 @@ function initCityScene() {
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
     controls.minDistance = 10;
-    controls.maxDistance = 150;
+    controls.maxDistance = 250; // Increased from 150 to allow zooming out more
     controls.maxPolarAngle = Math.PI / 2.5;
     controls.enabled = false; // Disable controls during intro animation
     
@@ -102,6 +103,9 @@ function initCityScene() {
     
     // Create infinite terrain instead of just a ground plane
     const terrain = createInfiniteTerrain(scene, 500);
+    
+    // Create camera boundary controller
+    const boundaryController = new CameraBoundaryController(camera, controls, terrain.bounds);
     
     // Add grid for reference - 1m x 1m grid squares
     const gridHelper = new THREE.GridHelper(500, 500, 0x000000, 0x555555); 
@@ -171,6 +175,13 @@ function initCityScene() {
             }
         } else {
             controls.update();
+            // Apply camera boundary restrictions
+            boundaryController.update();
+        }
+        
+        // Call animation functions for other components
+        if (window.cityAnimateLightsFn) {
+            window.cityAnimateLightsFn();
         }
         
         renderer.render(scene, camera);
