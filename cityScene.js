@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { config } from './config.js';
 import { cityData } from './cityData.js';
 import { setupSceneLighting } from './advancedLighting.js';
+import { createPlotOutline } from './plotConstructionElements.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -193,26 +194,11 @@ function createBuildingLots(scene) {
     const lots = cityData.lots;
     
     lots.forEach(lot => {
-        // Create a lot as a raised platform
-        const lotGeometry = new THREE.BoxGeometry(lot.width, 0.2, lot.height);
-        const lotMaterial = new THREE.MeshStandardMaterial({ 
-            color: lot.available ? 0xffeb3b : 0xbdbdbd,
-            roughness: 0.7,
-            metalness: 0.2
-        });
+        // Create plot outline with construction elements instead of box geometry
+        const plotOutline = createPlotOutline(lot, scene);
+        plotOutline.userData = { type: 'lot', id: lot.id };
         
-        const lotMesh = new THREE.Mesh(lotGeometry, lotMaterial);
-        lotMesh.position.set(lot.x, 0.1, lot.z);
-        lotMesh.receiveShadow = true;
-        lotMesh.userData = { type: 'lot', id: lot.id };
-        scene.add(lotMesh);
-        
-        // Add a wireframe outline
-        const wireframeGeometry = new THREE.EdgesGeometry(lotGeometry);
-        const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
-        wireframe.position.copy(lotMesh.position);
-        scene.add(wireframe);
+        // No need to add to scene as createPlotOutline already does this
     });
     
     // Add city name text
