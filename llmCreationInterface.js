@@ -91,7 +91,7 @@ export function setupLLMCreationInterface(llmToEdit) {
         });
     });
     
-    // Reset form values from existing LLM if editing
+    // Set form values from existing LLM if editing
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
