@@ -215,18 +215,8 @@ function updateVolumeState() {
         default: actualVolume = 0; // OFF
     }
     
-    // Apply volume and start playing if needed
+    // Apply volume without starting/stopping playback
     bgAudio.volume = actualVolume;
-    if (musicVolume > 0 && bgAudio.paused) {
-        bgAudio.play().catch(err => {
-            console.error("Error playing audio:", err);
-            // Reset volume if playback failed
-            musicVolume = 0;
-            bgAudio.volume = 0;
-        });
-    } else if (musicVolume === 0) {
-        bgAudio.pause();
-    }
     
     // Save to localStorage
     localStorage.setItem('musicVolume', musicVolume);
