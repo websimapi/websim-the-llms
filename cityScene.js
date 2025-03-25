@@ -115,6 +115,12 @@ function initCityScene() {
     const gridHelper = new THREE.GridHelper(500, 500, 0x000000, 0x555555); 
     scene.add(gridHelper);
     
+    // Hide grid by default
+    gridHelper.visible = false;
+    
+    // Store grid reference globally for console access
+    window.cityGrid = gridHelper;
+    
     // Create building lots from cityData
     createBuildingLots(scene);
     

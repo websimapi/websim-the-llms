@@ -267,6 +267,24 @@ document.addEventListener('DOMContentLoaded', () => {
             consolePanel.classList.add('hidden');
         });
         
+        // Add grid toggle button
+        const gridToggleButton = document.createElement('button');
+        gridToggleButton.className = 'console-button';
+        gridToggleButton.id = 'toggle-grid';
+        gridToggleButton.textContent = 'Toggle Grid';
+        gridToggleButton.addEventListener('click', () => {
+            if (window.cityGrid) {
+                window.cityGrid.visible = !window.cityGrid.visible;
+                consoleContent.innerHTML += `<p>Grid ${window.cityGrid.visible ? 'shown' : 'hidden'}</p>`;
+            } else {
+                consoleContent.innerHTML += `<p>Grid not available</p>`;
+            }
+        });
+        
+        // Insert grid toggle before existing buttons
+        const buttonsContainer = document.querySelector('.console-buttons');
+        buttonsContainer.insertBefore(gridToggleButton, exportButton);
+        
         exportButton.addEventListener('click', () => {
             const gameData = cityData.saveGame();
             
