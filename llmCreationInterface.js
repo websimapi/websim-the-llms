@@ -26,8 +26,14 @@ export function setupLLMCreationInterface(llmToEdit) {
     if (statusElement) {
         statusElement.textContent = '';
         delete statusElement.dataset.generatedCode;
+        delete statusElement.dataset.profileImageUrl;
     }
     customCharacter = null;
+    
+    // Reset profile image display to clear any previous images
+    import('./llmCreationInterfaceCompact.js').then(module => {
+        module.resetProfileImageDisplay();
+    });
     
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
@@ -120,6 +126,21 @@ export function setupLLMCreationInterface(llmToEdit) {
     import('./llmCreationInterfaceCompact.js').then(module => {
         module.setupProfileImageUI();
         module.setupProfileImageAppearance();
+        
+        // After setting up the profile image UI, load the LLM's profile image if editing
+        if (llmToEdit && llmToEdit.profileImageUrl) {
+            // Use a small timeout to ensure the UI is ready
+            setTimeout(() => {
+                import('./llmProfileImageDisplay.js').then(displayModule => {
+                    displayModule.updateProfileImageDisplay(llmToEdit.profileImageUrl);
+                    
+                    // Store the URL in status element for when saving
+                    if (statusElement) {
+                        statusElement.dataset.profileImageUrl = llmToEdit.profileImageUrl;
+                    }
+                });
+            }, 100);
+        }
     });
     
     // Wait a short moment for the UI to render before optimizing

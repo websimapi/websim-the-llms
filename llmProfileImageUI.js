@@ -97,11 +97,6 @@ async function handleCaptureButtonClick() {
             const statusElement = document.getElementById('generation-status');
             if (statusElement) {
                 statusElement.dataset.profileImageUrl = result.url;
-                
-                // Update the display in the appearance tab immediately
-                import('./llmProfileImageDisplay.js').then(module => {
-                    module.updateProfileImageDisplay(result.url);
-                });
             }
         } else {
             // Handle error

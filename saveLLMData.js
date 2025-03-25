@@ -3,6 +3,7 @@ import { setupLLMCollectionView } from './llmCollectionView.js';
 import { attributeSystem } from './attributeSystem.js';
 import { storeModelData } from './llmModelStorage.js';
 
+// Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
     // Get values from form
     const name = document.getElementById('llm-name').value || `LLM-${Math.floor(Math.random() * 1000)}`;

@@ -96,7 +96,20 @@ export function updatePointsDisplay() {
     }
 }
 
-// New function to reset form elements
+// New function to reset profile image display when opening creation UI
+export function resetProfileImageDisplay() {
+    // Clear current profile image display
+    const placeholder = document.querySelector('.profile-image-placeholder');
+    const imageElement = document.querySelector('.profile-image');
+    
+    if (placeholder && imageElement) {
+        placeholder.style.display = 'block';
+        imageElement.src = '';
+        imageElement.style.display = 'none';
+    }
+}
+
+// Function to reset form elements
 export function resetFormAttributes() {
     // Reset attributes
     attributeSystem.initializeAttributes();
@@ -110,9 +123,7 @@ export function resetFormAttributes() {
     }
     
     // Reset profile image display
-    import('./llmProfileImageDisplay.js').then(module => {
-        module.clearProfileImageDisplay();
-    });
+    resetProfileImageDisplay();
     
     // Hide the preview if it's open
     const previewContainer = document.getElementById('profile-image-preview-container');
@@ -133,10 +144,6 @@ export function setupProfileImageUI() {
 
 // New function to initialize profile image UI in the appearance tab
 export function setupProfileImageAppearance() {
-    // Check if profile image display already exists to prevent duplication
-    const existingDisplay = document.querySelector('.profile-image-display');
-    if (existingDisplay) return;
-    
     // Import and setup the profile image display in appearance tab
     import('./llmProfileImageDisplay.js').then(module => {
         module.setupProfileImageInAppearance();
