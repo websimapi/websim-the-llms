@@ -303,7 +303,8 @@ function clearSelection() {
         }
     });
     
-    selectedModelId = null;
+    // Don't clear selectedModelId here; selection should persist
+    // This allows us to maintain selection state across updates
 }
 
 // Function to select a model by ID

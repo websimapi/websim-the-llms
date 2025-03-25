@@ -83,16 +83,8 @@ export function setupLLMCollectionView(selectLLMId = null) {
             // Setup carousel
             setupLLMCarousel(collectionViewport, llms);
             
-            // Add profile images to the list items
-            import('./llmProfileImageDisplay.js').then(module => {
-                if (typeof module.addProfileImagesToLLMList === 'function') {
-                    module.addProfileImagesToLLMList();
-                } else {
-                    console.error('addProfileImagesToLLMList function not found in module');
-                }
-            }).catch(err => {
-                console.error('Error loading profile image display module:', err);
-            });
+            // Add profile images to the list items 
+            addProfileImagesToLLMList();
             
             // Add click event to viewport for model selection
             collectionViewport.addEventListener('click', handleViewportClick);
@@ -117,9 +109,9 @@ export function setupLLMCollectionView(selectLLMId = null) {
             
             // Select specific LLM if ID provided, otherwise select first one
             if (selectLLMId) {
-                setTimeout(() => selectModel(selectLLMId), 100);
+                selectModel(selectLLMId);
             } else if (llms.length > 0) {
-                setTimeout(() => selectModel(llms[0].id), 100);
+                selectModel(llms[0].id);
             }
         }
     }, 100);
@@ -213,4 +205,17 @@ function deleteLLM(id) {
         // Refresh the UI
         setupLLMCollectionView();
     }
+}
+
+// Helper function to add profile images to the list view
+function addProfileImagesToLLMList() {
+    import('./llmProfileImageDisplay.js').then(module => {
+        if (typeof module.addProfileImagesToLLMList === 'function') {
+            module.addProfileImagesToLLMList();
+        } else {
+            console.error('addProfileImagesToLLMList function not found in module');
+        }
+    }).catch(error => {
+        console.error('Error loading profile image display module:', error);
+    });
 }
