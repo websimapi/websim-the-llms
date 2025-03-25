@@ -5,18 +5,35 @@
     padding-top: 15px;
 }
 
-.show-all-languages {
-    margin-top: 8px;
+.voice-selection-container {
     display: flex;
     align-items: center;
-    background-color: rgba(60, 179, 113, 0.1);
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.setting-select#llm-tts-voice {
+    flex: 1;
+}
+
+.show-all-languages {
+    display: flex;
+    align-items: center;
+    background-color: rgba(60, 179, 113, 0.2);
     border-radius: 6px;
-    padding: 8px 12px;
-    transition: background-color 0.3s;
+    padding: 6px 10px;
+    transition: background-color 0.3s, transform 0.1s;
+    cursor: pointer;
+    border: 1px solid rgba(60, 179, 113, 0.4);
 }
 
 .show-all-languages:hover {
-    background-color: rgba(60, 179, 113, 0.2);
+    background-color: rgba(60, 179, 113, 0.3);
+    transform: translateY(-1px);
+}
+
+.show-all-languages:active {
+    transform: translateY(1px);
 }
 
 .show-all-label {
@@ -27,6 +44,7 @@
     cursor: pointer;
     width: 100%;
     justify-content: space-between;
+    white-space: nowrap;
 }
 
 .setting-checkbox {
@@ -39,6 +57,11 @@
 
 /* Mobile adjustments */
 @media screen and (max-width: 768px) {
+    .voice-selection-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
     .show-all-label {
         font-size: 1rem;
     }

@@ -8,7 +8,10 @@ export function setupProfileImageInAppearance() {
     if (!appearanceSection) return;
     
     // Check if profile image display already exists
-    if (appearanceSection.querySelector('.profile-image-display')) return;
+    const existingDisplay = appearanceSection.querySelector('.profile-image-display');
+    if (existingDisplay) {
+        existingDisplay.remove(); // Remove if exists to prevent duplication
+    }
     
     // Create profile image display element
     const profileImageElement = document.createElement('div');

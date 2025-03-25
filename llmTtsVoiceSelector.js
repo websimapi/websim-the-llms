@@ -42,16 +42,18 @@ function createVoiceSelectorUI() {
     voiceSelectorContainer.innerHTML = `
         <div class="setting-item">
             <label class="setting-label" for="llm-tts-voice">Voice</label>
-            <select id="llm-tts-voice" class="setting-select">
-                <option value="">Select a voice</option>
-                <!-- Voices will be populated here -->
-            </select>
-        </div>
-        <div class="setting-item show-all-languages">
-            <label class="setting-label show-all-label">
-                <input type="checkbox" id="show-all-languages" class="setting-checkbox">
-                Show all languages
-            </label>
+            <div class="voice-selection-container">
+                <select id="llm-tts-voice" class="setting-select">
+                    <option value="">Select a voice</option>
+                    <!-- Voices will be populated here -->
+                </select>
+                <div class="show-all-languages">
+                    <label class="setting-label show-all-label">
+                        <input type="checkbox" id="show-all-languages" class="setting-checkbox">
+                        All Languages
+                    </label>
+                </div>
+            </div>
         </div>
     `;
     
