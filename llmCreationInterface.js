@@ -13,6 +13,7 @@ import { initMeshManipulator, updateManipulationDisplays } from './llmMeshManipu
 import { setGlobalReferences, setModels, setSelectedMesh } from './threeJSGlobals.js';
 import { setupProfileImageInAppearance } from './llmProfileImageDisplay.js';
 import { initializeAllComponents } from './llmSetupHelpers.js';
+import { createNameModelOverlay, updateOverlayFromForm } from './llmCreationOverlays.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -113,8 +114,15 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Initialize the humanoid preview
     initHumanoidPreview(llmToEdit);
     
+    // Add the name and model type overlay
+    createNameModelOverlay();
+    
     // Make humanoidScene globally accessible
     window.currentHumanoidScene = humanoidScene;
+    
+    // Add event listener to form elements to update overlay
+    document.getElementById('llm-name').addEventListener('input', updateOverlayFromForm);
+    document.getElementById('llm-model').addEventListener('change', updateOverlayFromForm);
     
     // Add event listener for create button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');

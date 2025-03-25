@@ -129,6 +129,12 @@
         margin-bottom: 0;
     }
     
+    /* Hide the original name and model inputs */
+    .settings-group:first-child .setting-item:nth-child(1),
+    .settings-group:first-child .setting-item:nth-child(2) {
+        display: none;
+    }
+    
     /* Optimize create LLM UI layout to reduce height */
     .create-llm-sidebar {
         display: flex;

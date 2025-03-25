@@ -22,12 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup music player UI
     setupMusicPlayer();
 
-    import('./settingsMenu.js').then(module => {
-        module.setupSettingsMenu();
-    }).catch(error => {
-        console.error("Error setting up settings menu:", error);
-    });
-
     const startOverlay = document.getElementById('start-overlay');
     const startButton = document.getElementById('start-button');
     const playButton = document.getElementById('play-button');
