@@ -14,6 +14,9 @@ export class CameraBoundaryController {
         // Initialize
         this.originalTarget = controls.target.clone();
         this.lastValidPosition = camera.position.clone();
+        
+        // Track if we're currently restricting movement
+        this.restrictingMovement = false;
     }
     
     // Enable or disable boundary control
@@ -33,35 +36,65 @@ export class CameraBoundaryController {
         // Store a reference to the current camera position
         const position = this.camera.position.clone();
         
-        // Check if camera is outside bounds (XZ plane only)
-        let outsideBounds = false;
+        // Calculate camera direction vector (from target to camera)
+        const directionToCamera = new THREE.Vector3().subVectors(position, this.controls.target).normalize();
+        
+        // Check boundaries separately for each axis
+        let xOutOfBounds = false;
+        let zOutOfBounds = false;
         
         // Check X bounds
-        if (position.x < this.bounds.min || position.x > this.bounds.max) {
-            outsideBounds = true;
+        if (position.x < this.bounds.min) {
+            xOutOfBounds = true;
+            position.x = this.bounds.min;
+        } else if (position.x > this.bounds.max) {
+            xOutOfBounds = true;
+            position.x = this.bounds.max;
         }
         
         // Check Z bounds
-        if (position.z < this.bounds.min || position.z > this.bounds.max) {
-            outsideBounds = true;
+        if (position.z < this.bounds.min) {
+            zOutOfBounds = true;
+            position.z = this.bounds.min;
+        } else if (position.z > this.bounds.max) {
+            zOutOfBounds = true;
+            position.z = this.bounds.max;
         }
         
-        // If outside bounds, reset to last valid position
-        if (outsideBounds) {
-            // Move camera back to last valid position
-            this.camera.position.copy(this.lastValidPosition);
+        // If out of bounds, restrict only the affected dimension
+        if (xOutOfBounds || zOutOfBounds) {
+            this.restrictingMovement = true;
             
-            // Reset orbit control target if it's pulled too far
-            const targetDist = Math.sqrt(
-                this.controls.target.x * this.controls.target.x +
-                this.controls.target.z * this.controls.target.z
-            );
+            // Apply the corrected position to the camera
+            this.camera.position.copy(position);
             
-            if (targetDist > Math.abs(this.bounds.max)) {
-                this.controls.target.copy(this.originalTarget);
+            // Check if orbit controls target is outside boundary
+            const target = this.controls.target.clone();
+            let targetNeedsUpdate = false;
+            
+            if (target.x < this.bounds.min) {
+                target.x = this.bounds.min;
+                targetNeedsUpdate = true;
+            } else if (target.x > this.bounds.max) {
+                target.x = this.bounds.max;
+                targetNeedsUpdate = true;
+            }
+            
+            if (target.z < this.bounds.min) {
+                target.z = this.bounds.min;
+                targetNeedsUpdate = true;
+            } else if (target.z > this.bounds.max) {
+                target.z = this.bounds.max;
+                targetNeedsUpdate = true;
+            }
+            
+            // Update orbit controls target if needed
+            if (targetNeedsUpdate) {
+                this.controls.target.copy(target);
                 this.controls.update();
             }
         } else {
+            this.restrictingMovement = false;
             // Update last valid position
             this.lastValidPosition.copy(position);
         }

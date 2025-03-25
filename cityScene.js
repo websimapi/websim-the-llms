@@ -6,6 +6,8 @@ import { setupSceneLighting } from './advancedLighting.js';
 import { createPlotOutline } from './plotConstructionElements.js';
 import { createInfiniteTerrain } from './infiniteTerrain.js';
 import { CameraBoundaryController } from './cameraBoundaryController.js';
+import { createDistanceMist } from './terrainUtils.js';
+import { setupUIInteractions, setupConsolePanel } from './citySceneUI.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -90,19 +92,12 @@ function initCityScene() {
     
     // Add orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.screenSpacePanning = false;
-    controls.minDistance = 10;
-    controls.maxDistance = 250; // Increased from 150 to allow zooming out more
-    controls.maxPolarAngle = Math.PI / 2.5;
-    controls.enabled = false; // Disable controls during intro animation
-    
-    // Setup advanced lighting - use new function from dedicated file
-    setupSceneLighting(scene, renderer);
     
     // Create infinite terrain instead of just a ground plane
     const terrain = createInfiniteTerrain(scene, 500);
+    
+    // Add distance mist for better horizon
+    const mistLayers = createDistanceMist(scene, 1500, 60);
     
     // Create camera boundary controller
     const boundaryController = new CameraBoundaryController(camera, controls, terrain.bounds);
@@ -120,17 +115,27 @@ function initCityScene() {
     // Create building lots from cityData
     createBuildingLots(scene);
     
-    // Setup console toggling
-    setupConsoleToggle();
+    // Update orbit controls settings
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 10;
+    controls.maxDistance = 350;
+    controls.maxPolarAngle = Math.PI / 2.2;
+    controls.enabled = false; // Disable controls during intro animation
+    
+    // Setup advanced lighting - use new function from dedicated file
+    setupSceneLighting(scene, renderer);
+    
+    // Call imported setup functions 
+    setupUIInteractions();
+    setupConsolePanel();
     
     // Setup camera intro animation
     let introDuration = 4000; // 4 seconds for intro
     let introStartTime = Date.now();
     let introComplete = false;
     let audioFadeStarted = false;
-    
-    // Setup UI event listeners
-    setupUIInteractions();
     
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -188,15 +193,6 @@ function initCityScene() {
     }
     
     animate();
-}
-
-function setupUIInteractions() {
-    const createLLMButton = document.querySelector('.create-llm-btn');
-    
-    createLLMButton.addEventListener('click', () => {
-        console.log('Create new LLM clicked');
-        // Implementation for creating new LLM will go here
-    });
 }
 
 function createBuildingLots(scene) {
@@ -313,15 +309,7 @@ function addCityNameText(scene) {
     scene.add(sign);
 }
 
-function setupConsoleToggle() {
-    document.addEventListener('keydown', (event) => {
-        if (event.key === '`' || event.key === '~') {
-            toggleConsolePanel();
-        }
-    });
-}
-
-function toggleConsolePanel() {
+export function toggleConsolePanel() {
     const consolePanel = document.getElementById('console-panel');
     if (consolePanel.classList.contains('hidden')) {
         consolePanel.classList.remove('hidden');

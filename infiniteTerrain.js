@@ -4,7 +4,7 @@ import { config } from './config.js';
 // Create a terrain that extends into the distance with fog and LOD
 export function createInfiniteTerrain(scene, primaryGroundSize = 500) {
     // Add fog to create distance fade effect
-    scene.fog = new THREE.FogExp2(0xe0f5e0, 0.0015); // Reduced fog density for greater visibility
+    scene.fog = new THREE.FogExp2(0xe0f5e0, 0.0008); // Reduced fog density even further for greater visibility
     
     // Create primary ground (high detail, close to camera)
     const groundGeometry = new THREE.PlaneGeometry(primaryGroundSize, primaryGroundSize);
@@ -20,8 +20,8 @@ export function createInfiniteTerrain(scene, primaryGroundSize = 500) {
     scene.add(ground);
     
     // Create distant terrain pieces (lower detail)
-    const terrainSize = primaryGroundSize * 10; // Increased from 4x to 10x for much larger terrain
-    const segmentCount = 12; // Slightly increased from 8 for better detail at distance
+    const terrainSize = primaryGroundSize * 20; // Increased from 10x to 20x for much larger terrain
+    const segmentCount = 16; // Increased from 12 for better detail at distance
     
     const distantGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, segmentCount, segmentCount);
     const distantMaterial = new THREE.MeshStandardMaterial({
@@ -37,8 +37,8 @@ export function createInfiniteTerrain(scene, primaryGroundSize = 500) {
     scene.add(distantTerrain);
     
     // Add more distant mountains terrain for horizon
-    const horizonSize = terrainSize * 3; // Extremely distant terrain
-    const horizonGeometry = new THREE.PlaneGeometry(horizonSize, horizonSize, 8, 8);
+    const horizonSize = terrainSize * 5; // Extremely distant terrain, increased from 3x to 5x
+    const horizonGeometry = new THREE.PlaneGeometry(horizonSize, horizonSize, 12, 12); // Increased from 8x8
     const horizonMaterial = new THREE.MeshStandardMaterial({
         color: 0x5a8c50, // Darker green for distance effect
         roughness: 1.0,
@@ -60,7 +60,7 @@ export function createInfiniteTerrain(scene, primaryGroundSize = 500) {
         const distFromCenter = Math.sqrt(x * x + z * z);
         if (distFromCenter > primaryGroundSize / 2) {
             // Add more dramatic height variation for distant terrain
-            vertices.setY(i, Math.sin(x * 0.005) * Math.cos(z * 0.005) * 15 - 5);
+            vertices.setY(i, Math.sin(x * 0.005) * Math.cos(z * 0.005) * 25 - 8); // Increased height variation
         }
     }
     
@@ -70,11 +70,12 @@ export function createInfiniteTerrain(scene, primaryGroundSize = 500) {
         const x = horizonVertices.getX(i);
         const z = horizonVertices.getZ(i);
         
-        // Create mountain ranges in the far distance
+        // Create mountain ranges in the far distance with more variation
         horizonVertices.setY(
             i, 
-            (Math.sin(x * 0.002) * Math.cos(z * 0.002) * 50) + 
-            (Math.sin(x * 0.01) * Math.cos(z * 0.01) * 15)
+            (Math.sin(x * 0.002) * Math.cos(z * 0.002) * 80) + // Increased height from 50 to 80
+            (Math.sin(x * 0.01) * Math.cos(z * 0.01) * 25) +   // Increased from 15 to 25
+            (Math.sin(x * 0.005 + z * 0.003) * 30)             // Added a third variation pattern
         );
     }
     
