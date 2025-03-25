@@ -32,7 +32,6 @@ export function createNameModelOverlay() {
     nameInput.className = 'overlay-name-input';
     nameInput.placeholder = 'Enter LLM name';
     nameInput.value = currentName;
-    nameInput.addEventListener('input', updateNameInForm);
     
     // Add model type dropdown (initially hidden)
     const modelTypeDropdown = document.createElement('div');
@@ -107,23 +106,6 @@ function createColorBrushOverlay(container, currentColor) {
     colorInput.type = 'color';
     colorInput.className = 'color-input-overlay';
     colorInput.value = currentColor;
-    colorInput.addEventListener('input', (e) => {
-        // Update the form color picker
-        const formColorPicker = document.getElementById('llm-color');
-        if (formColorPicker) {
-            formColorPicker.value = e.target.value;
-            
-            // Trigger input event on the form color picker to update the model
-            const inputEvent = new Event('input', { bubbles: true });
-            formColorPicker.dispatchEvent(inputEvent);
-        }
-        
-        // Update brush tip color
-        const brushTip = brushContainer.querySelector('.brush-tip');
-        if (brushTip) {
-            brushTip.style.backgroundColor = e.target.value;
-        }
-    });
     
     colorPickerContainer.appendChild(colorInput);
     brushContainer.appendChild(brushIcon);
@@ -170,14 +152,6 @@ function selectModelType(modelType) {
     });
 }
 
-// Update the name in the form when the overlay input changes
-function updateNameInForm(e) {
-    const nameInput = document.getElementById('llm-name');
-    if (nameInput) {
-        nameInput.value = e.target.value;
-    }
-}
-
 // Update the overlay when the form changes
 export function updateOverlayFromForm() {
     const nameInput = document.querySelector('.overlay-name-input');
@@ -211,4 +185,45 @@ export function updateOverlayFromForm() {
             option.classList.remove('selected');
         }
     });
+}
+
+// Makes the overlay input the primary input
+// while keeping hidden form inputs for data handling
+export function makeOverlayInputsPrimary() {
+    // Update form values when overlay inputs change
+    const overlayNameInput = document.querySelector('.overlay-name-input');
+    const colorInputOverlay = document.querySelector('.color-input-overlay');
+    
+    if (overlayNameInput) {
+        // Make sure we have hidden input fields for form submission
+        let nameInput = document.getElementById('llm-name');
+        if (!nameInput) {
+            nameInput = document.createElement('input');
+            nameInput.type = 'hidden';
+            nameInput.id = 'llm-name';
+            document.querySelector('.create-llm-sidebar').appendChild(nameInput);
+        }
+        
+        // Ensure the name input reflects overlay changes
+        overlayNameInput.addEventListener('input', (e) => {
+            nameInput.value = e.target.value;
+        });
+    }
+    
+    // Similar setup for model type (handled by existing selectModelType function)
+    
+    // Make sure the main form color input is hidden but synced
+    if (colorInputOverlay) {
+        let colorInput = document.getElementById('llm-color');
+        if (!colorInput) {
+            colorInput = document.createElement('input');
+            colorInput.type = 'hidden';
+            colorInput.id = 'llm-color';
+            document.querySelector('.create-llm-sidebar').appendChild(colorInput);
+        }
+        
+        colorInputOverlay.addEventListener('input', (e) => {
+            colorInput.value = e.target.value;
+        });
+    }
 }

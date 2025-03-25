@@ -129,11 +129,6 @@
         margin-bottom: 0;
     }
     
-    /* Hide the original name and model inputs - no longer needed due to having these in the overlay */
-    .settings-group:first-child {
-        display: none;
-    }
-    
     /* Optimize create LLM UI layout to reduce height */
     .create-llm-sidebar {
         display: flex;

@@ -13,7 +13,7 @@ import { initMeshManipulator, updateManipulationDisplays } from './llmMeshManipu
 import { setGlobalReferences, setModels, setSelectedMesh } from './threeJSGlobals.js';
 import { setupProfileImageInAppearance } from './llmProfileImageDisplay.js';
 import { initializeAllComponents } from './llmSetupHelpers.js';
-import { createNameModelOverlay, updateOverlayFromForm } from './llmCreationOverlays.js';
+import { createNameModelOverlay, updateOverlayFromForm, makeOverlayInputsPrimary } from './llmCreationOverlays.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
@@ -117,8 +117,14 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Add the name and model type overlay
     createNameModelOverlay();
     
+    // Make overlay inputs primary and ensure form data syncing
+    makeOverlayInputsPrimary();
+    
     // Make humanoidScene globally accessible
     window.currentHumanoidScene = humanoidScene;
+    
+    // Update overlay when form elements change
+    updateOverlayFromForm();
     
     // Add event listener to form elements to update overlay
     document.getElementById('llm-name').addEventListener('input', updateOverlayFromForm);
@@ -422,7 +428,9 @@ function updateHumanoidPreview() {
 }
 
 function updateSelectedMeshColor() {
-    const color = document.getElementById('llm-color').value;
+    // Get color from the new UI overlay or fall back to hidden input
+    const colorOverlay = document.querySelector('.color-input-overlay');
+    const color = colorOverlay ? colorOverlay.value : document.getElementById('llm-color').value;
     
     if (selectedMesh && selectedMesh.material) {
         // Use the color manager to apply color only to the selected mesh
