@@ -1,63 +1,58 @@
-/* Styles for plot hover info panel */
-.plot-info-panel {
+/* Styles for plot hover information panel */
+.plot-hover-panel {
     position: absolute;
-    z-index: 100;
-    background-color: rgba(40, 40, 40, 0.9);
-    border: 2px solid #3cb371;
-    border-radius: 8px;
-    padding: 0;
     width: 250px;
-    pointer-events: none;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-    font-family: 'Arial', sans-serif;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(60, 179, 113, 0.8);
+    border-radius: 8px;
     color: white;
-    user-select: none;
-    overflow: hidden;
-    transition: opacity 0.2s;
+    padding: 0;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-.plot-info-header {
-    background-color: #3cb371;
+.plot-hover-panel.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.plot-hover-header {
+    background-color: rgba(60, 179, 113, 0.8);
     color: white;
     padding: 8px 12px;
     font-weight: bold;
-    font-size: 1.1rem;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
+    border-radius: 6px 6px 0 0;
+    font-size: 16px;
 }
 
-.plot-info-content {
+.plot-hover-content {
     padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.plot-info-row {
+.plot-hover-size,
+.plot-hover-price,
+.plot-hover-status,
+.plot-hover-type {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 6px;
 }
 
-.plot-info-label {
-    font-weight: bold;
-    color: #aaa;
+.plot-hover-type {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
-.plot-info-value {
-    color: white;
-}
-
-.plot-info-value.available {
-    color: #5cff9d;
-}
-
-.plot-info-value.unavailable {
-    color: #ff5c5c;
-}
-
-.plot-info-description {
-    margin-top: 8px;
-    font-style: italic;
-    color: #ddd;
-    font-size: 0.9rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 5px;
+/* Effect when a plot is hovered */
+.plot-highlight {
+    /* This class can be applied to plots when hovered */
+    transition: all 0.3s ease;
+    filter: brightness(1.3);
 }

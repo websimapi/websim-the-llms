@@ -3,7 +3,6 @@ import * as THREE from 'three';
 // Create construction tape outline around a plot with wooden poles
 export function createConstructionTape(width, depth, position) {
     const group = new THREE.Group();
-    group.name = "construction_site";
     
     // Create tape material - yellow with black stripes
     const tapeCanvas = document.createElement('canvas');
@@ -81,11 +80,10 @@ function createSideWithPoles(group, sideLength, zPos, xPos, rotation, width, tap
     // Create tape segment
     const tape = new THREE.Mesh(
         new THREE.PlaneGeometry(width, tapeHeight),
-        tapeMaterial.clone() // Clone the material to prevent shared material issues
+        tapeMaterial
     );
     tape.position.set(xPos, tapeElevation, zPos);
     tape.rotation.y = rotation;
-    tape.name = "tape_segment";
     group.add(tape);
     
     // Add poles
@@ -109,7 +107,6 @@ function createSideWithPoles(group, sideLength, zPos, xPos, rotation, width, tap
         const pole = new THREE.Mesh(poleGeometry, poleMaterial);
         pole.position.set(poleX, 0.6, poleZ); // Half height of pole
         pole.castShadow = true;
-        pole.name = "pole_support";
         group.add(pole);
     }
 }
@@ -152,10 +149,9 @@ export function createConstructionCones(width, depth, position) {
     // Create and position detailed cones
     conePositions.forEach(pos => {
         // Create cone body
-        const cone = new THREE.Mesh(coneGeometry, orangeMaterial.clone()); // Clone the material
+        const cone = new THREE.Mesh(coneGeometry, orangeMaterial);
         cone.position.set(pos.x, coneHeight/2, pos.z);
         cone.castShadow = true;
-        cone.name = "cone_marker";
         group.add(cone);
         
         // Add reflective stripes (2 stripes per cone)
@@ -181,7 +177,6 @@ export function createConstructionCones(width, depth, position) {
         base.position.set(pos.x, 0.025, pos.z); // Just above ground
         base.castShadow = true;
         base.receiveShadow = true;
-        base.name = "cone_base";
         group.add(base);
     });
     
@@ -247,7 +242,6 @@ function createWoodTexture() {
 // Create a plot outline with construction elements
 export function createPlotOutline(lot, scene) {
     const plotGroup = new THREE.Group();
-    plotGroup.name = "plot_outline";
     
     // Create construction tape outline with wooden poles
     const tape = createConstructionTape(lot.width, lot.height, {x: 0, y: 0, z: 0});
@@ -259,9 +253,6 @@ export function createPlotOutline(lot, scene) {
     
     // Position the entire group at lot position
     plotGroup.position.set(lot.x, 0.1, lot.z);
-    
-    // Store lot ID in userData for hover detection
-    plotGroup.userData = { type: 'lot', id: lot.id };
     
     scene.add(plotGroup);
     
