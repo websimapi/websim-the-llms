@@ -8,9 +8,11 @@ let sky, sun, water, environmentScene;
 let mountainMesh, beachMesh;
 let dayNightCycle;
 let time = 0;
+let renderer;
 
-export function setupEnvironment(scene, renderer) {
+export function setupEnvironment(scene, rendererInstance) {
     environmentScene = scene;
+    renderer = rendererInstance;
     
     // Add sky
     setupSky();
