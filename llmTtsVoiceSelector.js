@@ -169,9 +169,21 @@ function setupVoiceSelectionListeners() {
     
     // Show all languages toggle
     const showAllCheckbox = document.getElementById('show-all-languages');
-    if (showAllCheckbox) {
-        showAllCheckbox.addEventListener('change', () => {
+    const showAllButton = document.querySelector('.show-all-languages');
+    
+    if (showAllCheckbox && showAllButton) {
+        // Update button state based on checkbox state
+        showAllButton.addEventListener('click', () => {
+            showAllCheckbox.checked = !showAllCheckbox.checked;
             showAllLanguages = showAllCheckbox.checked;
+            
+            // Update button style
+            if (showAllCheckbox.checked) {
+                showAllButton.classList.add('enabled');
+            } else {
+                showAllButton.classList.remove('enabled');
+            }
+            
             updateVoiceList();
         });
     }
