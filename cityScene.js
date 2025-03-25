@@ -8,7 +8,6 @@ import { createInfiniteTerrain } from './infiniteTerrain.js';
 import { CameraBoundaryController } from './cameraBoundaryController.js';
 import { createDistanceMist } from './terrainUtils.js';
 import { setupUIInteractions, setupConsolePanel } from './citySceneUI.js';
-import { setupPlotInteraction } from './plotInteractionHandler.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -116,6 +115,12 @@ function initCityScene() {
     // Create building lots from cityData
     createBuildingLots(scene);
     
+    // Initialize plot hover UI
+    import('./plotHoverUI.js').then(module => {
+        module.plotHoverUI.scene = scene;
+        module.plotHoverUI.init(camera, renderer);
+    });
+    
     // Update orbit controls settings
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -127,9 +132,6 @@ function initCityScene() {
     
     // Setup advanced lighting - use new function from dedicated file
     setupSceneLighting(scene, renderer);
-    
-    // Setup plot interaction
-    setupPlotInteraction(scene, camera, renderer);
     
     // Call imported setup functions 
     setupUIInteractions();
