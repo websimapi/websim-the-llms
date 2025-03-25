@@ -132,16 +132,8 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Make overlay inputs primary and ensure form data syncing
     makeOverlayInputsPrimary();
     
-    // Update overlay when form elements change
-    updateOverlayFromForm();
-    
-    const nameInput = document.getElementById('llm-name');
-    const modelInput = document.getElementById('llm-model');
-    if (nameInput) nameInput.addEventListener('input', updateOverlayFromForm);
-    if (modelInput) modelInput.addEventListener('change', updateOverlayFromForm);
-    
-    // Add event listener to form elements to update overlay
-    // Removed these lines as per plan
+    document.getElementById('llm-name')?.addEventListener('input', updateOverlayFromForm);
+    document.getElementById('llm-model')?.addEventListener('change', updateOverlayFromForm);
     
     // Add event listener for create button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
@@ -512,46 +504,4 @@ function resetForm() {
     } else {
         updateHumanoidPreview();
     }
-}
-
-function updateOverlayFromForm() {
-    const nameInput = document.querySelector('.overlay-name-input');
-    const modelTypeIcon = document.querySelector('.model-type-icon');
-    const brushTip = document.querySelector('.brush-tip');
-    const colorInputOverlay = document.querySelector('.color-input-overlay');
-    
-    const llmNameInput = document.getElementById('llm-name');
-    const llmModelInput = document.getElementById('llm-model');
-    const llmColorInput = document.getElementById('llm-color');
-    
-    if (nameInput && llmNameInput) {
-        nameInput.value = llmNameInput.value;
-    }
-    
-    const currentModel = llmModelInput ? llmModelInput.value : 'assistant';
-    if (modelTypeIcon) {
-        const modelTypeIcons = {
-            assistant: '<i class="fas fa-robot"></i>',
-            // Add more model types here
-        };
-        modelTypeIcon.innerHTML = modelTypeIcons[currentModel] || modelTypeIcons.assistant;
-    }
-    
-    const currentColor = llmColorInput ? llmColorInput.value : '#3cb371';
-    if (brushTip) {
-        brushTip.style.backgroundColor = currentColor;
-    }
-    if (colorInputOverlay) {
-        colorInputOverlay.value = currentColor;
-    }
-    
-    // Update selected option in dropdown
-    const options = document.querySelectorAll('.model-type-option');
-    options.forEach(option => {
-        if (option.getAttribute('data-value') === currentModel) {
-            option.classList.add('selected');
-        } else {
-            option.classList.remove('selected');
-        }
-    });
 }
