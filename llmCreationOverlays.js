@@ -240,3 +240,6 @@ export function makeOverlayInputsPrimary() {
         colorInput.value = e.target.value;
     });
 }
+
+document.getElementById('llm-name')?.addEventListener('input', updateOverlayFromForm);
+document.getElementById('llm-model')?.addEventListener('change', updateOverlayFromForm);

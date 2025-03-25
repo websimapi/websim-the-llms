@@ -40,7 +40,28 @@ export function setupLLMCreationInterface(llmToEdit) {
     });
     
     // Setup default values for the form
-    document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
+    // Set form values from existing LLM if editing
+    if (llmToEdit) {
+        const nameInput = document.getElementById('llm-name');
+        const modelSelect = document.getElementById('llm-model');
+        const colorInput = document.getElementById('llm-color');
+        const customPromptInput = document.getElementById('llm-custom-prompt');
+        
+        if (nameInput) nameInput.value = llmToEdit.name || `LLM-${Math.floor(Math.random() * 1000)}`;
+        if (modelSelect) modelSelect.value = llmToEdit.model || 'assistant';
+        if (colorInput) colorInput.value = llmToEdit.color || '#3cb371';
+        if (customPromptInput) customPromptInput.value = llmToEdit.customPrompt || '';
+        
+        // Store the edit ID on the form
+        const createUI = document.getElementById('create-llm-ui');
+        createUI.setAttribute('data-edit-mode', 'true');
+        createUI.setAttribute('data-edit-id', llmToEdit.id);
+    } else {
+        // Clear edit mode flags if not editing
+        const createUI = document.getElementById('create-llm-ui');
+        createUI.removeAttribute('data-edit-mode');
+        createUI.removeAttribute('data-edit-id');
+    }
     
     // Initialize attribute system
     attributeSystem.initializeAttributes();
@@ -93,23 +114,6 @@ export function setupLLMCreationInterface(llmToEdit) {
             }
         });
     });
-    
-    // Set form values from existing LLM if editing
-    if (llmToEdit) {
-        document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
-        document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
-        document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
-        
-        // Store the edit ID on the form
-        const createUI = document.getElementById('create-llm-ui');
-        createUI.setAttribute('data-edit-mode', 'true');
-        createUI.setAttribute('data-edit-id', llmToEdit.id);
-    } else {
-        // Clear edit mode flags if not editing
-        const createUI = document.getElementById('create-llm-ui');
-        createUI.removeAttribute('data-edit-mode');
-        createUI.removeAttribute('data-edit-id');
-    }
     
     // Make humanoidScene globally accessible for other modules
     window.currentHumanoidScene = humanoidScene;
