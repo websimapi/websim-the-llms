@@ -14,6 +14,7 @@ export function createNameModelOverlay() {
     // Get current values from form
     const currentName = document.getElementById('llm-name').value;
     const currentModel = document.getElementById('llm-model').value;
+    const currentColor = document.getElementById('llm-color').value;
     
     // Create overlay container
     const overlayContainer = document.createElement('div');
@@ -71,12 +72,65 @@ export function createNameModelOverlay() {
     // Add to humanoid viewport
     humanoidViewport.appendChild(overlayContainer);
     
+    // Create the color brush overlay
+    createColorBrushOverlay(humanoidViewport, currentColor);
+    
     // Add click outside to close dropdown
     document.addEventListener('click', (e) => {
         if (!overlayContainer.contains(e.target)) {
             modelTypeDropdown.classList.remove('visible');
         }
     });
+}
+
+// Create color brush overlay
+function createColorBrushOverlay(container, currentColor) {
+    // Create color brush container
+    const brushContainer = document.createElement('div');
+    brushContainer.className = 'color-brush-container';
+    
+    // Add brush icon with the color tip
+    const brushIcon = document.createElement('div');
+    brushIcon.className = 'brush-icon';
+    brushIcon.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#aaaaaa">
+            <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34c-.39-.39-1.02-.39-1.41 0L9 12.25 11.75 15l8.96-8.96c.39-.39.39-1.02 0-1.41z"/>
+        </svg>
+        <div class="brush-tip" style="background-color: ${currentColor}"></div>
+    `;
+    
+    // Add color picker
+    const colorPickerContainer = document.createElement('div');
+    colorPickerContainer.className = 'color-picker-overlay';
+    
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.className = 'color-input-overlay';
+    colorInput.value = currentColor;
+    colorInput.addEventListener('input', (e) => {
+        // Update the form color picker
+        const formColorPicker = document.getElementById('llm-color');
+        if (formColorPicker) {
+            formColorPicker.value = e.target.value;
+            
+            // Trigger input event on the form color picker to update the model
+            const inputEvent = new Event('input', { bubbles: true });
+            formColorPicker.dispatchEvent(inputEvent);
+        }
+        
+        // Update brush tip color
+        const brushTip = brushContainer.querySelector('.brush-tip');
+        if (brushTip) {
+            brushTip.style.backgroundColor = e.target.value;
+        }
+    });
+    
+    colorPickerContainer.appendChild(colorInput);
+    brushContainer.appendChild(brushIcon);
+    brushContainer.appendChild(colorPickerContainer);
+    
+    // Add to container
+    container.appendChild(brushContainer);
 }
 
 // Toggle model type dropdown visibility
@@ -128,6 +182,8 @@ function updateNameInForm(e) {
 export function updateOverlayFromForm() {
     const nameInput = document.querySelector('.overlay-name-input');
     const modelTypeIcon = document.querySelector('.model-type-icon');
+    const brushTip = document.querySelector('.brush-tip');
+    const colorInputOverlay = document.querySelector('.color-input-overlay');
     
     if (nameInput) {
         nameInput.value = document.getElementById('llm-name').value;
@@ -136,6 +192,14 @@ export function updateOverlayFromForm() {
     const currentModel = document.getElementById('llm-model').value;
     if (modelTypeIcon) {
         modelTypeIcon.innerHTML = modelTypeIcons[currentModel] || modelTypeIcons.assistant;
+    }
+    
+    const currentColor = document.getElementById('llm-color').value;
+    if (brushTip) {
+        brushTip.style.backgroundColor = currentColor;
+    }
+    if (colorInputOverlay) {
+        colorInputOverlay.value = currentColor;
     }
     
     // Update selected option in dropdown
