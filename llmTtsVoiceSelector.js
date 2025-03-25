@@ -46,14 +46,6 @@ function createVoiceSelectorUI() {
                 Show all languages
             </label>
         </div>
-        <div class="voice-test-container">
-            <button id="test-voice-btn" class="preview-button" disabled>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
-                    <path d="M8 5v14l11-7z" fill="currentColor"/>
-                </svg>
-                Test Voice
-            </button>
-        </div>
     `;
     
     // Add to appearance section
@@ -149,14 +141,10 @@ function setupVoiceSelectionListeners() {
                     statusElement.dataset.selectedVoice = selectedVoiceUri;
                 }
                 
-                // Enable test button
-                document.getElementById('test-voice-btn').disabled = false;
-                
-                // Automatically play a sample
+                // Automatically play a sample without needing to click test button
                 speakSample();
             } else {
                 selectedVoice = null;
-                document.getElementById('test-voice-btn').disabled = true;
             }
         });
     }
@@ -168,12 +156,6 @@ function setupVoiceSelectionListeners() {
             showAllLanguages = showAllCheckbox.checked;
             updateVoiceList();
         });
-    }
-    
-    // Test voice button
-    const testButton = document.getElementById('test-voice-btn');
-    if (testButton) {
-        testButton.addEventListener('click', speakSample);
     }
 }
 

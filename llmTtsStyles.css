@@ -5,41 +5,6 @@
     padding-top: 15px;
 }
 
-.voice-test-container {
-    display: flex;
-    justify-content: flex-start;
-    margin-top: 10px;
-}
-
-#test-voice-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background-color: #3cb371;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s, transform 0.1s;
-}
-
-#test-voice-btn:hover:not(:disabled) {
-    background-color: #2a8c5a;
-    transform: scale(1.05);
-}
-
-#test-voice-btn:active:not(:disabled) {
-    transform: scale(0.95);
-}
-
-#test-voice-btn:disabled {
-    background-color: #555;
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
 .show-all-languages {
     margin-top: 5px;
     display: flex;
@@ -63,17 +28,12 @@
 
 /* Mobile adjustments */
 @media screen and (max-width: 768px) {
-    #test-voice-btn {
-        padding: 10px 15px;
+    .show-all-label {
         font-size: 1rem;
     }
     
     .setting-checkbox {
         width: 22px;
         height: 22px;
-    }
-    
-    .show-all-label {
-        font-size: 1rem;
     }
 }
