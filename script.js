@@ -5,6 +5,7 @@ import { setupLLMCreationInterface } from './llmCreationInterface.js';
 import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
+import { setupMusicPlayer } from './musicPlayer.js';
 
 let bgAudio;
 let useLLMTips = localStorage.getItem('useLLMTips') !== null ? 
@@ -16,6 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof llmDataManager !== 'undefined') {
         llmDataManager.init();
     }
+    
+    // Setup music player UI
+    setupMusicPlayer();
 
     const startOverlay = document.getElementById('start-overlay');
     const startButton = document.getElementById('start-button');
@@ -77,6 +81,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearInterval(fadeInterval);
             }
         }, intervalTime);
+        
+        // Update music player UI if it exists
+        setTimeout(() => {
+            const jukeboxIcon = document.querySelector('.jukebox-icon');
+            if (jukeboxIcon) {
+                jukeboxIcon.classList.add('playing');
+                document.querySelectorAll('.volume-bar').forEach(bar => {
+                    bar.classList.add('active');
+                });
+            }
+        }, 100);
     }
     
     // Fade out audio function

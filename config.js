@@ -20,5 +20,12 @@ export const config = {
     
     // City scene settings
     citySize: 100,
-    groundColor: 0x7cfc00
+    groundColor: 0x7cfc00,
+
+    // Music player settings
+    music: {
+        defaultVolume: 0, // 0-4 (OFF, 25%, 50%, 75%, 100%)
+        fadeInDuration: 5000,
+        fadeOutDuration: 3000
+    }
 };
