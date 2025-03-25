@@ -90,11 +90,16 @@ function initializeAudio() {
     bgAudio.loop = true;
     bgAudio.volume = 0; // Start with volume at 0
     
-    // Use configured initial volume if available
-    if (config.music && config.music.defaultVolume !== undefined) {
+    // Load saved volume from localStorage or use configured default
+    const savedVolume = localStorage.getItem('musicVolume');
+    if (savedVolume !== null) {
+        musicVolume = parseInt(savedVolume);
+    } else if (config.music && config.music.defaultVolume !== undefined) {
         musicVolume = config.music.defaultVolume;
-        updateVolumeState();
     }
+    
+    // Don't auto-play, just update volume state UI
+    updateVolumeUI();
     
     // Store it globally for other modules
     window.bgAudio = bgAudio;
@@ -222,6 +227,9 @@ function updateVolumeState() {
     } else if (musicVolume === 0) {
         bgAudio.pause();
     }
+    
+    // Save to localStorage
+    localStorage.setItem('musicVolume', musicVolume);
     
     // Update UI
     updateVolumeUI();
