@@ -68,6 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingScreen.style.display = 'flex';
         // Use the new music player functions
         import('./musicPlayer.js').then(module => {
+            // Just initialize the music module which will auto-play
+            // even when muted based on the volume level
+            setupMusicPlayer();
             module.fadeInMusic(config.music.fadeInDuration || 5000);
         });
         startLoading();
@@ -80,13 +83,16 @@ document.addEventListener('DOMContentLoaded', () => {
             setInterval(setRandomTip, 3000);
         }
     });
-    
+
     // Add play button click handler
     playButton.addEventListener('click', () => {
         startOverlay.style.display = 'none';
         loadingScreen.style.display = 'flex';
         // Use the new music player functions
         import('./musicPlayer.js').then(module => {
+            // Just initialize the music module which will auto-play
+            // even when muted based on the volume level
+            setupMusicPlayer();
             module.fadeInMusic(config.music.fadeInDuration || 5000);
         });
         startLoading();

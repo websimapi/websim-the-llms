@@ -3,7 +3,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { config } from './config.js';
 import { cityData } from './cityData.js';
 import { setupSceneLighting } from './advancedLighting.js';
-import { createSkybox, addFog, addDistantTerrain } from './skyboxManager.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -57,6 +56,7 @@ function initCityScene() {
     
     // Initialize Three.js scene
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xe0f5e0);
     
     // Create camera
     const camera = new THREE.PerspectiveCamera(
@@ -91,23 +91,14 @@ function initCityScene() {
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
     controls.minDistance = 10;
-    controls.maxDistance = 100; 
+    controls.maxDistance = 50;
     controls.maxPolarAngle = Math.PI / 2.5;
     controls.enabled = false; // Disable controls during intro animation
     
-    // Setup advanced lighting
+    // Setup advanced lighting - use new function from dedicated file
     setupSceneLighting(scene, renderer);
     
-    // Add skybox with clouds
-    createSkybox(scene);
-    
-    // Add fog for distance effect
-    addFog(scene);
-    
-    // Add distant terrain
-    addDistantTerrain(scene);
-    
-    // Create ground plane - make it larger to work with the skybox
+    // Create ground plane
     const groundGeometry = new THREE.PlaneGeometry(500, 500); 
     const groundMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x7cfc00,
@@ -156,15 +147,25 @@ function initCityScene() {
             
             if (progress < 1) {
                 // Interpolate camera position for smooth pan
-                const targetX = 15; 
-                const targetY = 25; 
-                const targetZ = 30; 
+                const targetX = 15; // Increased from 0 to stay further out
+                const targetY = 25; // Increased from 20
+                const targetZ = 30; // Increased from 20 to maintain more distance
                 
                 camera.position.x = 50 * (1 - progress) + targetX * progress;
                 camera.position.y = 30 * (1 - progress) + targetY * progress;
                 camera.position.z = 50 * (1 - progress) + targetZ * progress;
                 camera.lookAt(0, 0, 0);
                 
+                /*
+                if (progress > 0.3 && !audioFadeStarted) {
+                    audioFadeStarted = true;
+                    
+                    // Use the new music player module
+                    import('./musicPlayer.js').then(module => {
+                        module.fadeOutMusic(3000);
+                    });
+                }
+                */
             } else {
                 introComplete = true;
                 controls.enabled = true; // Enable controls after intro

@@ -101,8 +101,13 @@ function initializeAudio() {
         musicVolume = config.music.defaultVolume;
     }
     
-    // Don't auto-play, just update volume state UI
-    updateVolumeUI();
+    // Always start playing (even when muted)
+    bgAudio.play().catch(err => {
+        console.error("Error playing audio:", err);
+    });
+    
+    // Update volume based on settings
+    updateVolumeState();
     
     // Store it globally for other modules
     window.bgAudio = bgAudio;
