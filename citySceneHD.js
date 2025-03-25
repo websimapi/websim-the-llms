@@ -185,6 +185,15 @@ function createBuildingLots() {
 }
 
 function createCitySign() {
+    // Define materials at the top of the function
+    const materials = {
+        stone: new THREE.MeshStandardMaterial({ 
+            color: 0x808080,
+            roughness: 0.8,
+            metalness: 0.2
+        })
+    };
+    
     // Create stone pillars with realistic texture
     const pillarGeometry = new THREE.BoxGeometry(1, 10, 1);
     
@@ -262,7 +271,7 @@ function createCitySign() {
     });
     
     // Create materials array for BoxGeometry
-    const materials = [
+    const signMaterials = [
         sideMaterial,       // right side
         sideMaterial,       // left side
         sideMaterial,       // top side
@@ -273,8 +282,8 @@ function createCitySign() {
     
     // Create box with different materials per face
     const geometry = new THREE.BoxGeometry(20, 5, 0.5);
-    citySign = new THREE.Mesh(geometry, materials);
-    citySign.position.set(0, 8.5, -30);
+    citySign = new THREE.Mesh(geometry, signMaterials);
+    citySign.position.set(0, 8.5, -80); 
     citySign.castShadow = true;
     citySign.receiveShadow = true;
     cityGroup.add(citySign);
@@ -357,18 +366,20 @@ function setupPostProcessing() {
 
 function setupCameraIntro() {
     // Setup camera intro animation
-    let introDuration = 6000; // 6 seconds for intro
+    let introDuration = 8000; 
     let introStartTime = Date.now();
     let introComplete = false;
     let audioFadeStarted = false;
     
-    // Smoother, more cinematic camera path
+    // Smoother, more cinematic camera path - adjusted for new terrain layout
     const cameraPathPoints = [
-        new THREE.Vector3(80, 40, 80),   // Starting wide angle
-        new THREE.Vector3(60, 35, 60),   // Moving closer
-        new THREE.Vector3(40, 30, 40),   // Continue approach
-        new THREE.Vector3(20, 25, 20),   // Getting closer to city
-        new THREE.Vector3(15, 22, 15)    // Final position
+        new THREE.Vector3(80, 60, 180),   
+        new THREE.Vector3(60, 50, 120),   
+        new THREE.Vector3(40, 40, 80),    
+        new THREE.Vector3(20, 30, 40),    
+        new THREE.Vector3(0, 25, 20),     
+        new THREE.Vector3(0, 22, -20),    
+        new THREE.Vector3(15, 22, 15)     
     ];
     
     // Create a smooth curve through these points

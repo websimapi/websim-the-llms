@@ -129,7 +129,7 @@ function getSkyColor(elevation) {
 
 function setupWater(renderer) {
     // Create water geometry
-    const waterGeometry = new THREE.PlaneGeometry(5000, 2500);
+    const waterGeometry = new THREE.PlaneGeometry(5000, 5000);
     
     // Create water with reflection and refraction
     water = new Water(
@@ -150,21 +150,21 @@ function setupWater(renderer) {
     
     water.rotation.x = -Math.PI / 2;
     water.position.y = -1;
-    water.position.z = 200; // Moved further south of the city
+    water.position.z = 150; // Repositioned to the south (higher Z value)
     
     environmentScene.add(water);
 }
 
 function setupTerrain() {
-    // Create mountain terrain in the background (north)
+    // Create mountain terrain in the background
     createMountains();
     
-    // Create beach terrain connecting to water (south)
+    // Create beach terrain connecting to water
     createBeach();
 }
 
 function createMountains() {
-    const mountainGeometry = new THREE.PlaneGeometry(800, 400, 100, 50);
+    const mountainGeometry = new THREE.PlaneGeometry(1000, 600, 120, 60);
     const mountainMaterial = new THREE.MeshStandardMaterial({
         color: 0x506850,
         roughness: 0.9,
@@ -183,18 +183,18 @@ function createMountains() {
         
         // Create mountain peaks using noise functions
         // Larger scale noise for major mountain features
-        const largeScale = simplex.noise(x * 0.01, z * 0.01) * 40;
+        const largeScale = simplex.noise(x * 0.01, z * 0.01) * 70; // Increased height
         // Medium scale noise for smaller features
-        const mediumScale = simplex.noise(x * 0.03, z * 0.03) * 15;
+        const mediumScale = simplex.noise(x * 0.03, z * 0.03) * 25; // Increased height
         // Small scale noise for small details
-        const smallScale = simplex.noise(x * 0.2, z * 0.2) * 5;
+        const smallScale = simplex.noise(x * 0.2, z * 0.2) * 10; // Increased height
         
         // Combine noise at different scales for natural looking terrain
         // Higher towards the back, sloping down towards the front
         let height = largeScale + mediumScale + smallScale;
         
         // Make mountains higher in the back and taper down
-        const distanceFromBack = (400 + z) / 800;
+        const distanceFromBack = (600 + z) / 1200;
         height *= (1 - distanceFromBack * 1.2); 
         
         // Ensure minimum height is below ground level
@@ -210,7 +210,7 @@ function createMountains() {
     
     // Create the mountain mesh
     mountainMesh = new THREE.Mesh(mountainGeometry, mountainMaterial);
-    mountainMesh.position.z = -400; // Place to the north of the city
+    mountainMesh.position.z = -300; // Place to the north (lower Z value)
     mountainMesh.position.y = -1; // Align with ground
     mountainMesh.rotation.x = -Math.PI / 2;
     mountainMesh.receiveShadow = true;
@@ -219,7 +219,7 @@ function createMountains() {
 }
 
 function createBeach() {
-    const beachGeometry = new THREE.PlaneGeometry(300, 140, 50, 30);
+    const beachGeometry = new THREE.PlaneGeometry(400, 200, 60, 40);
     const beachMaterial = new THREE.MeshStandardMaterial({
         color: 0xeecc77,
         roughness: 0.8,
@@ -236,11 +236,11 @@ function createBeach() {
         const z = vertices[i + 2];
         
         // Create subtle sand ripples using high-frequency noise
-        const ripples = simplex.noise(x * 0.5, z * 0.5) * 0.5;
+        const ripples = simplex.noise(x * 0.5, z * 0.5) * 0.8; // Increased ripple height
         
-        // Sloping from water edge up to city level
-        const normalizedZ = (z + 70) / 140; // 0 at water's edge, 1 at city edge
-        const baseHeight = normalizedZ * 1; // Slope up from water to city
+        // Sloping from water edge up to city level with higher terrain
+        const normalizedZ = (z + 100) / 200; // 0 at water's edge, 1 at city edge
+        const baseHeight = normalizedZ * 2.5; // Increased slope height
         
         vertices[i + 1] = baseHeight + ripples;
     }
@@ -251,7 +251,7 @@ function createBeach() {
     
     // Create the beach mesh
     beachMesh = new THREE.Mesh(beachGeometry, beachMaterial);
-    beachMesh.position.z = 70; // Moved to the south of the city
+    beachMesh.position.z = 70; // Positioned to the south (higher Z value)
     beachMesh.position.y = -1; // Align with ground level
     beachMesh.rotation.x = -Math.PI / 2;
     beachMesh.receiveShadow = true;
