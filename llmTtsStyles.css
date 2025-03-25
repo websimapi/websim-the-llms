@@ -6,9 +6,17 @@
 }
 
 .show-all-languages {
-    margin-top: 5px;
+    margin-top: 8px;
     display: flex;
     align-items: center;
+    background-color: rgba(60, 179, 113, 0.1);
+    border-radius: 6px;
+    padding: 8px 12px;
+    transition: background-color 0.3s;
+}
+
+.show-all-languages:hover {
+    background-color: rgba(60, 179, 113, 0.2);
 }
 
 .show-all-label {
@@ -18,7 +26,7 @@
     font-size: 0.9rem;
     cursor: pointer;
     width: 100%;
-    margin: 0;
+    justify-content: space-between;
 }
 
 .setting-checkbox {
@@ -26,24 +34,7 @@
     height: 18px;
     margin: 0;
     cursor: pointer;
-}
-
-/* Improve alignment with voice dropdown */
-.voice-selector-wrapper {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-.voice-selector-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-}
-
-.voice-selector-dropdown {
-    flex: 1;
+    accent-color: #3cb371;
 }
 
 /* Mobile adjustments */
@@ -55,5 +46,9 @@
     .setting-checkbox {
         width: 22px;
         height: 22px;
+    }
+    
+    .show-all-languages {
+        padding: 10px 15px;
     }
 }

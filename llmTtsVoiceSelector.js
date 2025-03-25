@@ -38,24 +38,20 @@ function createVoiceSelectorUI() {
     const voiceSelectorContainer = document.createElement('div');
     voiceSelectorContainer.className = 'tts-voice-selector';
     
-    // Add the HTML for the voice selector with improved layout
+    // Add the HTML for the voice selector
     voiceSelectorContainer.innerHTML = `
         <div class="setting-item">
             <label class="setting-label" for="llm-tts-voice">Voice</label>
-            <div class="voice-selector-wrapper">
-                <div class="voice-selector-row">
-                    <select id="llm-tts-voice" class="setting-select voice-selector-dropdown">
-                        <option value="">Select a voice</option>
-                        <!-- Voices will be populated here -->
-                    </select>
-                </div>
-                <div class="voice-selector-row show-all-languages">
-                    <label class="setting-label show-all-label">
-                        <input type="checkbox" id="show-all-languages" class="setting-checkbox">
-                        Show all languages
-                    </label>
-                </div>
-            </div>
+            <select id="llm-tts-voice" class="setting-select">
+                <option value="">Select a voice</option>
+                <!-- Voices will be populated here -->
+            </select>
+        </div>
+        <div class="setting-item show-all-languages">
+            <label class="setting-label show-all-label">
+                <input type="checkbox" id="show-all-languages" class="setting-checkbox">
+                Show all languages
+            </label>
         </div>
     `;
     
