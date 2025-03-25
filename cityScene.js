@@ -86,9 +86,7 @@ function initCityScene() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimized pixel ratio
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadow mapping
-    renderer.outputEncoding = THREE.sRGBEncoding; // Improved color space
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; // Improved tone mapping
-    renderer.toneMappingExposure = 1.2; // Adjust exposure for better lighting
+    
     cityViewElement.appendChild(renderer.domElement);
     
     // Add orbit controls
