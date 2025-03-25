@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { cityData } from './cityData.js';
 
 let hoverInfoElement;
