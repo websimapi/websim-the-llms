@@ -91,7 +91,7 @@ export function setupLLMCreationInterface(llmToEdit) {
         });
     });
     
-    // Set form values from existing LLM if editing
+    // Reset form values from existing LLM if editing
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
@@ -123,9 +123,6 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Add event listener to form elements to update overlay
     document.getElementById('llm-name').addEventListener('input', updateOverlayFromForm);
     document.getElementById('llm-model').addEventListener('change', updateOverlayFromForm);
-    
-    // Call updateOverlayFromForm immediately to sync UI state
-    setTimeout(updateOverlayFromForm, 100);
     
     // Add event listener for create button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
