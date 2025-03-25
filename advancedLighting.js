@@ -26,20 +26,20 @@ export function setupSceneLighting(scene, renderer) {
     
     // Main directional light (sun)
     const sunLight = new THREE.DirectionalLight(0xfffae5, 1.0); // Warm sunlight color
-    sunLight.position.set(100, 150, 100); // Positioned further for larger scene
+    sunLight.position.set(50, 100, 50);
     sunLight.castShadow = true;
     
     // Configure shadow properties for better quality and performance
-    sunLight.shadow.mapSize.width = 4096;  // Higher res shadows for larger scene
-    sunLight.shadow.mapSize.height = 4096;
+    sunLight.shadow.mapSize.width = 2048;  // Higher res shadows
+    sunLight.shadow.mapSize.height = 2048;
     
-    // Optimize shadow camera frustum to cover larger scene area
+    // Optimize shadow camera frustum to cover scene area
     sunLight.shadow.camera.near = 10;
-    sunLight.shadow.camera.far = 500;  // Increased for larger scene
-    sunLight.shadow.camera.left = -150; // Increased for larger scene
-    sunLight.shadow.camera.right = 150;
-    sunLight.shadow.camera.top = 150;
-    sunLight.shadow.camera.bottom = -150;
+    sunLight.shadow.camera.far = 200;
+    sunLight.shadow.camera.left = -60;
+    sunLight.shadow.camera.right = 60;
+    sunLight.shadow.camera.top = 60;
+    sunLight.shadow.camera.bottom = -60;
     sunLight.shadow.bias = -0.0005; // Reduce shadow acne
     sunLight.shadow.normalBias = 0.02; // Improve normal-mapped materials shadowing
     
@@ -53,10 +53,10 @@ export function setupSceneLighting(scene, renderer) {
     
     // Secondary fill light from opposite direction
     const fillLight = new THREE.DirectionalLight(0xdde9ff, 0.4); // Cooler fill light
-    fillLight.position.set(-80, 60, -80); // Positioned further for larger scene
+    fillLight.position.set(-30, 40, -30);
     scene.add(fillLight);
     
-    // Add subtle point lights around the expanded area
+    // Add subtle point lights for visual interest around central area
     addPointLights(scene);
     
     return {
@@ -72,13 +72,11 @@ export function setupSceneLighting(scene, renderer) {
  * @param {THREE.Scene} scene - The Three.js scene
  */
 function addPointLights(scene) {
-    // Create an array of positions for point lights - expanded for larger scene
+    // Create an array of positions for point lights
     const lightPositions = [
-        { x: 0, y: 10, z: -60, color: 0xffcc77, intensity: 2, distance: 50 },  // Warm light for welcome sign
-        { x: -60, y: 8, z: -60, color: 0x88ccff, intensity: 1.5, distance: 40 },  // Blue light for north outpost
-        { x: 60, y: 8, z: -40, color: 0x88ffaa, intensity: 1.5, distance: 40 },   // Green light for east outpost
-        { x: -40, y: 8, z: 70, color: 0xffaa88, intensity: 1.5, distance: 40 },   // Orange light for south research
-        { x: 70, y: 8, z: 60, color: 0xaaddff, intensity: 1.5, distance: 40 }     // Light blue for west heights
+        { x: 0, y: 7, z: -30, color: 0xffcc77, intensity: 1.5, distance: 25 },  // Warm light for welcome sign
+        { x: -8, y: 5, z: 0, color: 0x88ccff, intensity: 1, distance: 15 },     // Blue light for atmosphere
+        { x: 8, y: 5, z: 0, color: 0x88ffaa, intensity: 1, distance: 15 }       // Green light for atmosphere
     ];
     
     // Create and add point lights to the scene

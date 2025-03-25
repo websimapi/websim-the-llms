@@ -67,7 +67,7 @@ function initCityScene() {
     );
     
     // Set initial camera position further out for cinematic intro
-    camera.position.set(80, 40, 80); 
+    camera.position.set(50, 30, 50);
     camera.lookAt(0, 0, 0);
     
     // Create renderer
@@ -77,12 +77,12 @@ function initCityScene() {
         logarithmicDepthBuffer: true
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimized pixel ratio
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
-    renderer.outputEncoding = THREE.sRGBEncoding; 
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; 
-    renderer.toneMappingExposure = 1.2; 
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadow mapping
+    renderer.outputEncoding = THREE.sRGBEncoding; // Improved color space
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; // Improved tone mapping
+    renderer.toneMappingExposure = 1.2; // Adjust exposure for better lighting
     cityViewElement.appendChild(renderer.domElement);
     
     // Add orbit controls
@@ -93,13 +93,13 @@ function initCityScene() {
     controls.minDistance = 10;
     controls.maxDistance = 50;
     controls.maxPolarAngle = Math.PI / 2.5;
-    controls.enabled = false; 
+    controls.enabled = false; // Disable controls during intro animation
     
     // Setup advanced lighting - use new function from dedicated file
     setupSceneLighting(scene, renderer);
     
-    // Create ground plane - increased size
-    const groundGeometry = new THREE.PlaneGeometry(500, 500);
+    // Create ground plane
+    const groundGeometry = new THREE.PlaneGeometry(500, 500); 
     const groundMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x7cfc00,
         roughness: 0.8,
@@ -110,29 +110,18 @@ function initCityScene() {
     ground.receiveShadow = true;
     scene.add(ground);
     
-    // Add grid for reference - increased size
-    const gridHelper = new THREE.GridHelper(500, 500, 0x000000, 0x555555);
+    // Add grid for reference - 1m x 1m grid squares
+    const gridHelper = new THREE.GridHelper(500, 500, 0x000000, 0x555555); 
     scene.add(gridHelper);
     
-    // Create terrain in the background with added details
-    import('./terrainGenerator.js').then(module => {
-        const terrain = module.generateTerrain(scene);
-        scene.add(terrain);
-        
-        // Add enhanced ground details
-        import('./enhancedTerrainUtils.js').then(enhancedModule => {
-            enhancedModule.enhanceGroundDetail(scene, ground);
-        });
-    });
-    
-    // Create building lots from cityData with more spread
+    // Create building lots from cityData
     createBuildingLots(scene);
     
     // Setup console toggling
     setupConsoleToggle();
     
     // Setup camera intro animation
-    let introDuration = 4000; 
+    let introDuration = 4000; // 4 seconds for intro
     let introStartTime = Date.now();
     let introComplete = false;
     let audioFadeStarted = false;
@@ -158,13 +147,13 @@ function initCityScene() {
             
             if (progress < 1) {
                 // Interpolate camera position for smooth pan
-                const targetX = 25; 
-                const targetY = 30; 
-                const targetZ = 45; 
+                const targetX = 15; // Increased from 0 to stay further out
+                const targetY = 25; // Increased from 20
+                const targetZ = 30; // Increased from 20 to maintain more distance
                 
-                camera.position.x = 80 * (1 - progress) + targetX * progress;
-                camera.position.y = 40 * (1 - progress) + targetY * progress;
-                camera.position.z = 80 * (1 - progress) + targetZ * progress;
+                camera.position.x = 50 * (1 - progress) + targetX * progress;
+                camera.position.y = 30 * (1 - progress) + targetY * progress;
+                camera.position.z = 50 * (1 - progress) + targetZ * progress;
                 camera.lookAt(0, 0, 0);
                 
                 /*
@@ -179,7 +168,7 @@ function initCityScene() {
                 */
             } else {
                 introComplete = true;
-                controls.enabled = true; 
+                controls.enabled = true; // Enable controls after intro
             }
         } else {
             controls.update();
@@ -201,111 +190,38 @@ function setupUIInteractions() {
 }
 
 function createBuildingLots(scene) {
-    // Create a modified copy of lots with expanded spacing
-    const expandedLots = cityData.lots.map(lot => {
-        // Ensure minimum size of 10x10
-        const width = Math.max(lot.width * 1.5, 10);
-        const height = Math.max(lot.height * 1.5, 10);
-        
-        return {
-            ...lot,
-            x: lot.x * 3, 
-            z: lot.z * 3, 
-            width: width, 
-            height: height
-        };
-    });
+    const lots = cityData.lots;
     
-    // Add some additional lots in more distant areas - avoid sign area (z from -70 to -30)
-    const additionalLots = [
-        { id: 8, name: "North Outpost", width: Math.max(12, 10), height: Math.max(12, 10), x: -60, z: -100, available: true, type: "residential" },
-        { id: 9, name: "East Outpost", width: Math.max(14, 10), height: Math.max(14, 10), x: 60, z: -100, available: true, type: "commercial" },
-        { id: 10, name: "South Research", width: Math.max(15, 10), height: Math.max(10, 10), x: -40, z: 70, available: true, type: "research" },
-        { id: 11, name: "West Heights", width: Math.max(12, 10), height: Math.max(12, 10), x: 70, z: 60, available: true, type: "residential" },
-        { id: 12, name: "Central Tower", width: Math.max(20, 10), height: Math.max(20, 10), x: 0, z: -110, available: true, type: "commercial" },
-        // Additional distant plots
-        { id: 13, name: "North Hills", width: Math.max(18, 10), height: Math.max(14, 10), x: -90, z: -130, available: true, type: "residential" },
-        { id: 14, name: "East Valley", width: Math.max(16, 10), height: Math.max(16, 10), x: 90, z: -80, available: true, type: "commercial" },
-        { id: 15, name: "Southern Meadows", width: Math.max(14, 10), height: Math.max(12, 10), x: -70, z: 100, available: true, type: "residential" },
-        { id: 16, name: "Western Plains", width: Math.max(15, 10), height: Math.max(15, 10), x: 100, z: 90, available: true, type: "research" }
-    ];
-    
-    // Combine original expanded lots with additional lots
-    const allLots = [...expandedLots, ...additionalLots];
-    
-    // Filter out any lots that are too close to the sign (z between -70 and -30)
-    const filteredLots = allLots.filter(lot => {
-        // Keep lots that aren't in the sign area
-        const minZ = lot.z - lot.height/2;
-        const maxZ = lot.z + lot.height/2;
-        
-        // Sign is at z = -60, so create a safe zone around it
-        const signZMin = -75;
-        const signZMax = -40;
-        
-        // Return true if lot doesn't overlap with sign area
-        return !(minZ <= signZMax && maxZ >= signZMin && Math.abs(lot.x) < 30);
-    });
-    
-    // Create visual representation of all lots
-    filteredLots.forEach(lot => {
-        // Create lot outline only using line segments
-        const halfWidth = lot.width / 2;
-        const halfHeight = lot.height / 2;
-        
-        // Create rectangle outline points
-        const outlineGeometry = new THREE.BufferGeometry();
-        const vertices = new Float32Array([
-            // Bottom rectangle
-            -halfWidth, 0.1, -halfHeight, -halfWidth, 0.1, halfHeight,
-            -halfWidth, 0.1, halfHeight, halfWidth, 0.1, halfHeight,
-            halfWidth, 0.1, halfHeight, halfWidth, 0.1, -halfHeight,
-            halfWidth, 0.1, -halfHeight, -halfWidth, 0.1, -halfHeight
-        ]);
-        
-        outlineGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-        
-        // Create line material with lot availability color
-        const outlineMaterial = new THREE.LineBasicMaterial({ 
-            color: lot.available ? 0xffeb3b : 0xbdbdbd,
-            linewidth: 2, // Note: linewidth may not work in all browsers
-        });
-        
-        const outline = new THREE.LineSegments(outlineGeometry, outlineMaterial);
-        outline.position.set(lot.x, 0.1, lot.z);
-        outline.userData = { type: 'lot', id: lot.id };
-        scene.add(outline);
-        
-        // Add corner posts for better visibility
-        const postGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 8);
-        const postMaterial = new THREE.MeshStandardMaterial({ 
+    lots.forEach(lot => {
+        // Create a lot as a raised platform
+        const lotGeometry = new THREE.BoxGeometry(lot.width, 0.2, lot.height);
+        const lotMaterial = new THREE.MeshStandardMaterial({ 
             color: lot.available ? 0xffeb3b : 0xbdbdbd,
             roughness: 0.7,
             metalness: 0.2
         });
         
-        // Add corner posts
-        [
-            [-halfWidth, 0.25, -halfHeight],
-            [-halfWidth, 0.25, halfHeight],
-            [halfWidth, 0.25, halfHeight],
-            [halfWidth, 0.25, -halfHeight]
-        ].forEach(pos => {
-            const post = new THREE.Mesh(postGeometry, postMaterial);
-            post.position.set(lot.x + pos[0], pos[1], lot.z + pos[2]);
-            post.castShadow = true;
-            post.receiveShadow = true;
-            scene.add(post);
-        });
+        const lotMesh = new THREE.Mesh(lotGeometry, lotMaterial);
+        lotMesh.position.set(lot.x, 0.1, lot.z);
+        lotMesh.receiveShadow = true;
+        lotMesh.userData = { type: 'lot', id: lot.id };
+        scene.add(lotMesh);
+        
+        // Add a wireframe outline
+        const wireframeGeometry = new THREE.EdgesGeometry(lotGeometry);
+        const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+        wireframe.position.copy(lotMesh.position);
+        scene.add(wireframe);
     });
     
-    // Add city name text - moved further away
-    addCityNameText(scene, 0, 5, -60); 
+    // Add city name text
+    addCityNameText(scene);
 }
 
-function addCityNameText(scene, x = 0, y = 5, z = -60) {
-    // Create larger, more ornate stone pillars
-    const pillarGeometry = new THREE.BoxGeometry(2, 15, 2);
+function addCityNameText(scene) {
+    // Create stone pillars
+    const pillarGeometry = new THREE.BoxGeometry(1, 10, 1);
     const pillarMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x808080,
         roughness: 0.8,
@@ -314,39 +230,17 @@ function addCityNameText(scene, x = 0, y = 5, z = -60) {
     
     // Left pillar
     const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
-    leftPillar.position.set(x - 15, y, z);
+    leftPillar.position.set(-8, 5, -30);
     leftPillar.castShadow = true;
     leftPillar.receiveShadow = true;
     scene.add(leftPillar);
     
     // Right pillar
     const rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
-    rightPillar.position.set(x + 15, y, z);
+    rightPillar.position.set(8, 5, -30);
     rightPillar.castShadow = true;
     rightPillar.receiveShadow = true;
     scene.add(rightPillar);
-    
-    // Add decorative pillar tops
-    const capGeometry = new THREE.BoxGeometry(3, 1.5, 3);
-    const capMaterial = new THREE.MeshStandardMaterial({
-        color: 0x707070,
-        roughness: 0.7,
-        metalness: 0.3
-    });
-    
-    // Left cap
-    const leftCap = new THREE.Mesh(capGeometry, capMaterial);
-    leftCap.position.set(x - 15, y + 8, z);
-    leftCap.castShadow = true;
-    leftCap.receiveShadow = true;
-    scene.add(leftCap);
-    
-    // Right cap
-    const rightCap = new THREE.Mesh(capGeometry, capMaterial);
-    rightCap.position.set(x + 15, y + 8, z);
-    rightCap.castShadow = true;
-    rightCap.receiveShadow = true;
-    scene.add(rightCap);
     
     // Create text canvas for front and back
     const canvasWithText = document.createElement('canvas');
@@ -366,39 +260,29 @@ function addCityNameText(scene, x = 0, y = 5, z = -60) {
         context.fillStyle = '#8B4513';
         context.fillRect(0, 0, canvasWithText.width, canvasWithText.height);
         
-        // Add wood grain effect with more variation
+        // Add wood grain effect
         context.strokeStyle = '#6B3100';
         context.lineWidth = 2;
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < 10; i++) {
             context.beginPath();
-            context.moveTo(0, i * 10);
+            context.moveTo(0, i * 15);
             context.bezierCurveTo(
-                canvasWithText.width * 0.3, i * 10 + (Math.random() * 15 - 7),
-                canvasWithText.width * 0.7, i * 10 + (Math.random() * 15 - 7),
-                canvasWithText.width, i * 10
+                canvasWithText.width * 0.3, i * 15 + (Math.random() * 10 - 5),
+                canvasWithText.width * 0.7, i * 15 + (Math.random() * 10 - 5),
+                canvasWithText.width, i * 15
             );
             context.stroke();
         }
     });
     
-    // Text with border and enhanced styling
+    // Text with border - only on the text canvas
     contextWithText.fillStyle = 'white';
     contextWithText.font = 'bold 60px Arial';
     contextWithText.textAlign = 'center';
     contextWithText.textBaseline = 'middle';
-    
-    // Add text shadow for depth
-    contextWithText.shadowColor = 'rgba(0, 0, 0, 0.6)';
-    contextWithText.shadowBlur = 10;
-    contextWithText.shadowOffsetX = 4;
-    contextWithText.shadowOffsetY = 4;
-    
-    // Text outline
     contextWithText.strokeStyle = 'black';
     contextWithText.lineWidth = 4;
     contextWithText.strokeText(cityData.name, canvasWithText.width / 2, canvasWithText.height / 2);
-    
-    // Text fill
     contextWithText.fillText(cityData.name, canvasWithText.width / 2, canvasWithText.height / 2);
     
     // Create textures
@@ -418,18 +302,18 @@ function addCityNameText(scene, x = 0, y = 5, z = -60) {
     
     // Create materials array for BoxGeometry
     const materials = [
-        sideMaterial,       
-        sideMaterial,       
-        sideMaterial,       
-        sideMaterial,       
-        frontBackMaterial,  
-        frontBackMaterial   
+        sideMaterial,       // right side
+        sideMaterial,       // left side
+        sideMaterial,       // top side
+        sideMaterial,       // bottom side
+        frontBackMaterial,  // front side
+        frontBackMaterial   // back side
     ];
     
-    // Create larger sign
-    const geometry = new THREE.BoxGeometry(35, 8, 0.6);
+    // Create box with different materials per face
+    const geometry = new THREE.BoxGeometry(20, 5, 0.5);
     const sign = new THREE.Mesh(geometry, materials);
-    sign.position.set(x, y + 5, z); // Raised higher
+    sign.position.set(0, 8.5, -30);
     sign.castShadow = true;
     scene.add(sign);
 }
