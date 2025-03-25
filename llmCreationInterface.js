@@ -33,6 +33,8 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Reset profile image display to clear any previous images
     import('./llmCreationInterfaceCompact.js').then(module => {
         module.resetProfileImageDisplay();
+    }).catch(error => {
+        console.error('Error resetting profile image display:', error);
     });
     
     // Setup default values for the form

@@ -83,8 +83,20 @@ export function setupLLMCollectionView(selectLLMId = null) {
             // Setup carousel
             setupLLMCarousel(collectionViewport, llms);
             
-            // Add profile images to the list items 
-            addProfileImagesToLLMList();
+            // Add profile images to the list items
+            try {
+                import('./llmProfileImageDisplay.js').then(module => {
+                    if (typeof module.addProfileImagesToLLMList === 'function') {
+                        module.addProfileImagesToLLMList();
+                    } else {
+                        console.error('addProfileImagesToLLMList is not a function');
+                    }
+                }).catch(error => {
+                    console.error('Error loading profile image display module:', error);
+                });
+            } catch (error) {
+                console.error('Error adding profile images to LLM list:', error);
+            }
             
             // Add click event to viewport for model selection
             collectionViewport.addEventListener('click', handleViewportClick);
@@ -205,17 +217,4 @@ function deleteLLM(id) {
         // Refresh the UI
         setupLLMCollectionView();
     }
-}
-
-// Helper function to add profile images to the list view
-function addProfileImagesToLLMList() {
-    import('./llmProfileImageDisplay.js').then(module => {
-        if (typeof module.addProfileImagesToLLMList === 'function') {
-            module.addProfileImagesToLLMList();
-        } else {
-            console.error('addProfileImagesToLLMList function not found in module');
-        }
-    }).catch(error => {
-        console.error('Error loading profile image display module:', error);
-    });
 }
