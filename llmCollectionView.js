@@ -85,7 +85,13 @@ export function setupLLMCollectionView(selectLLMId = null) {
             
             // Add profile images to the list items
             import('./llmProfileImageDisplay.js').then(module => {
-                module.addProfileImagesToLLMList();
+                if (typeof module.addProfileImagesToLLMList === 'function') {
+                    module.addProfileImagesToLLMList();
+                } else {
+                    console.error('addProfileImagesToLLMList function not found in module');
+                }
+            }).catch(err => {
+                console.error('Error loading profile image display module:', err);
             });
             
             // Add click event to viewport for model selection
@@ -111,9 +117,9 @@ export function setupLLMCollectionView(selectLLMId = null) {
             
             // Select specific LLM if ID provided, otherwise select first one
             if (selectLLMId) {
-                selectModel(selectLLMId);
+                setTimeout(() => selectModel(selectLLMId), 100);
             } else if (llms.length > 0) {
-                selectModel(llms[0].id);
+                setTimeout(() => selectModel(llms[0].id), 100);
             }
         }
     }, 100);
