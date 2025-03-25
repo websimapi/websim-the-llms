@@ -238,8 +238,10 @@ function updateVolumeUI() {
         const volumeClass = ['muted', 'volume-25', 'volume-50', 'volume-75', 'volume-100'][musicVolume];
         toggleButton.classList.add(volumeClass);
         
-        // Add playing animation if music is on
-        toggleButton.classList.add('playing');
+        // Add playing animation if music is on AND actually playing
+        if (!bgAudio.paused) {
+            toggleButton.classList.add('playing');
+        }
     }
     
     // Update volume dots
@@ -258,12 +260,14 @@ export function playMusic() {
         bgAudio.play().catch(err => {
             console.error("Error playing audio:", err);
         });
+        updateVolumeUI(); // Add this line
     }
 }
 
 export function pauseMusic() {
     if (bgAudio) {
         bgAudio.pause();
+        updateVolumeUI(); // Add this line
     }
 }
 

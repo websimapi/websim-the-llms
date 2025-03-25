@@ -8,6 +8,7 @@ import { setupLLMCollectionView } from './llmCollectionView.js';
 import { setupMusicPlayer } from './musicPlayer.js';
 
 let bgAudio;
+let musicVolume;
 let useLLMTips = localStorage.getItem('useLLMTips') !== null ? 
     localStorage.getItem('useLLMTips') === 'true' : true;
 let tipFetchInterval;
@@ -225,6 +226,24 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingBar.style.width = `${progress}%`;
             loadingPercentage.textContent = `${Math.round(progress)}%`;
         }, interval);
+        
+        // Update music animation state when audio state changes
+        if (bgAudio) {
+            bgAudio.addEventListener('play', updateMusicAnimation);
+            bgAudio.addEventListener('pause', updateMusicAnimation);
+        }
+    }
+
+    // New function to update music animation based on play state
+    function updateMusicAnimation() {
+        const toggleButton = document.querySelector('.music-toggle-button');
+        if (toggleButton) {
+            if (bgAudio && !bgAudio.paused && musicVolume > 0) {
+                toggleButton.classList.add('playing');
+            } else {
+                toggleButton.classList.remove('playing');
+            }
+        }
     }
     
     // Setup console panel functionality
