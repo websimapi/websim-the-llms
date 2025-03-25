@@ -9,15 +9,15 @@ export function setupAdvancedLighting(scene, camera, renderer, options = {}) {
     const config = {
         enableSSAO: true,
         enableBloom: true,
-        bloomStrength: 0.5,
-        bloomRadius: 0.4,
+        bloomStrength: 0.35, 
+        bloomRadius: 0.3,    
         bloomThreshold: 0.85,
         shadowMapSize: 2048,
-        shadowBias: -0.001,
+        shadowBias: -0.0005, 
         ...options
     };
     
-    // Set up shadow map
+    // Set up shadow map with better quality settings
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
@@ -30,12 +30,13 @@ export function setupAdvancedLighting(scene, camera, renderer, options = {}) {
     directionalLight.position.set(50, 80, 50);
     directionalLight.castShadow = true;
     
-    // Configure shadow properties
+    // Configure shadow properties with higher resolution
     directionalLight.shadow.mapSize.width = config.shadowMapSize;
     directionalLight.shadow.mapSize.height = config.shadowMapSize;
     directionalLight.shadow.camera.near = 0.5;
     directionalLight.shadow.camera.far = 500;
     directionalLight.shadow.bias = config.shadowBias;
+    directionalLight.shadow.normalBias = 0.02; 
     
     // Set up shadow camera frustum to cover scene
     const shadowSize = 100;
@@ -91,6 +92,10 @@ export function setupAdvancedLighting(scene, camera, renderer, options = {}) {
                 config.bloomRadius,
                 config.bloomThreshold
             );
+            // Add selective bloom to reduce fuzziness
+            bloomPass.threshold = config.bloomThreshold;
+            bloomPass.strength = config.bloomStrength;
+            bloomPass.radius = config.bloomRadius;
             composer.addPass(bloomPass);
         }
     }

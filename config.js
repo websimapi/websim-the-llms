@@ -28,9 +28,9 @@ export const config = {
         shadowMapSize: 2048,
         enableSSAO: true,
         enableBloom: true,
-        bloomStrength: 0.5,
-        bloomRadius: 0.4,
-        bloomThreshold: 0.85
+        bloomStrength: 0.35, 
+        bloomRadius: 0.3,    
+        bloomThreshold: 0.9  
     },
 
     // Music player settings

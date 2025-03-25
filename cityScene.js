@@ -77,6 +77,7 @@ function initCityScene() {
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit to 2x for performance
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Better shadow quality
     cityViewElement.appendChild(renderer.domElement);
     
     // Add orbit controls
