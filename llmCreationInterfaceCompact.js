@@ -98,16 +98,7 @@ export function updatePointsDisplay() {
 
 // New function to reset profile image display when opening creation UI
 export function resetProfileImageDisplay() {
-    // Remove any existing profile image container first to prevent duplication
-    const existingDisplays = document.querySelectorAll('.profile-image-display');
-    if (existingDisplays.length > 1) {
-        // Remove all but the first one
-        for (let i = 1; i < existingDisplays.length; i++) {
-            existingDisplays[i].remove();
-        }
-    }
-    
-    // Now clear the display or update with current data
+    // Clear current profile image display
     const placeholder = document.querySelector('.profile-image-placeholder');
     const imageElement = document.querySelector('.profile-image');
     

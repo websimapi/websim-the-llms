@@ -84,19 +84,9 @@ export function setupLLMCollectionView(selectLLMId = null) {
             setupLLMCarousel(collectionViewport, llms);
             
             // Add profile images to the list items
-            try {
-                import('./llmProfileImageDisplay.js').then(module => {
-                    if (typeof module.addProfileImagesToLLMList === 'function') {
-                        module.addProfileImagesToLLMList();
-                    } else {
-                        console.error('addProfileImagesToLLMList is not a function');
-                    }
-                }).catch(error => {
-                    console.error('Error loading profile image display module:', error);
-                });
-            } catch (error) {
-                console.error('Error adding profile images to LLM list:', error);
-            }
+            import('./llmProfileImageDisplay.js').then(module => {
+                module.addProfileImagesToLLMList();
+            });
             
             // Add click event to viewport for model selection
             collectionViewport.addEventListener('click', handleViewportClick);
