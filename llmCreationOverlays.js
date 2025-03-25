@@ -171,16 +171,20 @@ export function updateOverlayFromForm() {
     const brushTip = document.querySelector('.brush-tip');
     const colorInputOverlay = document.querySelector('.color-input-overlay');
     
-    if (nameInput) {
-        nameInput.value = document.getElementById('llm-name').value;
+    const llmNameInput = document.getElementById('llm-name');
+    const llmModelInput = document.getElementById('llm-model');
+    const llmColorInput = document.getElementById('llm-color');
+    
+    if (nameInput && llmNameInput) {
+        nameInput.value = llmNameInput.value;
     }
     
-    const currentModel = document.getElementById('llm-model').value;
+    const currentModel = llmModelInput ? llmModelInput.value : 'assistant';
     if (modelTypeIcon) {
         modelTypeIcon.innerHTML = modelTypeIcons[currentModel] || modelTypeIcons.assistant;
     }
     
-    const currentColor = document.getElementById('llm-color').value;
+    const currentColor = llmColorInput ? llmColorInput.value : '#3cb371';
     if (brushTip) {
         brushTip.style.backgroundColor = currentColor;
     }

@@ -47,6 +47,7 @@ export function setupLLMCreationInterface(llmToEdit) {
         const colorInput = document.getElementById('llm-color');
         const customPromptInput = document.getElementById('llm-custom-prompt');
         
+        // Add null checks to prevent errors when elements don't exist yet
         if (nameInput) nameInput.value = llmToEdit.name || `LLM-${Math.floor(Math.random() * 1000)}`;
         if (modelSelect) modelSelect.value = llmToEdit.model || 'assistant';
         if (colorInput) colorInput.value = llmToEdit.color || '#3cb371';
@@ -54,13 +55,17 @@ export function setupLLMCreationInterface(llmToEdit) {
         
         // Store the edit ID on the form
         const createUI = document.getElementById('create-llm-ui');
-        createUI.setAttribute('data-edit-mode', 'true');
-        createUI.setAttribute('data-edit-id', llmToEdit.id);
+        if (createUI) {
+            createUI.setAttribute('data-edit-mode', 'true');
+            createUI.setAttribute('data-edit-id', llmToEdit.id);
+        }
     } else {
         // Clear edit mode flags if not editing
         const createUI = document.getElementById('create-llm-ui');
-        createUI.removeAttribute('data-edit-mode');
-        createUI.removeAttribute('data-edit-id');
+        if (createUI) {
+            createUI.removeAttribute('data-edit-mode');
+            createUI.removeAttribute('data-edit-id');
+        }
     }
     
     // Initialize attribute system
