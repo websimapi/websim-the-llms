@@ -111,7 +111,7 @@ function initCityScene() {
     scene.add(ground);
     
     // Add grid for reference - increased size
-    const gridHelper = new THREE.GridHelper(500, 100, 0x000000, 0x555555);
+    const gridHelper = new THREE.GridHelper(500, 500, 0x000000, 0x555555);
     scene.add(gridHelper);
     
     // Create terrain in the background with added details
@@ -203,27 +203,31 @@ function setupUIInteractions() {
 function createBuildingLots(scene) {
     // Create a modified copy of lots with expanded spacing
     const expandedLots = cityData.lots.map(lot => {
+        // Ensure minimum size of 10x10
+        const width = Math.max(lot.width * 1.5, 10);
+        const height = Math.max(lot.height * 1.5, 10);
+        
         return {
             ...lot,
             x: lot.x * 3, 
             z: lot.z * 3, 
-            width: lot.width * 1.5, 
-            height: lot.height * 1.5
+            width: width, 
+            height: height
         };
     });
     
     // Add some additional lots in more distant areas - avoid sign area (z from -70 to -30)
     const additionalLots = [
-        { id: 8, name: "North Outpost", width: 12, height: 12, x: -60, z: -100, available: true, type: "residential" },
-        { id: 9, name: "East Outpost", width: 14, height: 14, x: 60, z: -100, available: true, type: "commercial" },
-        { id: 10, name: "South Research", width: 15, height: 10, x: -40, z: 70, available: true, type: "research" },
-        { id: 11, name: "West Heights", width: 12, height: 12, x: 70, z: 60, available: true, type: "residential" },
-        { id: 12, name: "Central Tower", width: 20, height: 20, x: 0, z: -110, available: true, type: "commercial" },
+        { id: 8, name: "North Outpost", width: Math.max(12, 10), height: Math.max(12, 10), x: -60, z: -100, available: true, type: "residential" },
+        { id: 9, name: "East Outpost", width: Math.max(14, 10), height: Math.max(14, 10), x: 60, z: -100, available: true, type: "commercial" },
+        { id: 10, name: "South Research", width: Math.max(15, 10), height: Math.max(10, 10), x: -40, z: 70, available: true, type: "research" },
+        { id: 11, name: "West Heights", width: Math.max(12, 10), height: Math.max(12, 10), x: 70, z: 60, available: true, type: "residential" },
+        { id: 12, name: "Central Tower", width: Math.max(20, 10), height: Math.max(20, 10), x: 0, z: -110, available: true, type: "commercial" },
         // Additional distant plots
-        { id: 13, name: "North Hills", width: 18, height: 14, x: -90, z: -130, available: true, type: "residential" },
-        { id: 14, name: "East Valley", width: 16, height: 16, x: 90, z: -80, available: true, type: "commercial" },
-        { id: 15, name: "Southern Meadows", width: 14, height: 12, x: -70, z: 100, available: true, type: "residential" },
-        { id: 16, name: "Western Plains", width: 15, height: 15, x: 100, z: 90, available: true, type: "research" }
+        { id: 13, name: "North Hills", width: Math.max(18, 10), height: Math.max(14, 10), x: -90, z: -130, available: true, type: "residential" },
+        { id: 14, name: "East Valley", width: Math.max(16, 10), height: Math.max(16, 10), x: 90, z: -80, available: true, type: "commercial" },
+        { id: 15, name: "Southern Meadows", width: Math.max(14, 10), height: Math.max(12, 10), x: -70, z: 100, available: true, type: "residential" },
+        { id: 16, name: "Western Plains", width: Math.max(15, 10), height: Math.max(15, 10), x: 100, z: 90, available: true, type: "research" }
     ];
     
     // Combine original expanded lots with additional lots
