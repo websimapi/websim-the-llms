@@ -347,23 +347,6 @@ function addCityNameText(scene, x = 0, y = 5, z = -60) {
             );
             context.stroke();
         }
-
-        // Add wood knots for realism
-        for (let i = 0; i < 3; i++) {
-            const knotX = Math.random() * canvasWithText.width;
-            const knotY = Math.random() * canvasWithText.height;
-            const knotRadius = 5 + Math.random() * 10;
-            
-            context.beginPath();
-            context.arc(knotX, knotY, knotRadius, 0, Math.PI * 2);
-            context.fillStyle = '#5D280A';
-            context.fill();
-            
-            context.beginPath();
-            context.arc(knotX, knotY, knotRadius * 0.6, 0, Math.PI * 2);
-            context.fillStyle = '#4A2208';
-            context.fill();
-        }
     });
     
     // Text with border and enhanced styling
