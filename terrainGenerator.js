@@ -26,23 +26,28 @@ function addMountainRange(parent, offsetX, offsetZ, color, scale = 1.0) {
         const x = (i / (numPeaks - 1) * rangeWidth) - (rangeWidth / 2) + offsetX;
         const z = offsetZ + (Math.random() * 50 - 25) * scale;
         
-        // Create mountain peak
+        // Create mountain peak with more detailed geometry
         const peakHeight = (30 + Math.random() * 50) * scale;
         const radius = (20 + Math.random() * 30) * scale;
         
         const mountainGeometry = new THREE.ConeGeometry(
             radius, 
             peakHeight, 
-            Math.floor(8 + Math.random() * 6)
+            Math.floor(12 + Math.random() * 8) 
         );
         
-        // Create noise-based material with color variation
+        // Create noise-based material with color variation and better shading
         const baseColor = new THREE.Color(color);
+        baseColor.r += (Math.random() * 0.1 - 0.05);
+        baseColor.g += (Math.random() * 0.1 - 0.05);
+        baseColor.b += (Math.random() * 0.1 - 0.05);
+        
         const mountainMaterial = new THREE.MeshStandardMaterial({
             color: baseColor,
             roughness: 0.9,
             metalness: 0.1,
-            flatShading: true
+            flatShading: true,
+            normalScale: new THREE.Vector2(1, 1)
         });
         
         // Create mountain mesh
@@ -54,7 +59,7 @@ function addMountainRange(parent, offsetX, offsetZ, color, scale = 1.0) {
         // Apply random rotation to make peaks look more natural
         mountain.rotation.y = Math.random() * Math.PI;
         
-        // Add some noise to vertices for more natural look
+        // Apply more complex noise to vertices for more natural look
         const positions = mountain.geometry.attributes.position;
         
         for (let j = 0; j < positions.count; j++) {
@@ -63,14 +68,16 @@ function addMountainRange(parent, offsetX, offsetZ, color, scale = 1.0) {
             
             // Don't modify the peak point or base rim
             if (vertex.y < peakHeight * 0.95 && vertex.y > 0) {
-                // Apply noise based on position
-                const noise = (Math.random() * 2 - 1) * radius * 0.15;
+                const noise1 = (Math.random() * 2 - 1) * radius * 0.15;
+                const noise2 = (Math.random() * 2 - 1) * radius * 0.08;
                 const normalizedHeight = vertex.y / peakHeight;
                 
-                // More noise in the middle, less at top and bottom
                 const noiseFactor = (1 - normalizedHeight) * normalizedHeight * 4;
-                vertex.x += noise * noiseFactor;
-                vertex.z += noise * noiseFactor;
+                
+                vertex.x += noise1 * noiseFactor + noise2 * noiseFactor * 2;
+                vertex.z += noise1 * noiseFactor + noise2 * noiseFactor * 2;
+                
+                vertex.y += noise2 * noiseFactor * peakHeight * 0.05;
             }
             
             positions.setXYZ(j, vertex.x, vertex.y, vertex.z);
@@ -81,21 +88,30 @@ function addMountainRange(parent, offsetX, offsetZ, color, scale = 1.0) {
         
         parent.add(mountain);
         
-        // Add smaller sub-peaks for more complex mountains
-        if (Math.random() > 0.6) {
-            const numSubPeaks = Math.floor(Math.random() * 3) + 1;
+        if (Math.random() > 0.4) {
+            const numSubPeaks = Math.floor(Math.random() * 4) + 2;
             
             for (let k = 0; k < numSubPeaks; k++) {
-                const subRadius = radius * 0.4;
-                const subHeight = peakHeight * 0.5;
-                const subPeakGeometry = new THREE.ConeGeometry(
-                    subRadius,
-                    subHeight,
-                    Math.floor(6 + Math.random() * 4)
-                );
+                const subRadius = radius * (0.3 + Math.random() * 0.3);
+                const subHeight = peakHeight * (0.3 + Math.random() * 0.4);
+                
+                let subPeakGeometry;
+                if (Math.random() > 0.5) {
+                    subPeakGeometry = new THREE.ConeGeometry(
+                        subRadius,
+                        subHeight,
+                        Math.floor(8 + Math.random() * 5)
+                    );
+                } else {
+                    subPeakGeometry = new THREE.DodecahedronGeometry(
+                        subRadius * 0.8,
+                        Math.floor(Math.random() * 2) 
+                    );
+                    subPeakGeometry.scale(1, subHeight/(subRadius*1.6), 1);
+                }
                 
                 const subColor = new THREE.Color(color);
-                subColor.multiplyScalar(0.9 + Math.random() * 0.2);
+                subColor.multiplyScalar(0.85 + Math.random() * 0.3);
                 
                 const subMaterial = new THREE.MeshStandardMaterial({
                     color: subColor,
@@ -106,16 +122,20 @@ function addMountainRange(parent, offsetX, offsetZ, color, scale = 1.0) {
                 
                 const subPeak = new THREE.Mesh(subPeakGeometry, subMaterial);
                 
-                // Position around the main peak
                 const angle = Math.random() * Math.PI * 2;
-                const distance = radius * 0.7;
+                const distance = radius * (0.6 + Math.random() * 0.5);
                 subPeak.position.set(
                     x + Math.sin(angle) * distance,
-                    subHeight / 2,
+                    (subHeight / 2) * (Math.random() * 0.4 + 0.8), 
                     z + Math.cos(angle) * distance
                 );
                 
-                subPeak.rotation.y = Math.random() * Math.PI;
+                subPeak.rotation.set(
+                    Math.random() * 0.3, 
+                    Math.random() * Math.PI, 
+                    Math.random() * 0.3  
+                );
+                
                 subPeak.castShadow = true;
                 subPeak.receiveShadow = true;
                 
