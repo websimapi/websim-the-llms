@@ -59,6 +59,9 @@ export function setupLLMCreationInterface(llmToEdit) {
     renderAttributeGrid();
     updatePointsDisplay();
     
+    // Initialize the humanoid preview
+    initHumanoidPreview(llmToEdit);
+    
     // Add event listeners for form elements that should update the humanoid preview
     document.getElementById('llm-color').addEventListener('input', updateSelectedMeshColor);
     
@@ -109,19 +112,13 @@ export function setupLLMCreationInterface(llmToEdit) {
     }
     
     // Make humanoidScene globally accessible for other modules
-    window.currentHumanoidScene = null;
-    
-    // Initialize the humanoid preview
-    initHumanoidPreview(llmToEdit);
+    window.currentHumanoidScene = humanoidScene;
     
     // Add the name and model type overlay
     createNameModelOverlay();
     
     // Make overlay inputs primary and ensure form data syncing
     makeOverlayInputsPrimary();
-    
-    // Make humanoidScene globally accessible
-    window.currentHumanoidScene = humanoidScene;
     
     // Update overlay when form elements change
     updateOverlayFromForm();

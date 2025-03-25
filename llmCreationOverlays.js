@@ -9,12 +9,24 @@ const modelTypeIcons = {
 // Create the overlay elements in the humanoid viewport
 export function createNameModelOverlay() {
     const humanoidViewport = document.querySelector('.humanoid-viewport');
-    if (!humanoidViewport) return;
+    if (!humanoidViewport) {
+        console.error('Cannot find humanoid viewport element for overlay');
+        return;
+    }
+    
+    // Check if overlay already exists to avoid duplicates
+    if (humanoidViewport.querySelector('.creation-overlay-container')) {
+        return;
+    }
     
     // Get current values from form
-    const currentName = document.getElementById('llm-name').value;
-    const currentModel = document.getElementById('llm-model').value;
-    const currentColor = document.getElementById('llm-color').value;
+    const nameInput = document.getElementById('llm-name');
+    const modelSelect = document.getElementById('llm-model');
+    const colorInput = document.getElementById('llm-color');
+    
+    const currentName = nameInput ? nameInput.value : `LLM-${Math.floor(Math.random() * 1000)}`;
+    const currentModel = modelSelect ? modelSelect.value : 'assistant';
+    const currentColor = colorInput ? colorInput.value : '#3cb371';
     
     // Create overlay container
     const overlayContainer = document.createElement('div');
@@ -27,11 +39,11 @@ export function createNameModelOverlay() {
     modelTypeIcon.addEventListener('click', toggleModelTypeDropdown);
     
     // Add name input
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.className = 'overlay-name-input';
-    nameInput.placeholder = 'Enter LLM name';
-    nameInput.value = currentName;
+    const nameInputOverlay = document.createElement('input');
+    nameInputOverlay.type = 'text';
+    nameInputOverlay.className = 'overlay-name-input';
+    nameInputOverlay.placeholder = 'Enter LLM name';
+    nameInputOverlay.value = currentName;
     
     // Add model type dropdown (initially hidden)
     const modelTypeDropdown = document.createElement('div');
@@ -65,7 +77,7 @@ export function createNameModelOverlay() {
     
     // Assemble elements
     overlayContainer.appendChild(modelTypeIcon);
-    overlayContainer.appendChild(nameInput);
+    overlayContainer.appendChild(nameInputOverlay);
     overlayContainer.appendChild(modelTypeDropdown);
     
     // Add to humanoid viewport
@@ -194,36 +206,37 @@ export function makeOverlayInputsPrimary() {
     const overlayNameInput = document.querySelector('.overlay-name-input');
     const colorInputOverlay = document.querySelector('.color-input-overlay');
     
-    if (overlayNameInput) {
-        // Make sure we have hidden input fields for form submission
-        let nameInput = document.getElementById('llm-name');
-        if (!nameInput) {
-            nameInput = document.createElement('input');
-            nameInput.type = 'hidden';
-            nameInput.id = 'llm-name';
-            document.querySelector('.create-llm-sidebar').appendChild(nameInput);
-        }
-        
-        // Ensure the name input reflects overlay changes
-        overlayNameInput.addEventListener('input', (e) => {
-            nameInput.value = e.target.value;
-        });
+    if (!overlayNameInput || !colorInputOverlay) {
+        console.error('Overlay inputs not found');
+        return;
     }
+    
+    // Make sure we have hidden input fields for form submission
+    let nameInput = document.getElementById('llm-name');
+    if (!nameInput) {
+        nameInput = document.createElement('input');
+        nameInput.type = 'hidden';
+        nameInput.id = 'llm-name';
+        document.querySelector('.create-llm-sidebar').appendChild(nameInput);
+    }
+        
+    // Ensure the name input reflects overlay changes
+    overlayNameInput.addEventListener('input', (e) => {
+        nameInput.value = e.target.value;
+    });
     
     // Similar setup for model type (handled by existing selectModelType function)
     
     // Make sure the main form color input is hidden but synced
-    if (colorInputOverlay) {
-        let colorInput = document.getElementById('llm-color');
-        if (!colorInput) {
-            colorInput = document.createElement('input');
-            colorInput.type = 'hidden';
-            colorInput.id = 'llm-color';
-            document.querySelector('.create-llm-sidebar').appendChild(colorInput);
-        }
-        
-        colorInputOverlay.addEventListener('input', (e) => {
-            colorInput.value = e.target.value;
-        });
+    let colorInput = document.getElementById('llm-color');
+    if (!colorInput) {
+        colorInput = document.createElement('input');
+        colorInput.type = 'hidden';
+        colorInput.id = 'llm-color';
+        document.querySelector('.create-llm-sidebar').appendChild(colorInput);
     }
+        
+    colorInputOverlay.addEventListener('input', (e) => {
+        colorInput.value = e.target.value;
+    });
 }
