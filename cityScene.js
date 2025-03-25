@@ -417,28 +417,6 @@ function addCityNameText(scene, x = 0, y = 5, z = -60) {
     sign.position.set(x, y + 5, z); // Raised higher
     sign.castShadow = true;
     scene.add(sign);
-    
-    // Add decorative supports below the sign
-    const supportGeometry = new THREE.BoxGeometry(2, 7, 0.5);
-    const supportMaterial = new THREE.MeshStandardMaterial({
-        color: 0x6D4C41,
-        roughness: 0.8,
-        metalness: 0.2
-    });
-    
-    // Left support
-    const leftSupport = new THREE.Mesh(supportGeometry, supportMaterial);
-    leftSupport.position.set(x - 10, y + 1, z + 0.1);
-    leftSupport.rotation.z = Math.PI / 12; // Slight angle
-    leftSupport.castShadow = true;
-    scene.add(leftSupport);
-    
-    // Right support
-    const rightSupport = new THREE.Mesh(supportGeometry, supportMaterial);
-    rightSupport.position.set(x + 10, y + 1, z + 0.1);
-    rightSupport.rotation.z = -Math.PI / 12; // Slight angle
-    rightSupport.castShadow = true;
-    scene.add(rightSupport);
 }
 
 function setupConsoleToggle() {
