@@ -21,17 +21,6 @@ export const config = {
     // City scene settings
     citySize: 100,
     groundColor: 0x7cfc00,
-    
-    // Advanced lighting settings
-    enableDayNightCycle: false,
-    lighting: {
-        shadowMapSize: 2048,
-        enableSSAO: true,
-        enableBloom: true,
-        bloomStrength: 0.35, 
-        bloomRadius: 0.3,    
-        bloomThreshold: 0.9  
-    },
 
     // Music player settings
     music: {

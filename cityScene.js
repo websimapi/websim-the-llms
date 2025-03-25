@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { config } from './config.js';
 import { cityData } from './cityData.js';
-import { setupAdvancedLighting } from './advancedLighting.js';
+import { setupSceneLighting } from './advancedLighting.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -73,11 +73,16 @@ function initCityScene() {
     // Create renderer
     const renderer = new THREE.WebGLRenderer({ 
         antialias: true,
-        powerPreference: "high-performance"
+        powerPreference: "high-performance",
+        logarithmicDepthBuffer: true
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit to 2x for performance
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Better shadow quality
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimized pixel ratio
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadow mapping
+    renderer.outputEncoding = THREE.sRGBEncoding; // Improved color space
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; // Improved tone mapping
+    renderer.toneMappingExposure = 1.2; // Adjust exposure for better lighting
     cityViewElement.appendChild(renderer.domElement);
     
     // Add orbit controls
@@ -90,20 +95,15 @@ function initCityScene() {
     controls.maxPolarAngle = Math.PI / 2.5;
     controls.enabled = false; // Disable controls during intro animation
     
-    // Setup advanced lighting
-    const lighting = setupAdvancedLighting(scene, camera, renderer, {
-        bloomStrength: 0.35,
-        bloomRadius: 0.3,
-        bloomThreshold: 0.9
-    });
+    // Setup advanced lighting - use new function from dedicated file
+    setupSceneLighting(scene, renderer);
     
-    // Create ground plane with more details
-    const groundGeometry = new THREE.PlaneGeometry(100, 100, 32, 32);
+    // Create ground plane
+    const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x7cfc00,
         roughness: 0.8,
-        metalness: 0.1,
-        flatShading: false
+        metalness: 0.2
     });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -134,11 +134,6 @@ function initCityScene() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        
-        // Update lighting effect sizes
-        if (lighting.composer) {
-            lighting.composer.setSize(window.innerWidth, window.innerHeight);
-        }
     });
     
     // Animation loop
@@ -178,18 +173,19 @@ function initCityScene() {
             controls.update();
         }
         
-        // Animate directional light for day/night cycling if needed
-        if (config.enableDayNightCycle) {
-            const time = Date.now() * 0.0001;
-            lighting.directionalLight.position.x = Math.sin(time) * 50;
-            lighting.directionalLight.position.z = Math.cos(time) * 50;
-        }
-        
-        // Use the composer for rendering if available
-        lighting.render();
+        renderer.render(scene, camera);
     }
     
     animate();
+}
+
+function setupUIInteractions() {
+    const createLLMButton = document.querySelector('.create-llm-btn');
+    
+    createLLMButton.addEventListener('click', () => {
+        console.log('Create new LLM clicked');
+        // Implementation for creating new LLM will go here
+    });
 }
 
 function createBuildingLots(scene) {
@@ -207,7 +203,6 @@ function createBuildingLots(scene) {
         const lotMesh = new THREE.Mesh(lotGeometry, lotMaterial);
         lotMesh.position.set(lot.x, 0.1, lot.z);
         lotMesh.receiveShadow = true;
-        lotMesh.castShadow = true; // Let lots cast shadows too
         lotMesh.userData = { type: 'lot', id: lot.id };
         scene.add(lotMesh);
         
@@ -337,13 +332,4 @@ function toggleConsolePanel() {
     } else {
         consolePanel.classList.add('hidden');
     }
-}
-
-function setupUIInteractions() {
-    const createLLMButton = document.querySelector('.create-llm-btn');
-    
-    createLLMButton.addEventListener('click', () => {
-        console.log('Create new LLM clicked');
-        // Implementation for creating new LLM will go here
-    });
 }
