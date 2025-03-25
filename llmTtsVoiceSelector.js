@@ -141,8 +141,11 @@ function setupVoiceSelectionListeners() {
                     statusElement.dataset.selectedVoice = selectedVoiceUri;
                 }
                 
-                // Automatically play a sample without needing to click test button
-                speakSample();
+                // Always speak a sample when a voice is selected
+                // Make sure this is called even on the first selection
+                setTimeout(() => {
+                    speakSample();
+                }, 100);
             } else {
                 selectedVoice = null;
             }
