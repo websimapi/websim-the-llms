@@ -4,6 +4,7 @@ import { config } from './config.js';
 import { cityData } from './cityData.js';
 import { setupSceneLighting } from './advancedLighting.js';
 import { createPlotOutline } from './plotConstructionElements.js';
+import { createInfiniteTerrain } from './infiniteTerrain.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -64,7 +65,7 @@ function initCityScene() {
         60, 
         window.innerWidth / window.innerHeight, 
         0.1, 
-        1000
+        2000
     );
     
     // Set initial camera position further out for cinematic intro
@@ -92,24 +93,15 @@ function initCityScene() {
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
     controls.minDistance = 10;
-    controls.maxDistance = 50;
+    controls.maxDistance = 150;
     controls.maxPolarAngle = Math.PI / 2.5;
     controls.enabled = false; // Disable controls during intro animation
     
     // Setup advanced lighting - use new function from dedicated file
     setupSceneLighting(scene, renderer);
     
-    // Create ground plane
-    const groundGeometry = new THREE.PlaneGeometry(500, 500); 
-    const groundMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x7cfc00,
-        roughness: 0.8,
-        metalness: 0.2
-    });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add(ground);
+    // Create infinite terrain instead of just a ground plane
+    const terrain = createInfiniteTerrain(scene, 500);
     
     // Add grid for reference - 1m x 1m grid squares
     const gridHelper = new THREE.GridHelper(500, 500, 0x000000, 0x555555); 

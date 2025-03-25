@@ -19,7 +19,7 @@ export const config = {
     },
     
     // City scene settings
-    citySize: 500, // Increased from 100
+    citySize: 2000, // Increased from 500 for larger world
     groundColor: 0x7cfc00,
 
     // Music player settings
