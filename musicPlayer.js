@@ -22,7 +22,7 @@ function createMusicPlayerUI() {
     const container = document.createElement('div');
     container.className = 'music-control-container';
     
-    // Create toggle button
+    // Create toggle button with a simple music note icon
     const toggleButton = document.createElement('button');
     toggleButton.className = 'music-toggle-button';
     toggleButton.innerHTML = `
@@ -157,6 +157,18 @@ function changeVolumeState() {
 
 function updateVolumeUI() {
     const volumeBars = document.querySelectorAll('.volume-bar');
+    const toggleButton = document.querySelector('.music-toggle-button');
+    
+    // Clear all volume classes
+    toggleButton.classList.remove('volume-1', 'volume-2', 'volume-3', 'volume-4');
+    
+    // Add appropriate volume class and playing animation
+    if (musicVolume > 0) {
+        toggleButton.classList.add(`volume-${musicVolume}`);
+        toggleButton.classList.add('playing');
+    } else {
+        toggleButton.classList.remove('playing');
+    }
     
     volumeBars.forEach((bar, index) => {
         if (index < musicVolume) {
