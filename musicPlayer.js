@@ -101,9 +101,6 @@ function initializeAudio() {
         musicVolume = config.music.defaultVolume;
     }
     
-    // Force preload the audio file even when muted
-    bgAudio.load();
-    
     // Don't auto-play, just update volume state UI
     updateVolumeUI();
     
@@ -154,6 +151,8 @@ function setupEventListeners() {
                 const objectURL = URL.createObjectURL(file);
                 changeTrack(objectURL, true);
                 toggleMusicMenu();
+                // Clear the input value to allow selecting the same file again
+                e.target.value = '';
             }
         });
     }
@@ -208,11 +207,6 @@ function changeVolumeState() {
     // Cycle through volume states
     musicVolume = (musicVolume + 1) % 5;
     updateVolumeState();
-    
-    // Ensure the audio is loaded even when toggling from muted
-    if (!bgAudio.readyState) {
-        bgAudio.load();
-    }
 }
 
 function updateVolumeState() {
