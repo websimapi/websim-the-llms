@@ -249,26 +249,54 @@ function createBuildingLots(scene) {
     
     // Create visual representation of all lots
     filteredLots.forEach(lot => {
-        // Create a lot as a raised platform
-        const lotGeometry = new THREE.BoxGeometry(lot.width, 0.2, lot.height);
-        const lotMaterial = new THREE.MeshStandardMaterial({ 
+        // Create lot outline only using line segments
+        const halfWidth = lot.width / 2;
+        const halfHeight = lot.height / 2;
+        
+        // Create rectangle outline points
+        const outlineGeometry = new THREE.BufferGeometry();
+        const vertices = new Float32Array([
+            // Bottom rectangle
+            -halfWidth, 0.1, -halfHeight, -halfWidth, 0.1, halfHeight,
+            -halfWidth, 0.1, halfHeight, halfWidth, 0.1, halfHeight,
+            halfWidth, 0.1, halfHeight, halfWidth, 0.1, -halfHeight,
+            halfWidth, 0.1, -halfHeight, -halfWidth, 0.1, -halfHeight
+        ]);
+        
+        outlineGeometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        
+        // Create line material with lot availability color
+        const outlineMaterial = new THREE.LineBasicMaterial({ 
+            color: lot.available ? 0xffeb3b : 0xbdbdbd,
+            linewidth: 2, // Note: linewidth may not work in all browsers
+        });
+        
+        const outline = new THREE.LineSegments(outlineGeometry, outlineMaterial);
+        outline.position.set(lot.x, 0.1, lot.z);
+        outline.userData = { type: 'lot', id: lot.id };
+        scene.add(outline);
+        
+        // Add corner posts for better visibility
+        const postGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.5, 8);
+        const postMaterial = new THREE.MeshStandardMaterial({ 
             color: lot.available ? 0xffeb3b : 0xbdbdbd,
             roughness: 0.7,
             metalness: 0.2
         });
         
-        const lotMesh = new THREE.Mesh(lotGeometry, lotMaterial);
-        lotMesh.position.set(lot.x, 0.1, lot.z);
-        lotMesh.receiveShadow = true;
-        lotMesh.userData = { type: 'lot', id: lot.id };
-        scene.add(lotMesh);
-        
-        // Add a wireframe outline
-        const wireframeGeometry = new THREE.EdgesGeometry(lotGeometry);
-        const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
-        wireframe.position.copy(lotMesh.position);
-        scene.add(wireframe);
+        // Add corner posts
+        [
+            [-halfWidth, 0.25, -halfHeight],
+            [-halfWidth, 0.25, halfHeight],
+            [halfWidth, 0.25, halfHeight],
+            [halfWidth, 0.25, -halfHeight]
+        ].forEach(pos => {
+            const post = new THREE.Mesh(postGeometry, postMaterial);
+            post.position.set(lot.x + pos[0], pos[1], lot.z + pos[2]);
+            post.castShadow = true;
+            post.receiveShadow = true;
+            scene.add(post);
+        });
     });
     
     // Add city name text - moved further away
