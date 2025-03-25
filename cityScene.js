@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { config } from './config.js';
 import { cityData } from './cityData.js';
 import { setupSceneLighting } from './advancedLighting.js';
+import { DaylightCycle } from './advancedSkybox.js';
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -56,21 +57,22 @@ function initCityScene() {
     
     // Initialize Three.js scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xe0f5e0);
+    // Remove background color - skybox will handle this
+    // scene.background = new THREE.Color(0xe0f5e0);
     
     // Create camera
     const camera = new THREE.PerspectiveCamera(
         60, 
         window.innerWidth / window.innerHeight, 
         0.1, 
-        1000
+        2000 // Increased far plane for skybox
     );
     
     // Set initial camera position further out for cinematic intro
     camera.position.set(50, 30, 50);
     camera.lookAt(0, 0, 0);
     
-    // Create renderer
+    // Create renderer with improved settings
     const renderer = new THREE.WebGLRenderer({ 
         antialias: true,
         powerPreference: "high-performance",
@@ -95,8 +97,9 @@ function initCityScene() {
     controls.maxPolarAngle = Math.PI / 2.5;
     controls.enabled = false; // Disable controls during intro animation
     
-    // Setup advanced lighting - use new function from dedicated file
-    setupSceneLighting(scene, renderer);
+    // Initialize daylight cycle and skybox
+    const daylightCycle = new DaylightCycle(scene, renderer);
+    daylightCycle.init();
     
     // Create ground plane
     const groundGeometry = new THREE.PlaneGeometry(500, 500); 
@@ -110,15 +113,21 @@ function initCityScene() {
     ground.receiveShadow = true;
     scene.add(ground);
     
-    // Add grid for reference - 1m x 1m grid squares
+    // Register ground material with daylight cycle
+    daylightCycle.registerTerrainMaterial(groundMaterial);
+    
+    // Add grid for reference - 1m x 1m grid squares (500x500)
     const gridHelper = new THREE.GridHelper(500, 500, 0x000000, 0x555555); 
     scene.add(gridHelper);
     
     // Create building lots from cityData
-    createBuildingLots(scene);
+    createBuildingLots(scene, daylightCycle);
     
     // Setup console toggling
     setupConsoleToggle();
+    
+    // Add daylight cycle controls (optional - for testing)
+    daylightCycle.createControls(cityViewElement);
     
     // Setup camera intro animation
     let introDuration = 4000; // 4 seconds for intro
@@ -140,6 +149,9 @@ function initCityScene() {
     function animate() {
         requestAnimationFrame(animate);
         
+        // Update daylight cycle
+        daylightCycle.update();
+        
         // Handle intro camera animation
         if (!introComplete) {
             const elapsed = Date.now() - introStartTime;
@@ -155,17 +167,6 @@ function initCityScene() {
                 camera.position.y = 30 * (1 - progress) + targetY * progress;
                 camera.position.z = 50 * (1 - progress) + targetZ * progress;
                 camera.lookAt(0, 0, 0);
-                
-                /*
-                if (progress > 0.3 && !audioFadeStarted) {
-                    audioFadeStarted = true;
-                    
-                    // Use the new music player module
-                    import('./musicPlayer.js').then(module => {
-                        module.fadeOutMusic(3000);
-                    });
-                }
-                */
             } else {
                 introComplete = true;
                 controls.enabled = true; // Enable controls after intro
@@ -180,16 +181,8 @@ function initCityScene() {
     animate();
 }
 
-function setupUIInteractions() {
-    const createLLMButton = document.querySelector('.create-llm-btn');
-    
-    createLLMButton.addEventListener('click', () => {
-        console.log('Create new LLM clicked');
-        // Implementation for creating new LLM will go here
-    });
-}
-
-function createBuildingLots(scene) {
+// Updated to register materials with daylight cycle
+function createBuildingLots(scene, daylightCycle) {
     const lots = cityData.lots;
     
     lots.forEach(lot => {
@@ -207,6 +200,9 @@ function createBuildingLots(scene) {
         lotMesh.userData = { type: 'lot', id: lot.id };
         scene.add(lotMesh);
         
+        // Register with daylight cycle
+        daylightCycle.registerObjectMaterial(lotMaterial);
+        
         // Add a wireframe outline
         const wireframeGeometry = new THREE.EdgesGeometry(lotGeometry);
         const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
@@ -216,10 +212,11 @@ function createBuildingLots(scene) {
     });
     
     // Add city name text
-    addCityNameText(scene);
+    addCityNameText(scene, daylightCycle);
 }
 
-function addCityNameText(scene) {
+// Updated to register materials with daylight cycle
+function addCityNameText(scene, daylightCycle) {
     // Create stone pillars
     const pillarGeometry = new THREE.BoxGeometry(1, 10, 1);
     const pillarMaterial = new THREE.MeshStandardMaterial({ 
@@ -227,6 +224,9 @@ function addCityNameText(scene) {
         roughness: 0.8,
         metalness: 0.2
     });
+    
+    // Register pillar material with daylight cycle
+    daylightCycle.registerObjectMaterial(pillarMaterial);
     
     // Left pillar
     const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
@@ -300,6 +300,10 @@ function addCityNameText(scene) {
         side: THREE.FrontSide
     });
     
+    // Register sign materials with daylight cycle
+    daylightCycle.registerObjectMaterial(frontBackMaterial);
+    daylightCycle.registerObjectMaterial(sideMaterial);
+    
     // Create materials array for BoxGeometry
     const materials = [
         sideMaterial,       // right side
@@ -333,4 +337,13 @@ function toggleConsolePanel() {
     } else {
         consolePanel.classList.add('hidden');
     }
+}
+
+function setupUIInteractions() {
+    const createLLMButton = document.querySelector('.create-llm-btn');
+    
+    createLLMButton.addEventListener('click', () => {
+        console.log('Create new LLM clicked');
+        // Implementation for creating new LLM will go here
+    });
 }
