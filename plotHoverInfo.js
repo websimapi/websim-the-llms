@@ -142,11 +142,12 @@ function checkPlotHovers() {
             }
             
             // Check if ray intersects the bounding box
-            if (plot.userData.boundingBox.intersectsRay(raycaster.ray)) {
+            const intersectPoint = new THREE.Vector3();
+            if (plot.userData.boundingBox.intersectRay(raycaster.ray, intersectPoint)) {
                 // Create a fake intersection with the plot
                 intersects.push({
                     object: plot,
-                    distance: raycaster.ray.origin.distanceTo(plot.position)
+                    distance: raycaster.ray.origin.distanceTo(intersectPoint)
                 });
                 break; // Only need one hit
             }
