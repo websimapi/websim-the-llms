@@ -54,3 +54,36 @@ export function updateProfileImageDisplay(imageUrl) {
         imageElement.style.display = 'block';
     }
 }
+
+// Add profile images to LLM list items in the collection view
+export function addProfileImagesToLLMList() {
+    const llmListItems = document.querySelectorAll('.llm-list-item');
+    
+    llmListItems.forEach(item => {
+        const id = item.getAttribute('data-id');
+        if (!id) return;
+        
+        const llm = llmDataManager.getLLMById(id);
+        if (!llm || !llm.profileImageUrl) return;
+        
+        // Check if this item already has an image container
+        if (item.querySelector('.llm-list-image-container')) return;
+        
+        // Add 'with-image' class to the item for proper grid layout
+        item.classList.add('with-image');
+        
+        // Create image container and image element
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'llm-list-image-container';
+        
+        const image = document.createElement('img');
+        image.className = 'llm-list-image';
+        image.src = llm.profileImageUrl;
+        image.alt = llm.name;
+        
+        imageContainer.appendChild(image);
+        
+        // Insert at the beginning of the item
+        item.insertBefore(imageContainer, item.firstChild);
+    });
+}
