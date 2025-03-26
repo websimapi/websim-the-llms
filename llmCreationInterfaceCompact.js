@@ -1,5 +1,6 @@
 // New file to reduce size of llmCreationInterface.js
 import * as THREE from 'three';
+import { createCustomCharacter } from './characterGenerator.js';
 import { attributeSystem } from './attributeSystem.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
 
@@ -132,6 +133,9 @@ export function resetFormAttributes() {
     const voiceSelect = document.getElementById('llm-tts-voice');
     if (voiceSelect) {
         voiceSelect.selectedIndex = 0;
+         // Find test button - it might not exist yet if TTS module hasn't loaded fully
+         // const testBtn = document.getElementById('test-voice-btn');
+         // if (testBtn) testBtn.disabled = true;
     }
 
     // Reset model badge selection to default (assistant)
@@ -149,16 +153,9 @@ export function resetFormAttributes() {
         if (selectedMeshNameEl) selectedMeshNameEl.classList.add('hidden');
 
         // Also clear the global selected mesh reference
-        import('./threeJSGlobals.js').then(globals => {
-             globals.setSelectedMesh(null);
-        });
+        window.selectedMesh = null;
+        if (typeof setSelectedMesh === 'function') setSelectedMesh(null);
     });
-
-     // Reset credit slider
-     const creditSlider = document.getElementById('generation-credits');
-     const creditValueDisplay = document.getElementById('generation-credits-value');
-     if (creditSlider) creditSlider.value = 5; // Default value
-     if (creditValueDisplay) creditValueDisplay.textContent = '5';
 }
 
 // New function to initialize profile image UI
@@ -176,32 +173,23 @@ export async function handleGenerateCharacter(generatingCharacter, setGenerating
     if (generatingCharacter) return;
     
     const promptInput = document.getElementById('llm-custom-prompt');
-    const creditSlider = document.getElementById('generation-credits'); // Get credit slider
     const userPrompt = promptInput.value.trim();
-    const credits = parseInt(creditSlider ? creditSlider.value : '5'); // Get credits value, default 5
     const statusElement = document.getElementById('generation-status');
     const generateBtn = document.getElementById('generate-character-btn');
     
     if (userPrompt.length < 5) {
         statusElement.textContent = "Please enter a more detailed description";
-        statusElement.classList.add('error');
-        setTimeout(() => statusElement.classList.remove('error'), 2000);
-        return { success: false, error: "Prompt too short" };
+        return;
     }
     
     setGeneratingCharacter(true);
-    let effortText = "Medium";
-    if (credits <= 3) effortText = "Low";
-    else if (credits >= 8) effortText = "High";
-    statusElement.textContent = `Generating character (Effort: ${effortText})...`;
-    statusElement.classList.remove('error');
+    statusElement.textContent = "Generating character...";
     generateBtn.disabled = true;
     
     try {
-        // Import the function from characterGenerator.js
+        // Import the function from characterGenerator.js to fix the reference error
         const { generateCharacterCode } = await import('./characterGenerator.js');
-        // Pass credits to the generation function
-        const generatedCode = await generateCharacterCode(userPrompt, credits);
+        const generatedCode = await generateCharacterCode(userPrompt);
         
         // Store the generated code for later use
         statusElement.dataset.generatedCode = generatedCode;
@@ -213,8 +201,7 @@ export async function handleGenerateCharacter(generatingCharacter, setGenerating
         };
     } catch (error) {
         console.error("Failed to generate character:", error);
-        statusElement.textContent = `Failed to generate character: ${error.message}. Try again.`;
-        statusElement.classList.add('error');
+        statusElement.textContent = "Failed to generate character. Try again with a different description.";
         return {
             success: false,
             error: error
@@ -222,21 +209,5 @@ export async function handleGenerateCharacter(generatingCharacter, setGenerating
     } finally {
         setGeneratingCharacter(false);
         generateBtn.disabled = false;
-    }
-}
-
-// Setup listener for the credit slider
-export function setupCreditSlider() {
-    const creditSlider = document.getElementById('generation-credits');
-    const creditValueDisplay = document.getElementById('generation-credits-value');
-
-    if (creditSlider && creditValueDisplay) {
-        // Update display initially
-        creditValueDisplay.textContent = creditSlider.value;
-
-        // Add event listener
-        creditSlider.addEventListener('input', () => {
-            creditValueDisplay.textContent = creditSlider.value;
-        });
     }
 }

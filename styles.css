@@ -569,7 +569,6 @@ input:checked + .llm-toggle-slider:before {
 
 .create-llm-sidebar {
     width: 30%;
-    min-width: 350px;
     height: 100%;
     background-color: #1a1a1a;
     padding: 20px;
@@ -648,68 +647,28 @@ input:checked + .llm-toggle-slider:before {
     font-family: 'Arial', sans-serif;
 }
 
-.slider-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
 .setting-slider {
-    flex-grow: 1;
+    width: 100%;
     height: 6px;
     background: #555;
     outline: none;
     -webkit-appearance: none;
-    appearance: none;
     border-radius: 3px;
-    cursor: pointer;
 }
 
 .setting-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    appearance: none;
     width: 16px;
     height: 16px;
     border-radius: 50%;
     background: #3cb371;
     cursor: pointer;
-}
-
-.setting-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #3cb371;
-    cursor: pointer;
-    border: none;
 }
 
 .setting-value {
     display: inline-block;
     color: #3cb371;
     margin-left: 10px;
-    font-weight: bold;
-    min-width: 25px;
-    text-align: right;
-}
-
-.setting-description {
-    font-size: 0.8rem;
-    color: #aaa;
-    margin-top: 5px;
-}
-
-.credit-icon-small {
-    width: 18px;
-    height: 18px;
-    vertical-align: middle;
-    margin-left: 5px;
-    border-radius: 50%;
-    object-fit: scale-down;
-    background-color: #2e0854;
-    border: 1px solid #37096b;
-    padding: 2px;
-    box-sizing: content-box;
 }
 
 .humanoid-viewport {
@@ -742,12 +701,6 @@ input:checked + .llm-toggle-slider:before {
     background-color: #2a8c5a;
 }
 
-.create-llm-button:disabled {
-    background-color: #555;
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
 .create-llm-button.secondary {
     background-color: #444;
 }
@@ -761,11 +714,6 @@ input:checked + .llm-toggle-slider:before {
     font-size: 0.9rem;
     color: #3cb371;
     height: 20px;
-    transition: color 0.3s;
-}
-
-.generation-status.error {
-    color: #ff4444;
 }
 
 #generate-character-btn {
@@ -832,17 +780,10 @@ input:checked + .llm-toggle-slider:before {
     cursor: not-allowed;
 }
 
-.attribute-value-text {
-    color: white;
-    font-weight: bold;
-    min-width: 20px;
-    text-align: center;
-}
-
 .attribute-value {
     display: flex;
     width: 100%;
-    height: 10px;
+    height: 20px;
     background-color: #222;
     border-radius: 3px;
     overflow: hidden;
@@ -868,7 +809,6 @@ input:checked + .llm-toggle-slider:before {
     background-color: rgba(60, 179, 113, 0.2);
     padding: 2px 6px;
     border-radius: 3px;
-    transition: background-color 0.3s;
 }
 
 /* LLM Collection UI Styles */
@@ -963,6 +903,24 @@ input:checked + .llm-toggle-slider:before {
     gap: 5px;
 }
 
+.llm-view-btn, .llm-delete-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.llm-view-btn {
+    background-color: #3cb371;
+    color: white;
+}
+
+.llm-delete-btn {
+    background-color: #ff4444;
+    color: white;
+}
+
 .empty-collection {
     color: #aaa;
     text-align: center;
@@ -977,6 +935,16 @@ input:checked + .llm-toggle-slider:before {
     justify-content: center;
 }
 
+.collection-button {
+    padding: 10px 20px;
+    background-color: #3cb371;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
 /* LLM Details Panel Styles */
 #llm-details-panel {
     position: fixed;
@@ -984,19 +952,15 @@ input:checked + .llm-toggle-slider:before {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 800px;
-    max-width: 90vw;
     background-color: #333;
     border-radius: 5px;
     z-index: 300;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
     display: none;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
 }
 
 #llm-details-panel.active {
-    display: flex;
+    display: block;
 }
 
 .details-header {
@@ -1006,7 +970,6 @@ input:checked + .llm-toggle-slider:before {
     padding: 15px;
     background-color: #3cb371;
     border-radius: 5px 5px 0 0;
-    flex-shrink: 0;
 }
 
 .details-title {
@@ -1028,21 +991,11 @@ input:checked + .llm-toggle-slider:before {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    overflow-y: auto;
-    flex-grow: 1;
-}
-
-.llm-detail-name-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
 }
 
 .llm-detail-name {
     color: #3cb371;
     margin: 0;
-    font-size: 1.5rem;
 }
 
 .edit-llm-btn {
@@ -1053,7 +1006,8 @@ input:checked + .llm-toggle-slider:before {
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-    flex-shrink: 0;
+    margin-left: 10px;
+    align-self: flex-start;
 }
 
 .edit-llm-btn:hover {
@@ -1072,7 +1026,6 @@ input:checked + .llm-toggle-slider:before {
     border-radius: 5px;
     overflow: hidden;
     margin: 15px 0;
-    flex-shrink: 0;
 }
 
 .llm-detail-attributes {

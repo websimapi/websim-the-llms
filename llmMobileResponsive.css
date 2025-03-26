@@ -6,16 +6,15 @@
     
     .create-llm-sidebar {
         width: 100%;
-        height: 55%; 
+        height: 50%;
         order: 2;
-        max-height: 55vh;
+        max-height: 50vh;
         overflow-y: auto;
-        min-width: unset; 
     }
     
     .create-llm-main {
         width: 100%;
-        height: 45%; 
+        height: 50%;
         order: 1;
     }
     
@@ -30,11 +29,15 @@
     
     /* Override grid layout for mobile */
     .attribute-grid {
-        grid-template-columns: 1fr !important; 
+        grid-template-columns: 1fr !important;
         gap: 10px;
     }
     
-    /* Show descriptions directly instead of tooltips on mobile */
+    /* Show tooltips on tap for mobile */
+    .attribute-item {
+        position: relative;
+    }
+    
     .attribute-description {
         display: block !important;
         font-size: 0.8rem;
@@ -47,7 +50,6 @@
     
     #llm-collection-ui .collection-viewport {
         height: 50vh !important;
-        min-height: 250px !important; 
     }
     
     #llm-collection-ui .llm-list {
@@ -110,38 +112,6 @@
         padding: 15px;
         font-size: 16px;
     }
-
-    /* Adjust manipulation controls for mobile */
-     .manipulation-controls .control-group {
-         flex-direction: column;
-         align-items: flex-start;
-         gap: 8px;
-     }
-     .manipulation-controls .control-group-label {
-         width: 100%;
-         text-align: left;
-         margin-bottom: 5px;
-     }
-     .manipulation-controls .control-button {
-         width: 45px;
-         height: 45px;
-     }
-      .manipulation-controls .control-value {
-         min-width: 80px;
-         padding: 6px 8px;
-     }
-
-     /* Adjust slider container */
-     .slider-container {
-         flex-wrap: wrap; 
-     }
-     .setting-slider {
-         width: 100%; 
-         margin-bottom: 5px; 
-     }
-     .setting-value, .credit-icon-small {
-         margin-left: 0; 
-     }
 }
 
 /* Add compact mode class */
@@ -175,10 +145,6 @@
     font-size: 0.9rem;
 }
 
-.compact-mode .attribute-value { 
-    height: 8px; 
-}
-
-.compact-mode .attribute-value-text { 
-    font-size: 0.9rem;
+.compact-mode .attribute-value {
+    height: 15px;
 }

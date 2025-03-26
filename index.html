@@ -17,8 +17,6 @@
     <link rel="stylesheet" href="plotHoverStyles.css">
     <link rel="stylesheet" href="modelBadgeStyles.css">
     <link rel="stylesheet" href="llmFormLayoutStyles.css">
-    <link rel="stylesheet" href="plotCoinStyles.css">
-    <link rel="stylesheet" href="llmTtsStyles.css">
     <script type="importmap">
     {
       "imports": {
@@ -109,7 +107,7 @@
                 
                 <div class="settings-group">
                     <div class="settings-group-title">Basic Information</div>
-                    <div class="setting-item"> 
+                    <div class="setting-item">
                         <div class="name-input-container"> 
                             <label class="setting-label" for="llm-name">Name</label>
                             <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
@@ -258,15 +256,6 @@
                         <textarea id="llm-custom-prompt" class="setting-input" placeholder="Describe your character (e.g., 'A sleek silver robot with blue glowing eyes and antenna')"></textarea>
                     </div>
                     <div class="setting-item">
-                        <label class="setting-label" for="generation-credits">Generation Effort (Credits)</label>
-                        <div class="slider-container">
-                            <input type="range" id="generation-credits" class="setting-slider" min="1" max="10" value="5">
-                            <span id="generation-credits-value" class="setting-value">5</span>
-                            <img src="/websim-credit.png" class="credit-icon-small" alt="Credits">
-                        </div>
-                        <div class="setting-description">More credits use more resources but may result in a higher quality model.</div>
-                    </div>
-                    <div class="setting-item">
                         <button id="generate-character-btn" class="create-llm-button">Generate Character</button>
                         <div id="generation-status" class="generation-status"></div>
                     </div>
@@ -313,7 +302,6 @@
             </div>
             
             <div class="collection-footer">
-                <button id="edit-selected-llm-btn" class="collection-button secondary" disabled>Edit Selected</button>
                 <button id="create-new-llm-btn" class="collection-button">Create New LLM</button>
             </div>
         </div>
@@ -321,7 +309,7 @@
         <div id="llm-details-panel">
             <div class="details-header">
                 <div class="details-title">LLM Details</div>
-                <button class="details-close" onclick="document.getElementById('llm-details-panel').classList.remove('active')">&times;</button> 
+                <button class="details-close">&times;</button>
             </div>
             
             <div class="details-content">
@@ -329,8 +317,6 @@
                 <p class="llm-detail-model">Model Type</p>
                 <p class="llm-detail-created">Created Date</p>
                 
-                <div class="llm-detail-viewport"></div> 
-
                 <div class="llm-detail-attributes">
                     <!-- Attribute details will be populated here -->
                 </div>
