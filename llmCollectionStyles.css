@@ -105,6 +105,209 @@
     opacity: 0.7;
 }
 
+/* New transport button styles */
+.llm-transport-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    background-color: #4169E1; 
+    color: white;
+    width: 100%;
+    margin-bottom: 5px;
+    transition: background-color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.llm-transport-btn:hover {
+    background-color: #1E90FF;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.llm-transport-btn:active {
+    transform: translateY(0px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.llm-transport-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Transport modal styles */
+.transport-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 300;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.transport-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.transport-modal-content {
+    background-color: #222;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.transport-modal-header {
+    background-color: #4169E1;
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.transport-modal-title {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.transport-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.transport-modal-body {
+    padding: 20px;
+}
+
+.plot-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.plot-item {
+    background-color: #333;
+    border-radius: 5px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.plot-item:hover {
+    background-color: #444;
+    transform: translateY(-2px);
+}
+
+.plot-item.selected {
+    background-color: #2a3540;
+    border-left: 3px solid #4169E1;
+}
+
+.plot-name {
+    font-weight: bold;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.plot-type {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.plot-description {
+    color: #ddd;
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+}
+
+.plot-requirements {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.plot-requirement {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.plot-requirement.assistant { background-color: rgba(60, 179, 113, 0.3); }
+.plot-requirement.creator { background-color: rgba(230, 126, 34, 0.3); }
+.plot-requirement.researcher { background-color: rgba(52, 152, 219, 0.3); }
+.plot-requirement.companion { background-color: rgba(155, 89, 182, 0.3); }
+.plot-requirement.humanoid { background-color: rgba(241, 196, 15, 0.3); }
+
+.plot-requirement svg {
+    width: 14px;
+    height: 14px;
+    fill: white;
+}
+
+.transport-modal-footer {
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    border-top: 1px solid #444;
+}
+
+.transport-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.transport-btn.primary {
+    background-color: #4169E1;
+    color: white;
+}
+
+.transport-btn.primary:hover {
+    background-color: #1E90FF;
+}
+
+.transport-btn.primary:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+.transport-btn.secondary {
+    background-color: #555;
+    color: white;
+}
+
+.transport-btn.secondary:hover {
+    background-color: #666;
+}
+
 /* Fix for viewport rendering */
 .collection-viewport {
     position: relative;
