@@ -1,7 +1,228 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'; // Needed for controls setup
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
+import { setGlobalReferences, setModels } from './threeJSGlobals.js'; // Import global setters
+import { createCustomCharacter } from './characterGenerator.js'; // Needed for custom char loading
+import { applyStoredModelData } from './llmModelStorage.js'; // Needed for applying stored data
+import { prepareModelForIndividualColoring } from './llmMeshColorManager.js'; // Needed for preparing model
 
-export function createRobotModel(humanoidScene, color, style) {
+// Keep track of animation frame ID for this specific renderer
+let humanoidAnimationId = null;
+let humanoidClock; // Clock for animations
+
+// Moved from llmCreationInterface.js
+export function initHumanoidPreview(llmToEdit) {
+    const viewport = document.querySelector('.humanoid-viewport');
+
+    // Clear existing content
+    viewport.innerHTML = '';
+    // Cancel any previous animation loop for this context
+    if (humanoidAnimationId) {
+        cancelAnimationFrame(humanoidAnimationId);
+        humanoidAnimationId = null;
+    }
+
+    // Setup Three.js scene
+    const humanoidScene = new THREE.Scene();
+    humanoidScene.background = new THREE.Color(0x111111);
+    // window.currentHumanoidScene = humanoidScene; // Don't set window ref here, use setGlobalReferences
+
+    // Setup camera
+    const humanoidCamera = new THREE.PerspectiveCamera(
+        45,
+        viewport.clientWidth / viewport.clientHeight,
+        0.1,
+        1000
+    );
+    humanoidCamera.position.set(0, 1.5, 4);
+    humanoidCamera.lookAt(0, 1, 0);
+
+    // Setup renderer
+    const humanoidRenderer = new THREE.WebGLRenderer({ antialias: true });
+    humanoidRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
+    humanoidRenderer.shadowMap.enabled = true;
+    viewport.appendChild(humanoidRenderer.domElement);
+
+    // Setup OrbitControls specific to this viewport
+    const controls = new OrbitControls(humanoidCamera, humanoidRenderer.domElement);
+    controls.target.set(0, 1, 0); // Look at the center of the character
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.1;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 1.5;
+    controls.maxDistance = 8;
+    controls.maxPolarAngle = Math.PI / 1.8; // Allow slightly more vertical rotation
+
+
+    // Set global references *after* creating scene, camera, renderer
+    setGlobalReferences(humanoidScene, humanoidCamera, humanoidRenderer);
+
+    // Add click event listener for mesh selection (forwarded from llmCreationInterface)
+    // The listener itself remains in llmCreationInterface as it updates UI elements there
+
+    // Setup lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Slightly brighter ambient
+    humanoidScene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.8); // Main light
+    keyLight.position.set(2, 3, 3);
+    keyLight.castShadow = true;
+    humanoidScene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.4); // Softer fill light
+    fillLight.position.set(-2, 1, 2);
+    humanoidScene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.3); // Backlight for definition
+    rimLight.position.set(0, 2, -3);
+    humanoidScene.add(rimLight);
+
+
+    // Add ground plane
+    const groundGeometry = new THREE.PlaneGeometry(10, 10);
+    const groundMaterial = new THREE.MeshStandardMaterial({
+        color: 0x222222,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.position.y = -0.01; // Place slightly below origin
+    humanoidScene.add(ground);
+
+    // Clear previous models before creating new ones (using global references)
+    if (window.robotModel && window.robotModel.parent) window.robotModel.parent.remove(window.robotModel);
+    if (window.customCharacter && window.customCharacter.parent) window.customCharacter.parent.remove(window.customCharacter);
+    setModels(null, null); // Clear global state
+
+    let createdModel = null; // To return the reference
+
+    // If editing and has custom character code, use it
+    if (llmToEdit && llmToEdit.customCharacterCode) {
+        try {
+            const customChar = createCustomCharacter(THREE, llmToEdit.customCharacterCode);
+            humanoidScene.add(customChar);
+            prepareModelForIndividualColoring(customChar); // Prepare for coloring/manipulation
+            setModels(null, customChar); // Update global state
+
+            // Apply saved model data if it exists (handles colors/transforms)
+            if (llmToEdit.modelData) {
+                applyStoredModelData(customChar, llmToEdit);
+                // Re-prepare after applying stored data
+                prepareModelForIndividualColoring(customChar);
+            }
+
+            createdModel = customChar; // Set the return value
+
+            // Store the generated code for later use
+            const statusElement = document.getElementById('generation-status');
+            if(statusElement) {
+                statusElement.dataset.generatedCode = llmToEdit.customCharacterCode;
+                statusElement.textContent = "Character loaded successfully!";
+            }
+
+        } catch (error) {
+            console.error("Error loading custom character:", error);
+            // Fallback to default robot
+            const { model } = createRobotModel(humanoidScene, llmToEdit?.color, llmToEdit?.style);
+            createdModel = model;
+            setModels(createdModel, null); // Update global state
+            prepareModelForIndividualColoring(createdModel);
+        }
+    } else {
+        // Create default robot humanoid model
+        const { model } = createRobotModel(humanoidScene, llmToEdit?.color, llmToEdit?.style);
+        createdModel = model;
+        setModels(createdModel, null); // Update global state
+        prepareModelForIndividualColoring(createdModel);
+
+        // *** Crucial Fix: DO NOT apply old modelData to default robots on edit ***
+        // This ensures we always edit the current default robot structure.
+        // The base color is already handled by createRobotModel.
+        /*
+        // Apply stored model data if editing and model data exists
+        if (llmToEdit && llmToEdit.modelData) {
+             applyStoredModelData(createdModel, llmToEdit);
+             prepareModelForIndividualColoring(createdModel);
+        }
+        */
+    }
+
+    // Setup animation clock
+    humanoidClock = new THREE.Clock();
+    // humanoidMixer = null; // Mixer would be initialized if loading animated models
+
+    // Start animation loop specific to this renderer
+    animateHumanoidPreview(humanoidScene, humanoidCamera, humanoidRenderer, controls);
+
+    // Handle resize specific to this viewport
+    const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+            const { width, height } = entry.contentRect;
+            if (humanoidCamera && humanoidRenderer) {
+                humanoidCamera.aspect = width / height;
+                humanoidCamera.updateProjectionMatrix();
+                humanoidRenderer.setSize(width, height);
+            }
+        }
+    });
+    resizeObserver.observe(viewport);
+
+    // Return the created model reference
+    return { model: createdModel };
+}
+
+
+// Animation loop specific to the humanoid preview
+function animateHumanoidPreview(scene, camera, renderer, controls) {
+    // Cancel previous frame if exists
+    if (humanoidAnimationId) cancelAnimationFrame(humanoidAnimationId);
+
+    humanoidAnimationId = requestAnimationFrame(() => animateHumanoidPreview(scene, camera, renderer, controls));
+
+    // Update controls
+    controls.update();
+
+    // Use window references for current model
+    const currentModel = window.customCharacter || window.robotModel;
+
+    // Simple idle animation
+    if (currentModel) {
+        const time = humanoidClock.getElapsedTime(); // Use clock for smoother animation
+
+        // Gentle bobbing motion - apply to the model's position directly
+        // Make sure not to overwrite position changes from manipulator
+        // Maybe store an initial position and offset from that?
+        // For now, let's skip this if a mesh is selected to avoid conflict
+        if (!window.selectedMesh) {
+             // Store initial Y position if not already stored
+             if (currentModel.userData.initialY === undefined) {
+                 currentModel.userData.initialY = currentModel.position.y;
+             }
+             currentModel.position.y = currentModel.userData.initialY + Math.sin(time * 2) * 0.03; // Slower, smaller bob
+        }
+
+        // Gentle rotation - apply to the model's rotation directly
+        // Also skip if selected to avoid conflict? Or maybe rotation is fine? Let's try allowing it.
+        // Store initial Y rotation if not already stored
+         if (currentModel.userData.initialRotationY === undefined) {
+             currentModel.userData.initialRotationY = currentModel.rotation.y;
+         }
+         currentModel.rotation.y = currentModel.userData.initialRotationY + Math.sin(time) * 0.1; // Slower rotation
+
+    }
+
+    // Update animation mixer if exists (for more complex animations)
+    // if (humanoidMixer) {
+    //     humanoidMixer.update(humanoidClock.getDelta());
+    // }
+
+    renderer.render(scene, camera);
+}
+
+// --- Robot Creation Logic (Copied from previous version, ensures consistency) ---
+export function createRobotModel(humanoidScene, color = '#3cb371', style = 'modern') {
     const materials = createStandardMaterials(color, style);
 
     const robotGroup = new THREE.Group();
@@ -10,7 +231,7 @@ export function createRobotModel(humanoidScene, color, style) {
     // --- Head ---
     const headGroup = new THREE.Group();
     headGroup.name = "Head";
-    headGroup.position.y = 1.6; // Positioned by neck later
+    // Position will be set relative to neck
     robotGroup.add(headGroup);
 
     const headShape = new THREE.Shape();
@@ -33,7 +254,6 @@ export function createRobotModel(humanoidScene, color, style) {
 
     const headMain = new THREE.Mesh(headGeometry, materials.headMaterial);
     headMain.name = "Head_Main";
-    // No need to set position as geometry is centered and added to headGroup
     headGroup.add(headMain);
 
     const eyeGeometry = new THREE.SphereGeometry(0.05, 16, 8);
@@ -47,12 +267,11 @@ export function createRobotModel(humanoidScene, color, style) {
     rightEye.name = "Head_RightEye";
     headGroup.add(rightEye);
 
-    // Antenna parts relative to headGroup center
     const antennaBase = new THREE.Mesh(
         new THREE.CylinderGeometry(0.02, 0.02, 0.05),
         materials.limbsMaterial
     );
-    antennaBase.position.set(0, 0.22, 0);
+    antennaBase.position.set(0, 0.22, 0); // Relative to headGroup center
     antennaBase.name = "Head_AntennaBase";
     headGroup.add(antennaBase);
 
@@ -60,7 +279,7 @@ export function createRobotModel(humanoidScene, color, style) {
         new THREE.CylinderGeometry(0.008, 0.008, 0.15),
         materials.limbsMaterial
     );
-    antenna.position.set(0, 0.3, 0);
+    antenna.position.set(0, 0.3, 0); // Relative to headGroup center
     antenna.name = "Head_Antenna";
     headGroup.add(antenna);
 
@@ -68,7 +287,7 @@ export function createRobotModel(humanoidScene, color, style) {
         new THREE.SphereGeometry(0.02, 12, 8),
         materials.antennaTipMaterial
     );
-    antennaTip.position.set(0, 0.38, 0);
+    antennaTip.position.set(0, 0.38, 0); // Relative to headGroup center
     antennaTip.name = "Head_AntennaTip";
     headGroup.add(antennaTip);
 
@@ -98,7 +317,6 @@ export function createRobotModel(humanoidScene, color, style) {
 
     const torsoMain = new THREE.Mesh(torsoGeometry, materials.bodyMaterial);
     torsoMain.name = "Body_Torso";
-    // No need to set position as geometry is centered and added to torsoGroup
     torsoGroup.add(torsoMain);
 
     const chestLight = new THREE.Mesh(
@@ -109,22 +327,21 @@ export function createRobotModel(humanoidScene, color, style) {
     chestLight.name = "Body_ChestLight";
     torsoGroup.add(chestLight);
 
-    // Neck (Connects Torso and Head)
+    // --- Neck (Connects Torso and Head) ---
     const neck = new THREE.Mesh(
         new THREE.CylinderGeometry(0.08, 0.1, 0.15),
         materials.limbsMaterial
     );
-    neck.position.y = torsoGroup.position.y + tHeight / 2 - 0.075; // Place between torso top and head bottom
+    neck.position.y = torsoGroup.position.y + tHeight / 2; // Position neck base at torso top
     neck.name = "Body_Neck";
     robotGroup.add(neck);
 
-    // Update Head position based on neck
-    headGroup.position.y = neck.position.y + 0.15;
+    // Position Head group relative to neck top
+    headGroup.position.y = neck.position.y + 0.15 / 2;
 
     // --- Shoulders (Joints) ---
-    // Move shoulders further out
-    const shoulderOffsetX = 0.35; // Increased from 0.3
-    const shoulderOffsetY = torsoGroup.position.y + 0.3; // Relative to world
+    const shoulderOffsetX = 0.35;
+    const shoulderOffsetY = torsoGroup.position.y + 0.3;
     const shoulderGeometry = new THREE.SphereGeometry(0.1, 16, 8);
 
     const leftShoulder = new THREE.Mesh(shoulderGeometry, materials.limbsMaterial);
@@ -146,46 +363,46 @@ export function createRobotModel(humanoidScene, color, style) {
 
     // Left Arm
     const leftUpperArm = new THREE.Mesh(upperArmGeometry, materials.limbsMaterial);
-    leftUpperArm.position.set(leftShoulder.position.x, leftShoulder.position.y - armSegmentLength / 2 - 0.05, 0); // Below shoulder joint
+    leftUpperArm.position.set(leftShoulder.position.x, leftShoulder.position.y - armSegmentLength / 2 - 0.05, 0);
     leftUpperArm.name = "LeftArm_Upper";
     robotGroup.add(leftUpperArm);
 
     const leftElbow = new THREE.Mesh(elbowJointGeometry, materials.limbsMaterial);
-    leftElbow.position.set(leftUpperArm.position.x, leftUpperArm.position.y - armSegmentLength / 2 - 0.035, 0); // Below upper arm
+    leftElbow.position.set(leftUpperArm.position.x, leftUpperArm.position.y - armSegmentLength / 2 - 0.035, 0);
     leftElbow.name = "LeftArm_ElbowJoint";
     robotGroup.add(leftElbow);
 
     const leftLowerArm = new THREE.Mesh(lowerArmGeometry, materials.limbsMaterial);
-    leftLowerArm.position.set(leftElbow.position.x, leftElbow.position.y - armSegmentLength / 2 - 0.035, 0); // Below elbow
+    leftLowerArm.position.set(leftElbow.position.x, leftElbow.position.y - armSegmentLength / 2 - 0.035, 0);
     leftLowerArm.name = "LeftArm_Lower";
     robotGroup.add(leftLowerArm);
 
-    // Use helper function for Left Hand
     const leftHand = createDetailedHand(materials, 'left');
-    leftHand.position.set(leftLowerArm.position.x, leftLowerArm.position.y - armSegmentLength / 2 - 0.06, 0); // Below lower arm
-    leftHand.name = "LeftArm_Hand";
+    leftHand.position.set(leftLowerArm.position.x, leftLowerArm.position.y - armSegmentLength / 2 - 0.06, 0);
+    leftHand.name = "LeftArm_Hand"; // Ensure group has name
+    // hand naming handled inside helper
     robotGroup.add(leftHand);
 
     // Right Arm
     const rightUpperArm = new THREE.Mesh(upperArmGeometry, materials.limbsMaterial);
-    rightUpperArm.position.set(rightShoulder.position.x, rightShoulder.position.y - armSegmentLength / 2 - 0.05, 0); // Below shoulder joint
+    rightUpperArm.position.set(rightShoulder.position.x, rightShoulder.position.y - armSegmentLength / 2 - 0.05, 0);
     rightUpperArm.name = "RightArm_Upper";
     robotGroup.add(rightUpperArm);
 
     const rightElbow = new THREE.Mesh(elbowJointGeometry, materials.limbsMaterial);
-    rightElbow.position.set(rightUpperArm.position.x, rightUpperArm.position.y - armSegmentLength / 2 - 0.035, 0); // Below upper arm
+    rightElbow.position.set(rightUpperArm.position.x, rightUpperArm.position.y - armSegmentLength / 2 - 0.035, 0);
     rightElbow.name = "RightArm_ElbowJoint";
     robotGroup.add(rightElbow);
 
     const rightLowerArm = new THREE.Mesh(lowerArmGeometry, materials.limbsMaterial);
-    rightLowerArm.position.set(rightElbow.position.x, rightElbow.position.y - armSegmentLength / 2 - 0.035, 0); // Below elbow
+    rightLowerArm.position.set(rightElbow.position.x, rightElbow.position.y - armSegmentLength / 2 - 0.035, 0);
     rightLowerArm.name = "RightArm_Lower";
     robotGroup.add(rightLowerArm);
 
-    // Use helper function for Right Hand
     const rightHand = createDetailedHand(materials, 'right');
-    rightHand.position.set(rightLowerArm.position.x, rightLowerArm.position.y - armSegmentLength / 2 - 0.06, 0); // Below lower arm
-    rightHand.name = "RightArm_Hand";
+    rightHand.position.set(rightLowerArm.position.x, rightLowerArm.position.y - armSegmentLength / 2 - 0.06, 0);
+    rightHand.name = "RightArm_Hand"; // Ensure group has name
+    // hand naming handled inside helper
     robotGroup.add(rightHand);
 
     // --- Pelvis (Attached to torso bottom) ---
@@ -193,14 +410,14 @@ export function createRobotModel(humanoidScene, color, style) {
         new THREE.BoxGeometry(0.3, 0.15, 0.2),
         materials.bodyMaterial
     );
-    pelvis.position.y = torsoGroup.position.y - tHeight / 2 - 0.075; // Position below torso
+    pelvis.position.y = torsoGroup.position.y - tHeight / 2 - 0.075;
     pelvis.name = "Body_Pelvis";
     robotGroup.add(pelvis);
 
     // --- Hips (Joints attached to pelvis) ---
-    const hipOffsetX = 0.12; // Slightly wider hips
-    const hipOffsetY = pelvis.position.y - 0.05; // Below pelvis
-    const hipGeometry = new THREE.SphereGeometry(0.09, 12, 8); // Slightly larger hip joints
+    const hipOffsetX = 0.12;
+    const hipOffsetY = pelvis.position.y - 0.05;
+    const hipGeometry = new THREE.SphereGeometry(0.09, 12, 8);
 
     const leftHip = new THREE.Mesh(hipGeometry, materials.limbsMaterial);
     leftHip.position.set(-hipOffsetX, hipOffsetY, 0);
@@ -222,43 +439,43 @@ export function createRobotModel(humanoidScene, color, style) {
 
     // Left Leg
     const leftUpperLeg = new THREE.Mesh(upperLegGeometry, materials.limbsMaterial);
-    leftUpperLeg.position.set(leftHip.position.x, leftHip.position.y - legSegmentLength / 2 - 0.045, 0); // Below hip joint
+    leftUpperLeg.position.set(leftHip.position.x, leftHip.position.y - legSegmentLength / 2 - 0.045, 0);
     leftUpperLeg.name = "LeftLeg_Upper";
     robotGroup.add(leftUpperLeg);
 
     const leftKnee = new THREE.Mesh(kneeJointGeometry, materials.limbsMaterial);
-    leftKnee.position.set(leftUpperLeg.position.x, leftUpperLeg.position.y - legSegmentLength / 2 - 0.04, 0); // Below upper leg
+    leftKnee.position.set(leftUpperLeg.position.x, leftUpperLeg.position.y - legSegmentLength / 2 - 0.04, 0);
     leftKnee.name = "LeftLeg_KneeJoint";
     robotGroup.add(leftKnee);
 
     const leftLowerLeg = new THREE.Mesh(lowerLegGeometry, materials.limbsMaterial);
-    leftLowerLeg.position.set(leftKnee.position.x, leftKnee.position.y - legSegmentLength / 2 - 0.04, 0); // Below knee
+    leftLowerLeg.position.set(leftKnee.position.x, leftKnee.position.y - legSegmentLength / 2 - 0.04, 0);
     leftLowerLeg.name = "LeftLeg_Lower";
     robotGroup.add(leftLowerLeg);
 
     const leftFoot = new THREE.Mesh(footGeometry, materials.limbsMaterial);
-    leftFoot.position.set(leftLowerLeg.position.x, leftLowerLeg.position.y - legSegmentLength / 2 - 0.04, leftLowerLeg.position.z + 0.05); // Below lower leg, slightly forward
+    leftFoot.position.set(leftLowerLeg.position.x, leftLowerLeg.position.y - legSegmentLength / 2 - 0.04, 0.05); // Z offset added here
     leftFoot.name = "LeftLeg_Foot";
     robotGroup.add(leftFoot);
 
     // Right Leg
     const rightUpperLeg = new THREE.Mesh(upperLegGeometry, materials.limbsMaterial);
-    rightUpperLeg.position.set(rightHip.position.x, rightHip.position.y - legSegmentLength / 2 - 0.045, 0); // Below hip joint
+    rightUpperLeg.position.set(rightHip.position.x, rightHip.position.y - legSegmentLength / 2 - 0.045, 0);
     rightUpperLeg.name = "RightLeg_Upper";
     robotGroup.add(rightUpperLeg);
 
     const rightKnee = new THREE.Mesh(kneeJointGeometry, materials.limbsMaterial);
-    rightKnee.position.set(rightUpperLeg.position.x, rightUpperLeg.position.y - legSegmentLength / 2 - 0.04, 0); // Below upper leg
+    rightKnee.position.set(rightUpperLeg.position.x, rightUpperLeg.position.y - legSegmentLength / 2 - 0.04, 0);
     rightKnee.name = "RightLeg_KneeJoint";
     robotGroup.add(rightKnee);
 
     const rightLowerLeg = new THREE.Mesh(lowerLegGeometry, materials.limbsMaterial);
-    rightLowerLeg.position.set(rightKnee.position.x, rightKnee.position.y - legSegmentLength / 2 - 0.04, 0); // Below knee
+    rightLowerLeg.position.set(rightKnee.position.x, rightKnee.position.y - legSegmentLength / 2 - 0.04, 0);
     rightLowerLeg.name = "RightLeg_Lower";
     robotGroup.add(rightLowerLeg);
 
     const rightFoot = new THREE.Mesh(footGeometry, materials.limbsMaterial);
-    rightFoot.position.set(rightLowerLeg.position.x, rightLowerLeg.position.y - legSegmentLength / 2 - 0.04, rightLowerLeg.position.z + 0.05); // Below lower leg, slightly forward
+    rightFoot.position.set(rightLowerLeg.position.x, rightLowerLeg.position.y - legSegmentLength / 2 - 0.04, 0.05); // Z offset added here
     rightFoot.name = "RightLeg_Foot";
     robotGroup.add(rightFoot);
 
@@ -266,19 +483,24 @@ export function createRobotModel(humanoidScene, color, style) {
     robotGroup.traverse((child) => {
         if (child.isMesh) {
             child.castShadow = true;
-            child.receiveShadow = true;
+            // child.receiveShadow = true; // Fewer objects need to receive shadows
         }
     });
 
     // --- Adjust final position ---
-    // Calculate bounding box AFTER all parts are positioned relative to the robotGroup
+    // Calculate bounding box AFTER all parts are positioned
     const tempBox = new THREE.Box3().setFromObject(robotGroup);
     const lowestPointY = tempBox.min.y;
 
-    // Adjust the whole group so the lowest point (feet) is slightly above y=0
-    robotGroup.position.y = -lowestPointY + 0.01; // Small offset above ground
+    // Adjust the whole group so the lowest point (feet) is at y=0
+    robotGroup.position.y = -lowestPointY;
 
-    // Add the fully constructed robot to the scene
+    // Store initial position for animation baseline
+    robotGroup.userData.initialY = robotGroup.position.y;
+    robotGroup.userData.initialRotationY = robotGroup.rotation.y;
+
+
+    // Add the fully constructed robot to the scene passed as argument
     humanoidScene.add(robotGroup);
 
     return {
@@ -287,38 +509,34 @@ export function createRobotModel(humanoidScene, color, style) {
     };
 }
 
-// Helper function to create a more detailed hand - MODIFIED
+// Helper function to create a more detailed hand
 function createDetailedHand(materials, side) {
     const handGroup = new THREE.Group();
+    handGroup.name = `${side === 'left' ? 'Left' : 'Right'}Hand`; // Name the group
 
     // Palm
     const palmGeometry = new THREE.BoxGeometry(0.08, 0.1, 0.04);
     const palm = new THREE.Mesh(palmGeometry, materials.limbsMaterial);
-    palm.name = "Hand_Palm";
+    palm.name = `${handGroup.name}_Palm`; // Specific name
     handGroup.add(palm);
 
     // Fingers (simplified cylinders)
     const fingerGeometry = new THREE.CylinderGeometry(0.015, 0.01, 0.08);
-    const fingerMaterial = materials.limbsMaterial.clone(); // Use separate material if needed
+    const fingerMaterial = materials.limbsMaterial.clone();
 
-    // Finger 1 (Index)
-    const finger1 = new THREE.Mesh(fingerGeometry, fingerMaterial);
-    finger1.position.set(-0.03, -0.06, 0);
-    finger1.name = "Hand_Finger1";
-    handGroup.add(finger1);
+    const fingerPositions = [
+        { x: -0.03, y: -0.06, z: 0, scale: 1.0, name: "Finger1" },   // Index
+        { x: 0,    y: -0.065, z: 0, scale: 1.05, name: "Finger2" }, // Middle
+        { x: 0.03, y: -0.06, z: 0, scale: 1.0, name: "Finger3" }    // Ring
+    ];
 
-    // Finger 2 (Middle)
-    const finger2 = new THREE.Mesh(fingerGeometry.clone(), fingerMaterial); // Clone geometry
-    finger2.scale.y = 1.05; // Slightly longer middle finger
-    finger2.position.set(0, -0.065, 0);
-    finger2.name = "Hand_Finger2";
-    handGroup.add(finger2);
-
-    // Finger 3 (Ring)
-    const finger3 = new THREE.Mesh(fingerGeometry, fingerMaterial);
-    finger3.position.set(0.03, -0.06, 0);
-    finger3.name = "Hand_Finger3";
-    handGroup.add(finger3);
+    fingerPositions.forEach(pos => {
+         const finger = new THREE.Mesh(fingerGeometry.clone(), fingerMaterial);
+         finger.scale.y = pos.scale;
+         finger.position.set(pos.x, pos.y, pos.z);
+         finger.name = `${handGroup.name}_${pos.name}`; // Specific name
+         handGroup.add(finger);
+    });
 
     return handGroup;
 }

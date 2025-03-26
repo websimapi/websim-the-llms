@@ -3,6 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The LLMs - Loading Screen</title>
+    <!-- CSS Links -->
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="llmCollectionStyles.css">
     <link rel="stylesheet" href="llmCarouselStyles.css">
@@ -15,8 +16,11 @@
     <link rel="stylesheet" href="musicPlayerStyles.css">
     <link rel="stylesheet" href="musicPlayerToggle.css">
     <link rel="stylesheet" href="plotHoverStyles.css">
+    <link rel="stylesheet" href="plotCoinStyles.css"> 
     <link rel="stylesheet" href="modelBadgeStyles.css">
     <link rel="stylesheet" href="llmFormLayoutStyles.css">
+    
+    <!-- Import Map -->
     <script type="importmap">
     {
       "imports": {
@@ -32,6 +36,7 @@
         <div id="ui-overlay">
             <div class="top-menu">
                 <button class="menu-button create-llm-btn">
+                    <!-- SVG Icon -->
                     <svg class="llm-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="56" height="56">
                         <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z" fill="currentColor"/>
                         <circle cx="10.5" cy="11.5" r="1" fill="currentColor"/>
@@ -40,6 +45,7 @@
                     </svg>
                 </button>
                 <button class="menu-button move-llm-btn">
+                    <!-- SVG Icon -->
                     <svg class="llm-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="56" height="56">
                         <!-- Drone body -->
                         <path d="M12,12c-1.7,0-3,1.3-3,3s1.3,3,3,3s3-1.3,3-3S13.7,12,12,12z M12,16c-0.6,0-1-0.4-1-1s0.4-1,1-1s1,0.4,1,1S12.6,16,12,16z" fill="currentColor"/>
@@ -47,7 +53,7 @@
                         <!-- Drone arms -->
                         <rect x="6.5" y="11.5" width="11" height="1" rx="0.5" fill="currentColor"/>
                         <rect x="11.5" y="7" width="1" height="11" rx="0.5" fill="currentColor"/>
-                        <!-- Drone propellers with motor hubs -->
+                        <!-- Drone propellers -->
                         <g class="propeller" style="transform-origin: 6.5px 11.5px;">
                             <circle cx="6.5" cy="11.5" r="1" fill="#333"/>
                             <ellipse cx="6.5" cy="11.5" rx="3" ry="0.5" fill="currentColor"/>
@@ -68,7 +74,7 @@
                             <ellipse cx="12" cy="17.5" rx="3" ry="0.5" fill="currentColor"/>
                             <ellipse cx="12" cy="17.5" rx="0.5" ry="3" fill="currentColor"/>
                         </g>
-                        <!-- Package with robot parts -->
+                        <!-- Package -->
                         <rect x="9" y="20" width="6" height="3" rx="1" fill="currentColor"/>
                         <path d="M10,20.5h4v0.5H10V20.5z" fill="#333"/>
                         <path d="M10,21.5h4v0.5H10V21.5z" fill="#333"/>
@@ -78,6 +84,7 @@
                 </button>
             </div>
             
+            <!-- Console Panel -->
             <div id="console-panel" class="hidden">
                 <div class="console-header">
                     <div class="console-title">Developer Console</div>
@@ -93,11 +100,10 @@
                 </div>
             </div>
             
-            <div class="console-indicator">
-                Press ~ to open console
-            </div>
+            <div class="console-indicator">Press ~ to open console</div>
         </div>
         
+        <!-- Create LLM UI -->
         <div id="create-llm-ui">
             <div class="create-llm-sidebar">
                 <div class="create-llm-header">
@@ -105,16 +111,16 @@
                     <button class="create-llm-close">&times;</button>
                 </div>
                 
+                <!-- Basic Info Group -->
                 <div class="settings-group">
                     <div class="settings-group-title">Basic Information</div>
                     <div class="setting-item">
-                        <div class="name-input-container"> 
+                         <div class="name-input-container">
                             <label class="setting-label" for="llm-name">Name</label>
                             <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
                         </div>
                     </div>
                     <div class="setting-item">
-                        <!-- Hidden select for form compatibility -->
                         <select id="llm-model" class="setting-select" style="display: none;">
                             <option value="assistant">Assistant</option>
                             <option value="creator">Creator</option>
@@ -122,11 +128,10 @@
                             <option value="companion">Companion</option>
                             <option value="humanoid">Humanoid</option>
                         </select>
-                        <!-- New badge container -->
                         <div class="model-badge-container">
                             <label class="model-badge assistant">
                                 <input type="radio" name="model-type" value="assistant" class="model-badge-input" checked>
-                                <div class="model-badge-icon">
+                                <div class="model-badge-icon"><!-- SVG --> 
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
                                         <path d="M19 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h4l3 3 3-3h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 16h-4.83l-1.17 1.17-1.17-1.17H5V4h14v14z"/>
                                         <path d="M11 15h2v2h-2zm0-8h2v6h-2z"/>
@@ -136,16 +141,16 @@
                             </label>
                             <label class="model-badge creator">
                                 <input type="radio" name="model-type" value="creator" class="model-badge-input">
-                                <div class="model-badge-icon">
+                                <div class="model-badge-icon"><!-- SVG --> 
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
                                         <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z"/>
                                     </svg>
                                 </div>
                                 <span class="model-badge-label">Creator</span>
                             </label>
-                            <label class="model-badge researcher">
+                             <label class="model-badge researcher">
                                 <input type="radio" name="model-type" value="researcher" class="model-badge-input">
-                                <div class="model-badge-icon">
+                                <div class="model-badge-icon"><!-- SVG --> 
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
                                         <path d="M9.5 16c-1.93 0-3.5-1.57-3.5-3.5S7.57 9 9.5 9s3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zm5.5-1l5 5-1.5 1.5-5-5V15l-0.03-0.03c-1.45 1.28-3.36 2.03-5.47 2.03-4.56 0-8.25-3.69-8.25-8.25s3.69-8.25 8.25-8.25S17 4.19 17 8.75c0 2.11-0.76 4.02-2.05 5.47L15 14.24z"/>
                                     </svg>
@@ -154,7 +159,7 @@
                             </label>
                             <label class="model-badge companion">
                                 <input type="radio" name="model-type" value="companion" class="model-badge-input">
-                                <div class="model-badge-icon">
+                                <div class="model-badge-icon"><!-- SVG --> 
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21.71.33 1.47.33 2.26 0 4.41-3.59 8-8 8z"/>
                                     </svg>
@@ -163,7 +168,7 @@
                             </label>
                             <label class="model-badge humanoid">
                                 <input type="radio" name="model-type" value="humanoid" class="model-badge-input">
-                                <div class="model-badge-icon">
+                                <div class="model-badge-icon"><!-- SVG --> 
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
                                         <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
                                     </svg>
@@ -173,87 +178,49 @@
                         </div>
                     </div>
                     <div class="setting-item">
-                        <label class="setting-label" for="llm-color">Color (click on any body part to select it)</label>
+                        <label class="setting-label" for="llm-color">Color (click part to select)</label>
                         <div class="color-picker-container">
                             <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
                             <span id="selected-mesh-name" class="selected-mesh-name hidden">No part selected</span>
                         </div>
-                        
                         <div class="no-selection-message">Select a body part to manipulate it</div>
-                        
                         <div class="manipulation-controls">
-                            <!-- Rotation Controls -->
+                            <!-- Rotation -->
                             <div class="control-group">
                                 <span class="control-group-label">Rotation:</span>
-                                
-                                <!-- X Axis -->
-                                <button id="rotate-x-minus" class="control-button axis-x">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
-                                </button>
+                                <button id="rotate-x-minus" class="control-button axis-x"><svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X</button>
                                 <span id="rotation-x-value" class="control-value">0.00</span>
-                                <button id="rotate-x-plus" class="control-button axis-x">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
-                                </button>
-                                
-                                <!-- Y Axis -->
-                                <button id="rotate-y-minus" class="control-button axis-y">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
-                                </button>
+                                <button id="rotate-x-plus" class="control-button axis-x"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X</button>
+                                <button id="rotate-y-minus" class="control-button axis-y"><svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y</button>
                                 <span id="rotation-y-value" class="control-value">0.00</span>
-                                <button id="rotate-y-plus" class="control-button axis-y">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
-                                </button>
-                                
-                                <!-- Z Axis -->
-                                <button id="rotate-z-minus" class="control-button axis-z">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
-                                </button>
+                                <button id="rotate-y-plus" class="control-button axis-y"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y</button>
+                                <button id="rotate-z-minus" class="control-button axis-z"><svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z</button>
                                 <span id="rotation-z-value" class="control-value">0.00</span>
-                                <button id="rotate-z-plus" class="control-button axis-z">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z
-                                </button>
+                                <button id="rotate-z-plus" class="control-button axis-z"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z</button>
                             </div>
-                            
-                            <!-- Position Controls -->
+                            <!-- Position -->
                             <div class="control-group">
                                 <span class="control-group-label">Position:</span>
-                                
-                                <!-- X Axis -->
-                                <button id="position-x-minus" class="control-button axis-x">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
-                                </button>
+                                <button id="position-x-minus" class="control-button axis-x"><svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X</button>
                                 <span id="position-x-value" class="control-value">0.00</span>
-                                <button id="position-x-plus" class="control-button axis-x">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
-                                </button>
-                                
-                                <!-- Y Axis -->
-                                <button id="position-y-minus" class="control-button axis-y">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
-                                </button>
+                                <button id="position-x-plus" class="control-button axis-x"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X</button>
+                                <button id="position-y-minus" class="control-button axis-y"><svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y</button>
                                 <span id="position-y-value" class="control-value">0.00</span>
-                                <button id="position-y-plus" class="control-button axis-y">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
-                                </button>
-                                
-                                <!-- Z Axis -->
-                                <button id="position-z-minus" class="control-button axis-z">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
-                                </button>
+                                <button id="position-y-plus" class="control-button axis-y"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y</button>
+                                <button id="position-z-minus" class="control-button axis-z"><svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z</button>
                                 <span id="position-z-value" class="control-value">0.00</span>
-                                <button id="position-z-plus" class="control-button axis-z">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z
-                                </button>
+                                <button id="position-z-plus" class="control-button axis-z"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z</button>
                             </div>
                         </div>
                     </div>
                 </div>
-
+                
+                <!-- Custom Design Group -->
                 <div class="settings-group">
                     <div class="settings-group-title">Custom Design</div>
                     <div class="setting-item">
-                        <label class="setting-label" for="llm-custom-prompt">AI Generated Character Description</label>
-                        <textarea id="llm-custom-prompt" class="setting-input" placeholder="Describe your character (e.g., 'A sleek silver robot with blue glowing eyes and antenna')"></textarea>
+                        <label class="setting-label" for="llm-custom-prompt">AI Character Description</label>
+                        <textarea id="llm-custom-prompt" class="setting-input" placeholder="Describe your character..."></textarea>
                     </div>
                     <div class="setting-item">
                         <button id="generate-character-btn" class="create-llm-button">Generate Character</button>
@@ -261,13 +228,15 @@
                     </div>
                 </div>
                 
+                <!-- Attributes Group -->
                 <div class="settings-group">
                     <div class="settings-group-title">Attributes <span id="points-remaining" class="points-info">15 Points Remaining</span></div>
                     <div class="attribute-grid" id="attribute-grid">
-                        <!-- Attribute slots will be generated here by JavaScript -->
+                        <!-- JS Generated -->
                     </div>
                 </div>
                 
+                <!-- Appearance Group (will include Voice selector added by JS) -->
                 <div class="settings-group">
                     <div class="settings-group-title">Appearance</div>
                 </div>
@@ -278,52 +247,38 @@
                 </div>
             </div>
             
+            <!-- Main Viewport -->
             <div class="create-llm-main">
                 <div class="humanoid-viewport">
-                    <!-- Humanoid figure will be rendered here with Three.js -->
+                    <!-- 3D Render -->
                 </div>
             </div>
         </div>
         
+        <!-- LLM Collection UI -->
         <div id="llm-collection-ui">
             <div class="collection-header">
                 <div class="collection-title">My LLMs</div>
                 <button class="collection-close">&times;</button>
             </div>
-            
             <div class="collection-container">
-                <div class="collection-viewport">
-                    <!-- LLM models will be rendered here -->
+                <div class="collection-viewport"> 
                 </div>
-                
-                <div class="llm-list" id="llm-list">
-                    <!-- LLM list items will be generated here -->
+                <div class="llm-list" id="llm-list"> 
                 </div>
             </div>
-            
             <div class="collection-footer">
+                <button id="edit-selected-llm-btn" class="collection-button secondary" disabled>Edit Selected</button>
                 <button id="create-new-llm-btn" class="collection-button">Create New LLM</button>
             </div>
         </div>
         
+        <!-- LLM Details Panel (placeholder) -->
         <div id="llm-details-panel">
-            <div class="details-header">
-                <div class="details-title">LLM Details</div>
-                <button class="details-close">&times;</button>
-            </div>
-            
-            <div class="details-content">
-                <h2 class="llm-detail-name">LLM Name</h2>
-                <p class="llm-detail-model">Model Type</p>
-                <p class="llm-detail-created">Created Date</p>
-                
-                <div class="llm-detail-attributes">
-                    <!-- Attribute details will be populated here -->
-                </div>
-            </div>
         </div>
     </div>
 
+    <!-- Loading Screen -->
     <div id="loading-screen">
         <div class="loading-container">
             <div class="logo-container">
@@ -332,22 +287,18 @@
                     <div class="logo-subtitle">Life Learning Models</div>
                 </div>
             </div>
-            
             <div class="loading-bar-container">
                 <div class="loading-bar"></div>
                 <div class="loading-percentage">0%</div>
             </div>
-            
             <div class="loading-tip-container">
                 <div class="loading-tip">
                     <span class="tip-label">TIP:</span>
                     <span class="tip-text">LLMs need regular prompting to stay happy.</span>
                 </div>
             </div>
-            
             <button id="skip-button">Skip Loading</button>
         </div>
-        
         <div class="llm-toggle-container">
             <span class="llm-toggle-label">LLM Tips:</span>
             <label class="llm-toggle">
@@ -357,28 +308,24 @@
         </div>
     </div>
 
+    <!-- Start Overlay -->
     <div id="start-overlay">
         <div class="start-container">
             <div class="start-title">
                 <h1>The LLMs</h1>
                 <div class="subtitle">Life Learning Models</div>
             </div>
-            
             <div class="button-arc">
                 <button class="circle-button arc-button-2"></button>
                 <button class="circle-button arc-button-1"></button>
                 <button class="circle-button main-button" id="play-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="white">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
                 </button>
                 <button class="circle-button arc-button-3"></button>
                 <button class="circle-button arc-button-4"></button>
             </div>
-            
             <button id="start-button">Click Here to Start Experience</button>
         </div>
-        
         <div class="llm-toggle-container">
             <span class="llm-toggle-label">LLM Tips:</span>
             <label class="llm-toggle">
@@ -388,6 +335,7 @@
         </div>
     </div>
     
+    <!-- Module Scripts -->
     <script type="module" src="config.js"></script>
     <script type="module" src="script.js"></script>
     <script type="module" src="cityScene.js"></script>
@@ -397,12 +345,32 @@
     <script type="module" src="llmModelCreationRenderer.js"></script>
     <script type="module" src="threeJSGlobals.js"></script>
     <script type="module" src="llmCreationInterface.js"></script>
+    <script type="module" src="llmCreationInterfaceCompact.js"></script> 
     <script type="module" src="llmMeshColorManager.js"></script>
     <script type="module" src="llmViewInterface.js"></script>
     <script type="module" src="llmCollectionView.js"></script>
+    <script type="module" src="llmCollectionCarousel.js"></script> 
     <script type="module" src="saveLLMData.js"></script>
     <script type="module" src="llmMeshManipulator.js"></script>
+    <script type="module" src="llmModelStorage.js"></script> 
+    <script type="module" src="llmProfileImageGenerator.js"></script> 
+    <script type="module" src="llmProfileImageUI.js"></script> 
+    <script type="module" src="llmProfileImageDisplay.js"></script> 
+    <script type="module" src="llmSetupHelpers.js"></script> 
+    <script type="module" src="llmTtsVoiceSelector.js"></script> 
     <script type="module" src="musicPlayer.js"></script>
+    <script type="module" src="citySceneUI.js"></script> 
+    <script type="module" src="advancedLighting.js"></script> 
+    <script type="module" src="terrainUtils.js"></script> 
+    <script type="module" src="infiniteTerrain.js"></script> 
+    <script type="module" src="cameraBoundaryController.js"></script> 
+    <script type="module" src="plotHoverInfo.js"></script> 
+    <script type="module" src="modelBadgeSelector.js"></script> 
+    <script type="module" src="modelAttributeDefaults.js"></script> 
+    <script type="module" src="attributeSystem.js"></script> 
+    <script type="module" src="llmDataManager.js"></script> 
+    <script type="module" src="llmAttributeTooltips.js"></script> 
+    <script type="module" src="llmCharacterRendererUtils.js"></script> 
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

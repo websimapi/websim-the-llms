@@ -35,18 +35,6 @@ export function initPlotHoverInfo(mainCamera, mainScene, mainRenderer) {
     
     // Start checking for plot hovers
     checkPlotHovers();
-    
-    // If we have a stored voice to select
-    const statusElement = document.getElementById('generation-status');
-    if (statusElement && statusElement.dataset.profileImageUrl) {
-        const voiceUri = statusElement.dataset.selectedVoice;
-        for (let i = 0; i < voiceSelect.options.length; i++) {
-            if (voiceSelect.options[i].value === voiceUri) {
-                voiceSelect.selectedIndex = i;
-                break;
-            }
-        }
-    }
 }
 
 // Create the info panel HTML element
@@ -55,12 +43,6 @@ function createInfoPanel() {
     infoPanel.className = 'plot-info-panel';
     infoPanel.style.display = 'none';
     document.body.appendChild(infoPanel);
-    
-    // Add the coin styles
-    const coinStyles = document.createElement('link');
-    coinStyles.rel = 'stylesheet';
-    coinStyles.href = 'plotCoinStyles.css';
-    document.head.appendChild(coinStyles);
 }
 
 // Handle mouse movement
@@ -157,7 +139,7 @@ function formatTime(seconds) {
 function checkPlotHovers() {
     requestAnimationFrame(checkPlotHovers);
     
-    if (!scene || !camera) return;
+    if (!scene || !camera || !renderer) return; // Ensure references are valid
     
     // Update the picking ray
     raycaster.setFromCamera(mouse, camera);
@@ -216,8 +198,10 @@ function checkPlotHovers() {
                 }
             }
             
-            // Highlight the current plot
-            highlightPlot(plot);
+            // Highlight the current plot only if it's different from the active one
+            if (activePlotId !== plot.userData.id) {
+                highlightPlot(plot);
+            }
             
             // Show info panel
             showInfoPanel(plot);
@@ -229,7 +213,7 @@ function checkPlotHovers() {
         }
     }
     
-    // If no intersections, hide panel
+    // If no intersections, hide panel and reset highlight
     if (infoPanel.style.display !== 'none') {
         hideInfoPanel();
     }
@@ -251,21 +235,26 @@ function highlightPlot(plot) {
     // Find construction tape material
     plot.traverse(child => {
         if (child.isMesh) {
-            // Store original material for reset
+            // Store original material for reset if not already stored
             if (!child.userData.originalMaterial) {
-                child.userData.originalMaterial = child.material.clone();
+                 // Check if material is cloneable
+                 if (child.material && typeof child.material.clone === 'function') {
+                     child.userData.originalMaterial = child.material.clone();
+                 } else {
+                     // If not cloneable, store properties? Or skip storing?
+                     // For now, let's log a warning and maybe skip highlight for this part
+                     console.warn("Cannot clone material for highlight:", child.name, child.material?.type);
+                     return; // Skip this child
+                 }
             }
             
             // Highlight based on mesh type
             if (child.name && child.name.includes('tape')) {
-                // Safely set emissive properties
-                safeSetEmissive(child.material, 0xffff00);
+                safeSetEmissive(child.material, 0xffff00, 0.6); // Slightly less intense yellow emissive
             } else if (child.name && child.name.includes('cone')) {
-                // Safely set emissive properties
-                safeSetEmissive(child.material, 0xff5500, 0.5);
+                safeSetEmissive(child.material, 0xff8800, 0.7); // Brighter orange emissive
             } else if (child.name && child.name.includes('pole')) {
-                // Safely set emissive properties
-                safeSetEmissive(child.material, 0x8B4513, 0.2);
+                safeSetEmissive(child.material, 0xaa6622, 0.3); // Subtle brown emissive
             }
         }
     });
@@ -275,20 +264,28 @@ function highlightPlot(plot) {
 function resetPlotHighlight(plot) {
     plot.traverse(child => {
         if (child.isMesh && child.userData.originalMaterial) {
-            // Reset to original material
-            if (child.material) {
-                // Copy only the properties that exist on the target material
-                if (child.material.color && child.userData.originalMaterial.color) {
-                    child.material.color.copy(child.userData.originalMaterial.color);
+            // Reset to original material properties safely
+            const originalMat = child.userData.originalMaterial;
+            const currentMat = child.material;
+
+            if (currentMat && originalMat) {
+                // Reset color if exists
+                if (currentMat.color && originalMat.color) {
+                    currentMat.color.copy(originalMat.color);
                 }
-                if (child.material.emissive && child.userData.originalMaterial.emissive) {
-                    child.material.emissive.copy(child.userData.originalMaterial.emissive);
+                // Reset emissive properties if they exist on both
+                if (currentMat.emissive && originalMat.emissive) {
+                    currentMat.emissive.copy(originalMat.emissive);
                 }
-                if (child.material.emissiveIntensity !== undefined && 
-                    child.userData.originalMaterial.emissiveIntensity !== undefined) {
-                    child.material.emissiveIntensity = child.userData.originalMaterial.emissiveIntensity;
+                if (currentMat.emissiveIntensity !== undefined && originalMat.emissiveIntensity !== undefined) {
+                    currentMat.emissiveIntensity = originalMat.emissiveIntensity;
                 }
             }
+             // Optionally remove the stored original material after resetting
+             // delete child.userData.originalMaterial;
+        } else if (child.isMesh && child.material?.emissive) {
+             // If no original material was stored (e.g., non-cloneable), just reset emissive
+             safeSetEmissive(child.material, 0x000000, 0); // Turn off emissive
         }
     });
 }
@@ -321,7 +318,7 @@ function onTouchStart(event) {
         infoPanel.style.top = `${touch.clientY + 15}px`;
         
         // Force an immediate check for plot intersection
-        checkPlotHovers();
+        checkPlotHovers(); // This will handle highlighting and showing panel
         
         // For mobile, we'll keep the panel visible until touch end
         // No need to do anything else here
