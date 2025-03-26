@@ -2,7 +2,8 @@
 import { llmDataManager } from './llmDataManager.js';
 
 // Add profile image display to the basic info section of the Create LLM UI
-export function setupProfileImageDisplay() {
+// Modified to accept llmToEdit for direct image loading during setup
+export function setupProfileImageDisplay(llmToEdit = null) {
     // Find the name input to locate the target section
     const nameInput = document.getElementById('llm-name');
     if (!nameInput) return;
@@ -11,18 +12,18 @@ export function setupProfileImageDisplay() {
     const basicInfoGroup = nameSettingItem.closest('.settings-group');
     if (!basicInfoGroup) return;
 
+    let profileImageElement;
     // Check if profile image display already exists (within the new layout wrapper)
     const existingLayout = basicInfoGroup.querySelector('.basic-info-layout');
     if (existingLayout) {
-        // If the layout wrapper exists, assume the image display is already set up.
-        // We might just need to update the image if editing.
+        profileImageElement = existingLayout.querySelector('.profile-image-display');
     } else {
         // Create the layout wrapper
         const layoutWrapper = document.createElement('div');
         layoutWrapper.className = 'basic-info-layout';
 
         // Create profile image display element
-        const profileImageElement = document.createElement('div');
+        profileImageElement = document.createElement('div');
         profileImageElement.className = 'profile-image-display';
         profileImageElement.innerHTML = `
             <div class="profile-image-container">
@@ -44,22 +45,12 @@ export function setupProfileImageDisplay() {
         }
     }
 
-    // Check if we're in edit mode and have an image URL
-    const editId = document.getElementById('create-llm-ui').getAttribute('data-edit-id');
-    if (editId) {
-        const llm = llmDataManager.getLLMById(editId);
-        if (llm && llm.profileImageUrl) {
-            updateProfileImageDisplay(llm.profileImageUrl);
-        } else {
-            // Ensure placeholder is shown if editing but no image exists
-             updateProfileImageDisplay(null);
-        }
-    } else {
-        // Ensure placeholder is shown when creating new
-        updateProfileImageDisplay(null);
-    }
+    // Use llmToEdit directly if provided, otherwise assume creating new
+    const imageUrl = llmToEdit?.profileImageUrl;
+    updateProfileImageDisplay(imageUrl);
 
-    // Listen for profile image changes
+
+    // Listen for profile image changes (ensure listener isn't duplicated)
     document.removeEventListener('profileImageSaved', handleProfileImageSaved); // Remove previous listener if any
     document.addEventListener('profileImageSaved', handleProfileImageSaved);
 }
@@ -91,6 +82,9 @@ export function updateProfileImageDisplay(imageUrl) {
             imageElement.src = '';
             imageElement.style.display = 'none';
         }
+    } else {
+        // Log error if elements are not found
+        console.error("Could not find profile image display elements within .basic-info-layout");
     }
 }
 
