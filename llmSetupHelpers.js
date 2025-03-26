@@ -1,5 +1,8 @@
 // New file to hold code that would have gone into the maxed-out files
 import { setupTTSVoiceSelector, loadTTSVoiceSelection } from './llmTtsVoiceSelector.js';
+import { setupBrushIcon, setCurrentColor } from './llmBrushIcon.js'; 
+import { attributeSystem } from './attributeSystem.js'; 
+import { renderAttributeGrid, updatePointsDisplay } from './llmCreationInterfaceCompact.js'; 
 
 // Initialize all UI components for LLM creation
 export function initializeAllComponents(llmToEdit) {
@@ -9,6 +12,9 @@ export function initializeAllComponents(llmToEdit) {
     // Load data from LLM if editing
     if (llmToEdit) {
         loadLLMData(llmToEdit);
+    } else {
+        // Set default color if creating new
+        setCurrentColor('#3cb371');
     }
 }
 
@@ -42,9 +48,14 @@ function setupUIComponents() {
             
             // Initial state - hide manipulation controls until something is selected
             const manipulationControls = document.querySelector('.manipulation-controls');
+            const noSelectionMessage = document.querySelector('.no-selection-message'); 
             if (manipulationControls) manipulationControls.style.display = 'none';
+            if (noSelectionMessage) noSelectionMessage.style.display = 'block'; 
         }, 200);
     });
+
+    // Setup the brush icon
+    setupBrushIcon();
 }
 
 function loadLLMData(llm) {
@@ -80,4 +91,24 @@ function loadLLMData(llm) {
             });
         }, 100);
     }
+
+    // Load color for the brush icon
+    if (llm.color) {
+        setCurrentColor(llm.color);
+    } else {
+         setCurrentColor('#3cb371'); 
+    }
+
+     // Load model data (which might override the base color for the brush)
+     if (llm.modelData) {
+         // Apply data (done in llmCreationInterface) and then potentially update brush
+         // Check if the model data specifies a color for the first part
+         let firstPartColor = llm.color || '#3cb371';
+         if (llm.modelData.parts && llm.modelData.parts.length > 0 &&
+             llm.modelData.parts[0].materialProps && llm.modelData.parts[0].materialProps.color) {
+             firstPartColor = llm.modelData.parts[0].materialProps.color;
+         }
+         // Defer setting the color slightly to ensure model data is applied first
+         setTimeout(() => setCurrentColor(firstPartColor), 50);
+     }
 }

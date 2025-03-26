@@ -4,7 +4,45 @@
     flex-direction: column;
     margin-top: 10px;
     gap: 8px;
+    /* Add padding to contain the selected mesh name */
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
 }
+
+/* Selected Mesh Name styles - Moved from llmColorPickerStyles.css */
+.selected-mesh-name {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: rgba(60, 179, 113, 0.2);
+    border-radius: 4px;
+    color: #3cb371;
+    font-weight: bold;
+    transition: opacity 0.3s ease;
+    font-size: 0.9rem;
+    text-transform: capitalize;
+    /* Added margin for spacing */
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.selected-mesh-name.hidden {
+    opacity: 0;
+    display: none; /* Hide completely when hidden */
+}
+
+.part-type {
+    color: #fff;
+    font-weight: normal;
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-left: 5px;
+    padding: 2px 5px;
+    background-color: rgba(60, 179, 113, 0.3);
+    border-radius: 3px;
+}
+/* End of moved styles */
+
 
 .control-group {
     display: flex;
