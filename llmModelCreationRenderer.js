@@ -122,7 +122,8 @@ function positionModelOnGround(model) {
     const lowestPointY = box.min.y;
     // Adjust model's position so its lowest point is at y=0
     // Add a small epsilon to prevent z-fighting with ground if ground is at y=0
-    model.position.y = -lowestPointY + 0.001;
+    // Adding an additional offset of 0.1 to ensure the model is above the ground
+    model.position.y = -lowestPointY + 0.001 + 0.1;
     console.log(`Positioned model ${model.name || model.uuid} on ground. Lowest point: ${lowestPointY}, New Y: ${model.position.y}`);
 }
 
@@ -195,6 +196,9 @@ export function createDefaultRobotModel(llmToEdit) {
     // Pass the previewScene so it gets added correctly
     const result = createRobotModel(previewScene, color, style); // Pass scene here
     robotModel = result.model;
+
+    // Position the robot higher to prevent ground clipping
+    robotModel.position.y = 1; // Directly set the position higher off the ground
 
     // Update global references
     setModels(robotModel, null);
