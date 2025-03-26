@@ -129,15 +129,15 @@ function showInfoPanel(plot) {
 // Format seconds into a more readable time format
 function formatTime(seconds) {
     if (seconds < 60) {
-        return `${seconds} sec`;
+        return `${seconds}s`;
     } else if (seconds < 3600) {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return secs > 0 ? `${mins} min ${secs} sec` : `${mins} min`;
+        return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
     } else {
         const hours = Math.floor(seconds / 3600);
         const mins = Math.floor((seconds % 3600) / 60);
-        return mins > 0 ? `${hours} hr ${mins} min` : `${hours} hr`;
+        return mins > 0 ? `${hours}hr ${mins}m` : `${hours}hr`;
     }
 }
 
