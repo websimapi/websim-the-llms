@@ -130,6 +130,11 @@ function createModelTypeSelectorHTML() {
     // Get the original select container
     const nameInputContainer = document.getElementById('llm-name').parentElement;
     
+    // Make sure the nameInputContainer has flex display
+    nameInputContainer.style.display = 'flex';
+    nameInputContainer.style.alignItems = 'center';
+    nameInputContainer.style.gap = '10px';
+    
     // Create model type selector HTML
     const selectorHTML = `
         <div class="model-type-selector">

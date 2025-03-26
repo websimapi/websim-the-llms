@@ -1,5 +1,6 @@
 // New file to hold code that would have gone into the maxed-out files
 import { setupTTSVoiceSelector, loadTTSVoiceSelection } from './llmTtsVoiceSelector.js';
+import { initializeUIEnhancements } from './llmCreationInterfaceEnhanced.js';
 
 // Initialize all UI components for LLM creation
 export function initializeAllComponents(llmToEdit) {
@@ -42,11 +43,7 @@ function setupUIComponents() {
     });
 
     // Initialize enhanced UI components
-    import('./llmCreationInterfaceEnhanced.js').then(module => {
-        setTimeout(() => {
-            module.initializeUIEnhancements();
-        }, 150);
-    });
+    initializeUIEnhancements();
 }
 
 function loadLLMData(llm) {
