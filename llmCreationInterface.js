@@ -11,7 +11,7 @@ import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGe
 import { prepareModelForIndividualColoring, applyColorToMesh } from './llmMeshColorManager.js';
 import { initMeshManipulator, updateManipulationDisplays } from './llmMeshManipulator.js';
 import { setGlobalReferences, setModels, setSelectedMesh } from './threeJSGlobals.js';
-import { setupProfileImageInAppearance } from './llmProfileImageDisplay.js';
+import { setupProfileImageDisplay } from './llmProfileImageDisplay.js';
 import { initializeAllComponents } from './llmSetupHelpers.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
