@@ -78,15 +78,6 @@ export function renderAttributeGrid() {
         
         gridContainer.appendChild(item);
     });
-    
-    // Add attribute locking if in edit mode
-    import('./attributeLockManager.js').then(module => {
-        if (module.isEditMode()) {
-            module.renderLockedAttributes();
-        }
-    }).catch(error => {
-        console.error("Error loading attribute lock manager:", error);
-    });
 }
 
 // Function to update points display - moved from llmCreationInterface.js

@@ -51,12 +51,11 @@ function loadLLMData(llm) {
     // Load TTS voice selection
     loadTTSVoiceSelection(llm);
     
-    // Load model badge selection - set skipAttributeAssignment to true to prevent overriding existing attributes
+    // Load model badge selection
     if (llm.model) {
         import('./modelBadgeSelector.js').then(module => {
-            module.loadModelBadgeSelection(llm.model, true); // Pass true to skip attribute assignment
-            
-            // We don't need to apply default attributes here since we're loading existing ones
+            // Set skipAttributeAssignment to true to preserve existing attributes
+            module.loadModelBadgeSelection(llm.model, true);
         });
     } else {
         // If no model specified, apply default attributes for "assistant"

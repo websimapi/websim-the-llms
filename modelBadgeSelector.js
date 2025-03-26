@@ -32,11 +32,17 @@ export function setupModelBadgeSelector() {
                     modelSelect.value = input.value;
                 }
                 
-                // Apply default attributes for this model type
-                const modelType = input.value;
-                assignDefaultAttributes(modelType, attributeSystem);
-                renderAttributeGrid();
-                updatePointsDisplay();
+                // Check if we're in edit mode - if yes, don't change attributes
+                const createUI = document.getElementById('create-llm-ui');
+                const isEditMode = createUI.getAttribute('data-edit-mode') === 'true';
+                
+                if (!isEditMode) {
+                    // Only apply default attributes if NOT editing
+                    const modelType = input.value;
+                    assignDefaultAttributes(modelType, attributeSystem);
+                    renderAttributeGrid();
+                    updatePointsDisplay();
+                }
             }
         });
     });
@@ -49,20 +55,26 @@ export function setupModelBadgeSelector() {
         if (selectedBadge) {
             selectedBadge.closest('.model-badge').classList.add('selected');
             
-            // Apply default attributes for the initial model type
-            assignDefaultAttributes(selectedValue, attributeSystem);
+            // Check if we're in edit mode before applying defaults
+            const createUI = document.getElementById('create-llm-ui');
+            const isEditMode = createUI.getAttribute('data-edit-mode') === 'true';
             
-            // Make sure to render the grid if it exists
-            if (document.getElementById('attribute-grid')) {
-                renderAttributeGrid();
-                updatePointsDisplay();
+            if (!isEditMode) {
+                // Only apply default attributes if NOT editing
+                assignDefaultAttributes(selectedValue, attributeSystem);
+                
+                // Make sure to render the grid if it exists
+                if (document.getElementById('attribute-grid')) {
+                    renderAttributeGrid();
+                    updatePointsDisplay();
+                }
             }
         }
     }
 }
 
 // Load existing model type when editing an LLM
-export function loadModelBadgeSelection(modelType, skipAttributeAssignment = false) {
+export function loadModelBadgeSelection(modelType, skipAttributeAssignment = true) {
     if (!modelType) return;
     
     // Find the badge with matching model type
@@ -85,7 +97,7 @@ export function loadModelBadgeSelection(modelType, skipAttributeAssignment = fal
             modelSelect.value = modelType;
         }
         
-        // Apply default attributes only if not editing (skipAttributeAssignment will be true when editing)
+        // When editing, we skip attribute assignment by default
         if (!skipAttributeAssignment) {
             import('./modelAttributeDefaults.js').then(module => {
                 module.assignDefaultAttributes(modelType, attributeSystem);
