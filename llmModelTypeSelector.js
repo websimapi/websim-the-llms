@@ -99,10 +99,8 @@ function updateModelTypeDisplay(value, modelTypes) {
     const modelType = modelTypes.find(type => type.value === value) || modelTypes[0];
     
     const iconContainer = display.querySelector('.model-type-icon');
-    const nameContainer = display.querySelector('.model-type-name');
     
     if (iconContainer) iconContainer.innerHTML = modelType.icon;
-    if (nameContainer) nameContainer.textContent = modelType.name;
 }
 
 // Create dropdown options
@@ -130,14 +128,13 @@ function createModelTypeSelectorHTML() {
     if (document.querySelector('.model-type-selector')) return;
     
     // Get the original select container
-    const selectContainer = document.getElementById('llm-model').parentElement;
+    const nameInputContainer = document.getElementById('llm-name').parentElement;
     
     // Create model type selector HTML
     const selectorHTML = `
         <div class="model-type-selector">
             <div class="model-type-display">
                 <div class="model-type-icon"></div>
-                <div class="model-type-name">Assistant</div>
                 <div class="model-type-arrow">
                     <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
                 </div>
@@ -146,6 +143,6 @@ function createModelTypeSelectorHTML() {
         </div>
     `;
     
-    // Insert the new selector before the existing select
-    selectContainer.insertAdjacentHTML('afterbegin', selectorHTML);
+    // Insert the new selector before the existing name input
+    nameInputContainer.insertAdjacentHTML('afterbegin', selectorHTML);
 }

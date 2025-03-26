@@ -1,23 +1,25 @@
 /* Styles for model type selector */
 .model-type-selector {
     position: relative;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 15px;
+    margin-right: 10px;
 }
 
 .model-type-display {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 8px;
     background-color: #333;
     border: 1px solid #555;
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
-    width: 160px;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
 }
 
 .model-type-display:hover {
@@ -33,14 +35,13 @@
 }
 
 .model-type-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     fill: currentColor;
 }
 
 .model-type-name {
-    flex-grow: 1;
-    color: white;
+    display: none;
 }
 
 .model-type-arrow {
@@ -103,10 +104,18 @@
     background-color: rgba(60, 179, 113, 0.2);
 }
 
+/* Modified to show name in dropdown options but not in main display */
+.model-type-option .model-type-name {
+    display: block;
+    flex-grow: 1;
+    color: white;
+}
+
 /* Mobile adjustments */
 @media screen and (max-width: 768px) {
     .model-type-display {
-        width: 140px;
+        width: 36px;
+        height: 36px;
     }
     
     .model-type-dropdown {

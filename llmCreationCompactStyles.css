@@ -17,6 +17,14 @@
     /* Smaller margins between setting items */
     .setting-item {
         margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    /* Adjust the name input to accommodate the model type selector */
+    .setting-item .model-type-selector + .setting-input {
+        flex: 1;
     }
     
     /* More compact form elements */

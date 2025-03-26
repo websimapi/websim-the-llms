@@ -11,4 +11,12 @@ export function initializeUIEnhancements() {
     stylesheet.rel = 'stylesheet';
     stylesheet.href = 'llmModelTypeSelector.css';
     document.head.appendChild(stylesheet);
+    
+    // Adjust the layout of the name input field container
+    const nameInputContainer = document.getElementById('llm-name').parentElement;
+    if (nameInputContainer) {
+        nameInputContainer.style.display = 'flex';
+        nameInputContainer.style.alignItems = 'center';
+        nameInputContainer.style.gap = '10px';
+    }
 }
