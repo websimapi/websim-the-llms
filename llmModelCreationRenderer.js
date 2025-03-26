@@ -198,7 +198,7 @@ export function createDefaultRobotModel(llmToEdit) {
     robotModel = result.model;
 
     // Position the robot higher to prevent ground clipping
-    robotModel.position.y = 1; // Directly set the position higher off the ground
+    robotModel.position.y = 0.1; // Changed from 1 to 0.1 for consistent positioning
 
     // Update global references
     setModels(robotModel, null);
