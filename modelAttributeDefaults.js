@@ -50,6 +50,35 @@ export function assignDefaultAttributes(modelType, attributeSystem) {
         spentPoints += attributeSystem.attributes[attr].value;
     });
     
+    // Check if we've exceeded available points and adjust if needed
+    if (spentPoints > attributeSystem.totalPointsAvailable) {
+        // Calculate the excess points
+        const excessPoints = spentPoints - attributeSystem.totalPointsAvailable;
+        
+        // Remove excess points by reducing attributes one by one
+        let pointsToRemove = excessPoints;
+        
+        while (pointsToRemove > 0) {
+            // Identify attributes with values > 0
+            const nonZeroAttrs = Object.keys(attributeSystem.attributes).filter(
+                attr => attributeSystem.attributes[attr].value > 0
+            );
+            
+            // Randomly select an attribute to reduce
+            const randomAttr = nonZeroAttrs[Math.floor(Math.random() * nonZeroAttrs.length)];
+            
+            // Reduce the attribute by 1
+            attributeSystem.attributes[randomAttr].value -= 1;
+            pointsToRemove -= 1;
+        }
+        
+        // Recalculate spent points after adjustment
+        spentPoints = 0;
+        Object.keys(attributeSystem.attributes).forEach(attr => {
+            spentPoints += attributeSystem.attributes[attr].value;
+        });
+    }
+    
     // Update spent points counter
     attributeSystem.pointsSpent = spentPoints;
     
