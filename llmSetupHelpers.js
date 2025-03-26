@@ -13,12 +13,6 @@ export function initializeAllComponents(llmToEdit) {
 }
 
 function setupUIComponents() {
-    // Preload CSS files first to avoid flash of unstyled content
-    preloadCSS();
-    
-    // Pre-create model type selector HTML structure before showing interface
-    preCreateModelTypeSelector();
-    
     // Set up profile image UI
     import('./llmCreationInterfaceCompact.js').then(module => {
         module.setupProfileImageUI();
@@ -45,42 +39,6 @@ function setupUIComponents() {
             const manipulationControls = document.querySelector('.manipulation-controls');
             if (manipulationControls) manipulationControls.style.display = 'none';
         }, 200);
-    });
-
-    // Initialize enhanced UI components
-    import('./llmCreationInterfaceEnhanced.js').then(module => {
-        setTimeout(() => {
-            module.initializeUIEnhancements();
-        }, 150);
-    });
-}
-
-// New function to preload CSS files
-function preloadCSS() {
-    const cssFiles = [
-        'llmModelTypeSelector.css',
-        'llmTtsStyles.css',
-        'llmColorPickerStyles.css'
-    ];
-    
-    cssFiles.forEach(file => {
-        // Check if stylesheet is already loaded
-        if (!document.querySelector(`link[href="${file}"]`)) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = file;
-            document.head.appendChild(link);
-        }
-    });
-}
-
-// New function to pre-create model type selector structure
-function preCreateModelTypeSelector() {
-    // Import the model type selector module directly
-    import('./llmModelTypeSelector.js').then(module => {
-        if (typeof module.createModelTypeSelectorHTML === 'function') {
-            module.createModelTypeSelectorHTML(true); // Pass true to indicate preloading
-        }
     });
 }
 
