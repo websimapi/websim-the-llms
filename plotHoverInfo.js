@@ -99,7 +99,7 @@ function showInfoPanel(plot) {
                 <span class="plot-info-value">${capitalizeFirstLetter(plotData.type)}</span>
             </div>
             <div class="plot-info-row">
-                <span class="plot-info-label">Price:</span>
+                <span class="plot-info-label">Credits Consumed:</span>
                 <span class="plot-info-value websim-credits">${plotData.price} <img src="/websim-credit.png" class="credit-icon" alt="Credits"></span>
             </div>
             <div class="plot-info-row">
