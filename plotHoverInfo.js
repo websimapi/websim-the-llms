@@ -44,7 +44,7 @@ function createInfoPanel() {
     infoPanel.style.display = 'none';
     document.body.appendChild(infoPanel);
     
-    // Add the coin styles
+    // Add the coin animation styles
     const coinStyles = document.createElement('link');
     coinStyles.rel = 'stylesheet';
     coinStyles.href = 'plotCoinStyles.css';

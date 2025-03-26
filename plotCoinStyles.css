@@ -1,60 +1,36 @@
-/* New file for plot coin styles with rainbow platinum effect */
+/* New file for coin animation effects */
 .credit-icon {
-  width: 30px;  
-  height: 30px; 
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   object-fit: scale-down; 
   vertical-align: middle;
-  /* Platinum obsidian base styling */
-  background: linear-gradient(135deg, #1a1a2e, #333342);
-  border: 1px solid #555;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3);
-  padding: 5px;  
+  background: linear-gradient(
+    45deg,
+    #111111 0%,
+    #2c2c2c 25%,
+    #111111 50%,
+    #2c2c2c 75%,
+    #111111 100%
+  );
+  background-size: 200% 200%;
+  border: 1px solid #333333;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.3);
+  padding: 4px; 
   box-sizing: content-box;
-  position: relative;
-  overflow: hidden;
-  animation: platinum-shimmer 3s infinite linear;
+  animation: titanium-shimmer 3s ease infinite;
 }
 
-/* Add rainbow shimmer effect */
-.credit-icon::after {
-  content: "";
-  position: absolute;
-  top: -100%;
-  left: -100%;
-  width: 300%;
-  height: 300%;
-  background: linear-gradient(45deg, 
-    rgba(255,0,0,0.5) 0%,
-    rgba(255,127,0,0.5) 17%,
-    rgba(255,255,0,0.5) 34%,
-    rgba(0,255,0,0.5) 51%,
-    rgba(0,0,255,0.5) 68%,
-    rgba(75,0,130,0.5) 85%,
-    rgba(238,84,144,0.5) 100%);
-  animation: rainbow-shine 3s infinite linear;
-  opacity: 0.8; 
-}
-
-@keyframes rainbow-shine {
-  0% {
-    transform: rotate(0deg) translate(-50%, -50%);
-  }
-  100% {
-    transform: rotate(360deg) translate(-50%, -50%);
-  }
-}
-
-@keyframes platinum-shimmer {
-  0% { filter: hue-rotate(0deg) brightness(1); }
-  50% { filter: hue-rotate(30deg) brightness(1.2); }
-  100% { filter: hue-rotate(0deg) brightness(1); }
+@keyframes titanium-shimmer {
+  0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+  50% { background-position: 100% 50%; filter: hue-rotate(180deg); }
+  100% { background-position: 0% 50%; filter: hue-rotate(360deg); }
 }
 
 /* Mobile adjustments */
 @media screen and (max-width: 768px) {
   .credit-icon {
-    width: 26px;  
-    height: 26px; 
+    width: 22px;
+    height: 22px;
   }
 }
