@@ -100,7 +100,7 @@ export function initHumanoidPreview(llmToEdit) {
     previewScene.add(ground);
 
     // Load the correct model (custom or default)
-    loadInitialModel(llmToEdit);
+    loadInitialModel(llmToEdit); // Await this to ensure model is loaded before positioning
 
     // Setup animation clock
     previewClock = new THREE.Clock();
@@ -116,14 +116,15 @@ export function initHumanoidPreview(llmToEdit) {
 // Helper function to adjust model position vertically
 function positionModelOnGround(model) {
     if (!model) return;
-    // Ensure transformations are applied before calculating bounding box
+    // Ensure world matrix is up-to-date before calculating bounding box
     model.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(model);
     const lowestPointY = box.min.y;
-    // Adjust model's position so its lowest point is at y=0
-    // Add a small epsilon to prevent z-fighting with ground if ground is at y=0
-    // Adding an additional offset of 0.1 to ensure the model is above the ground
-    model.position.y = -lowestPointY + 0.001 + 0.1;
+    // Calculate the current offset from the desired ground position (0)
+    const currentOffset = model.position.y - lowestPointY;
+    // Set the new Y position to lift the model so its lowest point is at y=0
+    // Adding a small epsilon to prevent z-fighting
+    model.position.y = -lowestPointY + 0.001;
     console.log(`Positioned model ${model.name || model.uuid} on ground. Lowest point: ${lowestPointY}, New Y: ${model.position.y}`);
 }
 
@@ -147,13 +148,12 @@ async function loadInitialModel(llmToEdit) {
             customCharacter = tempCustomCharacter;
             previewScene.add(customCharacter);
             prepareModelForIndividualColoring(customCharacter);
-            setModels(null, customCharacter);
-            modelToPosition = customCharacter; // Set the model to be positioned
 
-            // Apply saved model data if it exists
+            // Apply saved model data if it exists BEFORE setting global models and positioning
             if (llmToEdit.modelData) {
                 try {
                     const storageModule = await import('./llmModelStorage.js');
+                    // applyStoredModelData might change the model's position/rotation
                     storageModule.applyStoredModelData(customCharacter, llmToEdit);
                     // Re-prepare after applying stored data
                     prepareModelForIndividualColoring(customCharacter);
@@ -161,6 +161,9 @@ async function loadInitialModel(llmToEdit) {
                     console.error("Error applying stored model data:", err);
                 }
             }
+
+            setModels(null, customCharacter); // Set global models AFTER applying stored data
+            modelToPosition = customCharacter; // Set the model to be positioned
 
             // Update status
             const statusElement = document.getElementById('generation-status');
@@ -171,23 +174,23 @@ async function loadInitialModel(llmToEdit) {
 
         } catch (error) {
             console.error("Error loading custom character:", error);
-            const result = createDefaultRobotModel(llmToEdit); // Fallback
+            const result = await createDefaultRobotModel(llmToEdit); // Await fallback creation
             robotModel = result; // Store the result of the fallback
             modelToPosition = robotModel;
         }
     } else {
         // Create default robot humanoid model
-        const result = createDefaultRobotModel(llmToEdit);
+        const result = await createDefaultRobotModel(llmToEdit); // Await creation
         robotModel = result; // Store the result
         modelToPosition = robotModel;
     }
 
-    // Position the final loaded model on the ground
+    // Position the final loaded model on the ground AFTER all modifications
     positionModelOnGround(modelToPosition);
 }
 
 // Renamed from createDefaultRobot
-export function createDefaultRobotModel(llmToEdit) {
+export async function createDefaultRobotModel(llmToEdit) { // Make async to handle potential async imports
     // Get current selected color or color from edit data
     const color = llmToEdit?.color || document.getElementById('llm-color')?.value || '#3cb371';
     const style = llmToEdit?.style || 'modern';
@@ -197,25 +200,29 @@ export function createDefaultRobotModel(llmToEdit) {
     const result = createRobotModel(previewScene, color, style); // Pass scene here
     robotModel = result.model;
 
-    // Position the robot higher to prevent ground clipping
-    robotModel.position.y = 0.1; // Changed from 1 to 0.1 for consistent positioning
-
-    // Update global references
-    setModels(robotModel, null);
+    // Initialize position - will be corrected by positionModelOnGround later
+    robotModel.position.y = 0;
 
     // Prepare the model for individual part coloring
     prepareModelForIndividualColoring(robotModel);
 
     // Apply stored model data if editing and model data exists
+    // This needs to happen BEFORE setting global models and positioning
     if (llmToEdit && llmToEdit.modelData && !llmToEdit.customCharacterCode) {
-        import('./llmModelStorage.js').then(module => {
+        try {
+            const module = await import('./llmModelStorage.js');
+            // applyStoredModelData modifies the robotModel in place
             module.applyStoredModelData(robotModel, llmToEdit);
             // Ensure model is prepared for individual coloring after applying stored data
             prepareModelForIndividualColoring(robotModel);
-            // Re-position after applying stored data
-            positionModelOnGround(robotModel);
-        }).catch(err => console.error("Error applying stored model data to robot:", err));
+            console.log("Applied stored model data to robot in createDefaultRobotModel.");
+        } catch (err) {
+            console.error("Error applying stored model data to robot:", err);
+        }
     }
+
+    // Update global references AFTER applying potential stored data
+    setModels(robotModel, null);
 
     // --- Setup Animation ---
     if (robotModel.animations && robotModel.animations.length > 0) {
@@ -319,7 +326,7 @@ function handleMeshSelection(event) {
     }
 }
 
-export function updateSelectedMeshColor() {
+export async function updateSelectedMeshColor() { // Make async to handle createDefaultRobotModel
     const colorInput = document.getElementById('llm-color');
     if (!colorInput) return;
     const color = colorInput.value;
@@ -360,7 +367,7 @@ export function updateSelectedMeshColor() {
                 }
             }
             // Recreate default robot with current color picker value
-            const newRobot = createDefaultRobotModel(llmToEdit);
+            const newRobot = await createDefaultRobotModel(llmToEdit);
             // Position the newly created robot
             positionModelOnGround(newRobot);
         }
@@ -387,8 +394,6 @@ function animatePreview() {
     if (previewControls) {
         previewControls.update();
     }
-
-    // Removed manual idle animation - handled by mixer now
 
     previewRenderer.render(previewScene, previewCamera);
 }
@@ -435,7 +440,23 @@ export async function displayGeneratedCharacter(generatedCode) {
         customCharacter = newCustomCharacter; // Assign to global
         previewScene.add(customCharacter);
         prepareModelForIndividualColoring(customCharacter);
-        setModels(null, customCharacter); // Update global refs
+
+        // Apply saved data if exists (relevant if regenerating during edit)
+        const createUI = document.getElementById('create-llm-ui');
+        let llmToEdit = null;
+        if (createUI && createUI.getAttribute('data-edit-mode') === 'true') {
+            const editId = createUI.getAttribute('data-edit-id');
+            if (editId) {
+                llmToEdit = llmDataManager.getLLMById(editId);
+                if (llmToEdit && llmToEdit.modelData) {
+                    const storageModule = await import('./llmModelStorage.js');
+                    storageModule.applyStoredModelData(customCharacter, llmToEdit);
+                    prepareModelForIndividualColoring(customCharacter);
+                }
+            }
+        }
+
+        setModels(null, customCharacter); // Update global refs AFTER applying data
 
         // Position the newly created character on the ground
         positionModelOnGround(customCharacter);
@@ -454,8 +475,8 @@ export async function displayGeneratedCharacter(generatedCode) {
 }
 
 // Function to reset the preview to the default robot
-export function resetPreviewModel() {
-    loadInitialModel(); // Call with no llmToEdit to load default
+export async function resetPreviewModel() { // Make async
+    await loadInitialModel(); // Call with no llmToEdit to load default
 }
 
 // --- Create Robot Model with Hierarchy and Animation ---
