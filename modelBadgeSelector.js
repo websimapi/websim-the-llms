@@ -62,7 +62,7 @@ export function setupModelBadgeSelector() {
 }
 
 // Load existing model type when editing an LLM
-export function loadModelBadgeSelection(modelType, skipAttributeAssignment = false) {
+export function loadModelBadgeSelection(modelType, skipAttributeAssignment = true) {
     if (!modelType) return;
     
     // Find the badge with matching model type

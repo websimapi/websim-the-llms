@@ -51,11 +51,10 @@ function loadLLMData(llm) {
     // Load TTS voice selection
     loadTTSVoiceSelection(llm);
     
-    // Load model badge selection
+    // Load model badge selection - pass true to skip assigning default attributes
     if (llm.model) {
         import('./modelBadgeSelector.js').then(module => {
-            module.loadModelBadgeSelection(llm.model);
-            
+            module.loadModelBadgeSelection(llm.model, true);
             // We don't need to apply default attributes here since we're loading existing ones
         });
     } else {
