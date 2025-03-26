@@ -1,7 +1,7 @@
 /* New file for plot coin styles with rainbow platinum effect */
 .credit-icon {
-  width: 24px;
-  height: 24px;
+  width: 30px;  
+  height: 30px; 
   border-radius: 50%;
   object-fit: scale-down; 
   vertical-align: middle;
@@ -9,7 +9,7 @@
   background: linear-gradient(135deg, #1a1a2e, #333342);
   border: 1px solid #555;
   box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3);
-  padding: 4px; 
+  padding: 5px;  
   box-sizing: content-box;
   position: relative;
   overflow: hidden;
@@ -33,6 +33,7 @@
     rgba(75,0,130,0.5) 85%,
     rgba(238,84,144,0.5) 100%);
   animation: rainbow-shine 3s infinite linear;
+  opacity: 0.8; 
 }
 
 @keyframes rainbow-shine {
@@ -45,15 +46,15 @@
 }
 
 @keyframes platinum-shimmer {
-  0% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(30deg); }
-  100% { filter: hue-rotate(0deg); }
+  0% { filter: hue-rotate(0deg) brightness(1); }
+  50% { filter: hue-rotate(30deg) brightness(1.2); }
+  100% { filter: hue-rotate(0deg) brightness(1); }
 }
 
 /* Mobile adjustments */
 @media screen and (max-width: 768px) {
   .credit-icon {
-    width: 22px;
-    height: 22px;
+    width: 26px;  
+    height: 26px; 
   }
 }
