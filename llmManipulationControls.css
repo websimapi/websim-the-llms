@@ -1,6 +1,6 @@
 /* Styles for 3D manipulation controls */
 .manipulation-controls {
-    display: flex;
+    display: none;
     flex-direction: column;
     margin-top: 10px;
     gap: 8px;
@@ -91,6 +91,38 @@
     font-size: 0.8rem;
 }
 
+/* Advanced settings toggle button */
+.advanced-settings-toggle {
+    background-color: #444;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    margin-left: 10px;
+}
+
+.advanced-settings-toggle:hover {
+    background-color: #3cb371;
+    transform: scale(1.05);
+}
+
+.advanced-settings-toggle.active {
+    background-color: #3cb371;
+    box-shadow: 0 0 5px rgba(60, 179, 113, 0.5);
+}
+
+.advanced-settings-toggle svg {
+    width: 18px;
+    height: 18px;
+    fill: white;
+}
+
 @media screen and (max-width: 768px) {
     .control-button {
         width: 40px;
@@ -100,5 +132,15 @@
     .control-button svg {
         width: 20px;
         height: 20px;
+    }
+    
+    .advanced-settings-toggle {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .advanced-settings-toggle svg {
+        width: 24px;
+        height: 24px;
     }
 }

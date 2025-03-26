@@ -5,12 +5,14 @@ let transformMode = 'none'; // 'none', 'rotate', 'position'
 let transformAxis = 'y'; // 'x', 'y', 'z'
 let transformStep = 0.05; // Changed from 0.1 to 0.05 for finer control
 let transformMultiplier = 1; // For larger/smaller steps
+let advancedSettingsVisible = false; // Track if advanced settings are visible
 
 export function initMeshManipulator() {
     // Add event listeners to manipulation buttons
     setupRotationControls();
     setupPositionControls();
     setupValueEditing();
+    setupAdvancedSettingsToggle();
     updateTransformUIState();
 }
 
@@ -236,6 +238,23 @@ function applyManualValue(value, axis, mode) {
     storeTransformData(mesh);
 }
 
+function setupAdvancedSettingsToggle() {
+    const advancedToggle = document.getElementById('advanced-settings-toggle');
+    if (advancedToggle) {
+        advancedToggle.addEventListener('click', () => {
+            advancedSettingsVisible = !advancedSettingsVisible;
+            const manipulationControls = document.querySelector('.manipulation-controls');
+            
+            if (manipulationControls) {
+                manipulationControls.style.display = advancedSettingsVisible ? 'flex' : 'none';
+            }
+            
+            // Toggle active class for styling
+            advancedToggle.classList.toggle('active', advancedSettingsVisible);
+        });
+    }
+}
+
 function updateTransformUIState() {
     document.querySelectorAll('.control-button').forEach(btn => {
         btn.classList.remove('active');
@@ -320,6 +339,12 @@ export function updateManipulationDisplays() {
     updateRotationDisplay(mesh);
     updatePositionDisplay(mesh);
     updateTransformUIState();
+    
+    // Show advanced settings toggle when a mesh is selected
+    const advancedToggle = document.getElementById('advanced-settings-toggle');
+    if (advancedToggle) {
+        advancedToggle.style.display = 'flex';
+    }
 }
 
 function storeTransformData(mesh) {
