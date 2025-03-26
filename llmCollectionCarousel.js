@@ -21,7 +21,6 @@ export function setupLLMCarousel(viewportElement, llms) {
     
     if (animationId) {
         cancelAnimationFrame(animationId);
-        animationId = null; // Reset animation ID
     }
     
     // Only proceed if we have LLMs to display
@@ -97,19 +96,13 @@ function initCarouselScene(viewportElement) {
         scene.add(floor);
         
         // Handle window resize
-        // Use ResizeObserver for more reliable viewport resizing
-        const resizeObserver = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                const { width, height } = entry.contentRect;
-                if (camera && renderer && width > 0 && height > 0) {
-                     camera.aspect = width / height;
-                     camera.updateProjectionMatrix();
-                     renderer.setSize(width, height);
-                }
+        window.addEventListener('resize', () => {
+            if (camera && renderer && viewportElement) {
+                camera.aspect = viewportElement.clientWidth / viewportElement.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(viewportElement.clientWidth, viewportElement.clientHeight);
             }
         });
-        resizeObserver.observe(viewportElement);
-
     } catch (error) {
         console.error('Error initializing carousel scene:', error);
     }
@@ -164,9 +157,7 @@ function updateArrowVisibility() {
     // Show/hide arrows based on position in carousel
     if (leftArrow && rightArrow) {
         leftArrow.style.opacity = currentIndex > 0 ? "1" : "0.3";
-        leftArrow.style.pointerEvents = currentIndex > 0 ? "auto" : "none"; // Disable clicks when inactive
         rightArrow.style.opacity = currentIndex < carouselLLMs.length - 1 ? "1" : "0.3";
-        rightArrow.style.pointerEvents = currentIndex < carouselLLMs.length - 1 ? "auto" : "none"; // Disable clicks when inactive
     }
 }
 
@@ -179,14 +170,10 @@ function updateCarouselModels() {
     });
     llmModels = [];
     
-    // Clean up selection rings/highlights before adding new models
-    clearSelectionIndicators();
-    
     // Determine which LLMs to display (current, previous, next)
     const displayIndices = [];
     displayIndices.push(currentIndex);
     
-    // Preload one model to the left and one to the right for smoother transition
     if (currentIndex > 0) {
         displayIndices.unshift(currentIndex - 1);
     }
@@ -206,16 +193,15 @@ function updateCarouselModels() {
             
             model.position.set(position.x, position.y, position.z);
             model.rotation.y = position.rotation;
-            model.userData = { id: llm.id, index: index }; // Store LLM id and original index
+            model.userData = { id: llm.id, index: index };
             
-            scene.add(model);
-            llmModels.push(model); // Add to our list of active models
-            
-            // Add a selection indicator if this model is the currently selected one
+            // Add a selection indicator if this model is selected
             if (llm.id === selectedModelId) {
                 addSelectionIndicator(model);
             }
             
+            scene.add(model);
+            llmModels.push(model);
         } catch (error) {
             console.error('Error creating model for LLM:', llm.name, error);
         }
@@ -244,17 +230,12 @@ function displayEmptyState(viewportElement) {
 }
 
 function addSelectionIndicator(model) {
-    // Ensure scene exists before clearing indicators that might be attached to it
-    if (scene) {
-        clearSelectionIndicators();
-    } else {
-        // If scene doesn't exist, just clear indicators potentially attached to the model
-        clearModelAttachedIndicators(model);
-    }
-
+    // Remove any existing selection indicators first
+    clearSelection();
+    
     // Create a ring around the model
     const ringGeometry = new THREE.RingGeometry(1.5, 1.7, 32);
-    const ringMaterial = new THREE.MeshBasicMaterial({
+    const ringMaterial = new THREE.MeshBasicMaterial({ 
         color: 0x3cb371,
         side: THREE.DoubleSide,
         transparent: true,
@@ -265,133 +246,93 @@ function addSelectionIndicator(model) {
     ring.position.y = -0.99; // Fixed position just above ground level
     ring.userData.isSelectionRing = true;
     ring.name = "selectionRing";
-
+    
     // IMPORTANT: Store the model ID with the ring for identification
     ring.userData.modelId = model.userData.id;
-
+    
     // Set position to match the model
     ring.position.x = model.position.x;
     ring.position.z = model.position.z;
-
-    // Add ring to scene only if scene exists
-    if (scene) {
-        scene.add(ring);
-    } else {
-        console.warn("Scene not available, cannot add selection ring.");
-    }
-
+    
+    // Add to scene
+    scene.add(ring);
+    
     // Add a highlight effect
     const highlight = new THREE.PointLight(0x3cb371, 1, 3);
-    highlight.position.set(0, 1, 0); // Position relative to the model
+    highlight.position.set(0, 1, 0);
     highlight.userData.isSelectionHighlight = true;
     highlight.name = "selectionHighlight";
-    model.add(highlight); // Add light as child of the model
-
+    model.add(highlight);
+    
     // Add another light from below for more dramatic effect
     const bottomLight = new THREE.PointLight(0x3cb371, 0.5, 2);
-    bottomLight.position.set(0, -0.5, 0); // Position relative to the model
+    bottomLight.position.set(0, -0.5, 0);
     bottomLight.userData.isSelectionHighlight = true;
     bottomLight.name = "bottomHighlight";
-    model.add(bottomLight); // Add light as child of the model
-
-    // Store a reference to the selection indicators ON THE MODEL
-    model.userData.selectionIndicators = {
-        ring: scene ? ring : null, // Store ring only if added to scene
-        lights: [highlight, bottomLight]
-    };
+    model.add(bottomLight);
+    
+    // Store a reference to the selection indicators
+    model.userData.selectionIndicators = [ring, highlight, bottomLight];
+    model.userData.selectionRing = ring; // Store direct reference to ring
 }
 
-// Renamed function to specifically clear indicators
-function clearSelectionIndicators() {
-    // Check if scene exists before operating on it
-    if (scene) {
-        // Remove rings from the scene
-        const ringsToRemove = [];
-        scene.traverse(child => {
-            if (child.userData?.isSelectionRing) {
-                ringsToRemove.push(child);
-            }
-        });
-        ringsToRemove.forEach(ring => scene.remove(ring));
-    }
-
-    // Remove lights attached to models (this part is safe even if scene is null)
-    llmModels.forEach(model => {
-       clearModelAttachedIndicators(model);
+function clearSelection() {
+    // First find and remove all existing selection rings in the scene
+    const selectionRings = [];
+    scene.children.forEach(child => {
+        if (child.userData && child.userData.isSelectionRing) {
+            selectionRings.push(child);
+        }
     });
-}
-
-// Helper function to clear indicators attached directly to a model
-function clearModelAttachedIndicators(model) {
-     if (model?.userData?.selectionIndicators?.lights) {
-        model.userData.selectionIndicators.lights.forEach(light => {
-            // Check parentage before removing, in case model was already removed from scene hierarchy elsewhere
-            if (light.parent === model) {
-                model.remove(light);
-            }
-        });
-        // Clear the reference on the model itself
-        delete model.userData.selectionIndicators;
-    }
-     // Also ensure the ring reference is cleared if it exists, even if scene was null
-     if (model?.userData?.selectionIndicators?.ring) {
-         delete model.userData.selectionIndicators.ring;
-     }
-     // Final cleanup on the userData object if selectionIndicators is now empty
-     if (model?.userData?.selectionIndicators && Object.keys(model.userData.selectionIndicators).length === 0) {
-          delete model.userData.selectionIndicators;
-     }
+    
+    // Remove rings outside of the loop to avoid modifying the collection while iterating
+    selectionRings.forEach(ring => {
+        scene.remove(ring);
+    });
+    
+    // Then remove other indicators from models
+    llmModels.forEach(model => {
+        if (model && model.userData.selectionIndicators) {
+            model.userData.selectionIndicators.forEach(indicator => {
+                if (indicator.parent === model) {
+                    model.remove(indicator);
+                }
+            });
+            delete model.userData.selectionIndicators;
+            delete model.userData.selectionRing;
+        }
+    });
+    
+    selectedModelId = null;
 }
 
 // Function to select a model by ID
 export function selectModel(id) {
-    if (id === selectedModelId && selectedModelId !== null) return; // Already selected
-
-    // Set new selection ID
+    if (id === selectedModelId) return; // Already selected
+    
+    // Set new selection
     selectedModelId = id;
-
-    // Clear any previous selection indicators (respecting scene existence)
-    clearSelectionIndicators();
-
-    // Find the newly selected model among the currently displayed models
+    
+    // Clear any previous selection
+    clearSelection();
+    
+    // Find model with this ID
     const selectedModel = llmModels.find(model => model.userData.id === id);
-
     if (selectedModel) {
-        // Add selection indicator to the correct model
         addSelectionIndicator(selectedModel);
-
-        // Find the index of the selected LLM in the full list
+        
+        // Find the index of the selected LLM
         const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
-
-        // If the selected model is not the one currently centered, pan the carousel
         if (llmIndex !== -1 && llmIndex !== currentIndex) {
+            // Pan to the selected model if it's not the current one
             currentIndex = llmIndex;
-            updateCarouselModels(); // Reload models based on new index
+            updateCarouselModels();
             updateArrowVisibility();
-            // The selection indicator will be reapplied in updateCarouselModels
-        }
-    } else {
-        // If the model isn't currently displayed (e.g., after delete/refresh),
-        // try to find its index and pan to it.
-        const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
-        if (llmIndex !== -1) {
-            currentIndex = llmIndex;
-            updateCarouselModels(); // This will load and hopefully highlight the model
-            updateArrowVisibility();
-        } else {
-            console.warn("Selected model ID not found in carousel:", id);
-            selectedModelId = null; // Reset if ID is invalid
         }
     }
-
+    
     // Update list view highlighting
-    updateListSelection(selectedModelId); // Pass the potentially updated ID
-
-    // Update the state of the "Edit Selected" button
-    const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
-    if (editSelectedBtn) {
-        editSelectedBtn.disabled = !selectedModelId;
-    }
+    updateListSelection(id);
 }
 
 // Update the list view to highlight selected item
@@ -400,15 +341,21 @@ function updateListSelection(id) {
     document.querySelectorAll('.llm-list-item').forEach(item => {
         item.classList.remove('selected');
     });
-
-    if (id === null) return; // If nothing is selected, just clear highlights
-
+    
     // Add highlight to selected item
     const selectedItem = document.querySelector(`.llm-list-item[data-id="${id}"]`);
     if (selectedItem) {
         selectedItem.classList.add('selected');
-        // Optional: Scroll item into view if needed
-        // selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    // Ensure the model is actually highlighted in the scene
+    // Clear all existing selection effects first
+    clearSelection();
+    
+    // Find the model with this ID and reapply selection effects
+    const modelToSelect = llmModels.find(model => model.userData.id === id);
+    if (modelToSelect) {
+        addSelectionIndicator(modelToSelect);
     }
 }
 
@@ -419,117 +366,84 @@ export function getSelectedModelId() {
 
 function animateCarousel() {
     if (!scene || !camera || !renderer) {
-        // Scene might have been cleaned up, stop animation
-        if(animationId) cancelAnimationFrame(animationId);
-        animationId = null;
+        console.error('Cannot animate: scene, camera, or renderer is missing');
         return;
     }
     
-    // Make references available globally for the raycaster (if needed elsewhere)
+    // Make references available globally for the raycaster
     window.carouselScene = scene;
     window.carouselCamera = camera;
     
     animationId = requestAnimationFrame(animateCarousel);
     
-    llmModels.forEach((model) => { // No need for index here
+    llmModels.forEach((model, index) => {
         if (!model) return;
         
         const time = Date.now() * 0.001;
-        // Use the model's stored index relative to the current index
-        const offset = model.userData.index - currentIndex;
+        const offset = index * 0.5;
         
         // Simple hover effect - only apply to the model, not its children directly
-        const originY = calculatePosition(offset).y;
-        model.position.y = originY + Math.sin(time + (model.userData.index * 0.5)) * 0.1;
+        const originY = calculatePosition(model.userData.index - currentIndex).y;
+        model.position.y = originY + Math.sin(time + offset) * 0.1;
         
         // Subtle rotation
-        const baseRotation = calculatePosition(offset).rotation;
-        model.rotation.y = baseRotation + Math.sin(time * 0.5 + (model.userData.index * 0.5)) * 0.1;
+        const baseRotation = calculatePosition(model.userData.index - currentIndex).rotation;
+        model.rotation.y = baseRotation + Math.sin(time * 0.5 + offset) * 0.1;
         
-        // Update selection indicators if they exist on this model
+        // Find the selection ring for this model and update its position
+        scene.children.forEach(child => {
+            if (child.userData && 
+                child.userData.isSelectionRing && 
+                child.userData.modelId === model.userData.id) {
+                // Keep ring at fixed height and update x,z position
+                child.position.x = model.position.x;
+                child.position.z = model.position.z;
+                
+                // Pulse the ring size slightly
+                const pulseFactor = 1 + Math.sin(time * 2) * 0.05;
+                child.scale.x = child.scale.z = pulseFactor;
+            }
+        });
+        
+        // Update other lights/effects on the model
         if (model.userData.selectionIndicators) {
-             // Update ring position (it's in the scene, not child of model)
-             if (model.userData.selectionIndicators.ring && model.userData.selectionIndicators.ring.parent === scene) {
-                 model.userData.selectionIndicators.ring.position.x = model.position.x;
-                 model.userData.selectionIndicators.ring.position.z = model.position.z;
-                 
-                 // Pulse the ring size slightly
-                 const pulseFactor = 1 + Math.sin(time * 2) * 0.05;
-                 model.userData.selectionIndicators.ring.scale.set(pulseFactor, 1, pulseFactor); // Use set for clarity
-             }
-             
-             // Update lights attached to the model
-             model.userData.selectionIndicators.lights?.forEach(light => {
-                 if (light.userData?.isSelectionHighlight) {
-                     // Pulse the light intensity
-                     light.intensity = 1 + Math.sin(time * 2) * 0.3;
-                 }
-             });
+            model.userData.selectionIndicators.forEach(indicator => {
+                if (indicator.userData && indicator.userData.isSelectionHighlight) {
+                    // Pulse the light intensity
+                    indicator.intensity = 1 + Math.sin(time * 2) * 0.3;
+                }
+            });
         }
     });
 
-    try {
-        if(renderer) renderer.render(scene, camera);
-    } catch (e) {
-        console.error("Error during carousel render:", e);
-        if(animationId) cancelAnimationFrame(animationId); // Stop animation on error
-        animationId = null;
-    }
+    renderer.render(scene, camera);
 }
 
 export function cleanupCarousel() {
     if (animationId) {
         cancelAnimationFrame(animationId);
-        animationId = null;
     }
-
-    // Clean up models and selection indicators ONLY IF scene exists
+    
+    // Clean up all models and selection indicators
     if (scene) {
-        // Moved clearSelectionIndicators inside the check
-        clearSelectionIndicators();
-
+        // Clean up selection indicators in scene
+        scene.children.forEach(child => {
+            if (child.userData && (child.userData.isSelectionRing || child.userData.isSelectionIndicator)) {
+                scene.remove(child);
+            }
+        });
+        
+        // Clean up models
         llmModels.forEach(model => {
             if (model && model.parent) {
                 model.parent.remove(model);
-                // Dispose geometries and materials if necessary
-                model.traverse(child => {
-                    if (child.isMesh) {
-                        child.geometry?.dispose();
-                        if (child.material) {
-                             if (Array.isArray(child.material)) {
-                                 child.material.forEach(mat => mat.dispose());
-                             } else {
-                                 child.material.dispose();
-                             }
-                        }
-                    }
-                });
             }
         });
-    } else {
-        // If scene is already null, still try to clean indicators attached to models in memory
-         llmModels.forEach(model => {
-             clearModelAttachedIndicators(model);
-         });
     }
-
-
-    // Remove renderer canvas
-    if (renderer && renderer.domElement.parentNode) {
-        renderer.domElement.parentNode.removeChild(renderer.domElement);
-    }
-
-    // Clear arrays and references AFTER cleanup attempts
+    
     llmModels = [];
-    carouselLLMs = [];
     scene = null;
     camera = null;
     renderer = null;
-    selectedModelId = null;
-    leftArrow = null;
-    rightArrow = null;
-
-    // Clear global references if they were set
-    if (window.carouselScene === scene) window.carouselScene = null; // scene is already null here, so redundant but safe
-    if (window.carouselCamera === camera) window.carouselCamera = null;
+    selectedModelId = null; // Reset selection when cleaning up
 }
