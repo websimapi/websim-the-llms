@@ -82,6 +82,61 @@
     box-sizing: content-box;
 }
 
+.plot-info-requirements {
+    margin-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 8px;
+}
+
+.plot-requirements-label {
+    font-weight: bold;
+    color: #aaa;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.plot-requirements-icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.requirement-icon {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    border: 1px solid transparent;
+}
+
+.requirement-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.requirement-icon.assistant { 
+    border-left: 3px solid #3cb371; 
+}
+
+.requirement-icon.creator { 
+    border-left: 3px solid #e67e22; 
+}
+
+.requirement-icon.researcher { 
+    border-left: 3px solid #3498db; 
+}
+
+.requirement-icon.companion { 
+    border-left: 3px solid #9b59b6; 
+}
+
+.requirement-icon.humanoid { 
+    border-left: 3px solid #f1c40f; 
+}
+
 /* Mobile adjustments for fixed position */
 @media screen and (max-width: 768px) {
     .plot-info-panel.mobile-fixed {
