@@ -186,15 +186,15 @@
     background-color: #2a8c5a;
 }
 
-/* Profile image display in appearance tab */
+/* Profile image display (used in basic info and potentially other places) */
 .profile-image-display {
-    margin-top: 10px;
 }
 
 .profile-image-header {
     font-weight: bold;
     color: #fff;
     margin-bottom: 10px;
+    display: none;
 }
 
 .profile-image-container {
@@ -214,6 +214,11 @@
     text-align: center;
     font-size: 0.9rem;
     padding: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
 }
 
 .profile-image {
@@ -238,6 +243,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    border: 1px solid #444;
 }
 
 .llm-list-image {
@@ -251,12 +257,12 @@
     .profile-image-preview-container {
         width: 90%;
     }
-    
+
     .camera-button {
         bottom: 10px;
         right: 10px;
     }
-    
+
     .llm-list-image-container {
         width: 50px;
         height: 50px;

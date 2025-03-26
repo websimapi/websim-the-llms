@@ -1,91 +1,132 @@
 // New file for displaying profile images in various UI locations
 import { llmDataManager } from './llmDataManager.js';
 
-// Add profile image display to the appearance section of the Create LLM UI
-export function setupProfileImageInAppearance() {
-    // Get the appearance section
-    const appearanceSection = document.querySelector('.settings-group:nth-child(4)');
-    if (!appearanceSection) return;
-    
-    // Check if profile image display already exists
-    const existingDisplay = appearanceSection.querySelector('.profile-image-display');
-    if (existingDisplay) {
-        existingDisplay.remove(); // Remove if exists to prevent duplication
+// Add profile image display to the basic info section of the Create LLM UI
+export function setupProfileImageDisplay() {
+    // Find the name input to locate the target section
+    const nameInput = document.getElementById('llm-name');
+    if (!nameInput) return;
+    const nameSettingItem = nameInput.closest('.setting-item');
+    if (!nameSettingItem) return;
+    const basicInfoGroup = nameSettingItem.closest('.settings-group');
+    if (!basicInfoGroup) return;
+
+    // Check if profile image display already exists (within the new layout wrapper)
+    const existingLayout = basicInfoGroup.querySelector('.basic-info-layout');
+    if (existingLayout) {
+        // If the layout wrapper exists, assume the image display is already set up.
+        // We might just need to update the image if editing.
+    } else {
+        // Create the layout wrapper
+        const layoutWrapper = document.createElement('div');
+        layoutWrapper.className = 'basic-info-layout';
+
+        // Create profile image display element
+        const profileImageElement = document.createElement('div');
+        profileImageElement.className = 'profile-image-display';
+        profileImageElement.innerHTML = `
+            <div class="profile-image-container">
+                <div class="profile-image-placeholder">No image</div>
+                <img class="profile-image" src="" alt="Profile" style="display: none;">
+            </div>
+        `;
+
+        // Append image display and name item to the wrapper
+        layoutWrapper.appendChild(profileImageElement);
+        layoutWrapper.appendChild(nameSettingItem); // Move the existing name item into the wrapper
+
+        // Insert the wrapper before where the name item originally was (or just after title)
+        const titleElement = basicInfoGroup.querySelector('.settings-group-title');
+        if (titleElement) {
+             basicInfoGroup.insertBefore(layoutWrapper, titleElement.nextSibling);
+        } else {
+             basicInfoGroup.insertBefore(layoutWrapper, basicInfoGroup.firstChild); // Fallback
+        }
     }
-    
-    // Create profile image display element
-    const profileImageElement = document.createElement('div');
-    profileImageElement.className = 'profile-image-display';
-    profileImageElement.innerHTML = `
-        <div class="profile-image-header">Profile Image</div>
-        <div class="profile-image-container">
-            <div class="profile-image-placeholder">No image yet. Use the camera button to create one.</div>
-            <img class="profile-image" src="" alt="Profile" style="display: none;">
-        </div>
-    `;
-    
-    // Add to appearance section
-    appearanceSection.appendChild(profileImageElement);
-    
+
     // Check if we're in edit mode and have an image URL
     const editId = document.getElementById('create-llm-ui').getAttribute('data-edit-id');
     if (editId) {
         const llm = llmDataManager.getLLMById(editId);
         if (llm && llm.profileImageUrl) {
             updateProfileImageDisplay(llm.profileImageUrl);
+        } else {
+            // Ensure placeholder is shown if editing but no image exists
+             updateProfileImageDisplay(null);
         }
+    } else {
+        // Ensure placeholder is shown when creating new
+        updateProfileImageDisplay(null);
     }
-    
+
     // Listen for profile image changes
-    document.addEventListener('profileImageSaved', (e) => {
-        if (e.detail && e.detail.url) {
-            updateProfileImageDisplay(e.detail.url);
-        }
-    });
+    document.removeEventListener('profileImageSaved', handleProfileImageSaved); // Remove previous listener if any
+    document.addEventListener('profileImageSaved', handleProfileImageSaved);
+}
+
+// Handler for the custom event
+function handleProfileImageSaved(e) {
+    if (e.detail && e.detail.url) {
+        updateProfileImageDisplay(e.detail.url);
+    }
 }
 
 // Update the profile image display in the appearance section
 export function updateProfileImageDisplay(imageUrl) {
-    if (!imageUrl) return;
-    
-    const placeholder = document.querySelector('.profile-image-placeholder');
-    const imageElement = document.querySelector('.profile-image');
-    
+    // Find elements within the basic info layout
+    const layout = document.querySelector('.basic-info-layout');
+    if (!layout) return;
+
+    const placeholder = layout.querySelector('.profile-image-placeholder');
+    const imageElement = layout.querySelector('.profile-image');
+
     if (placeholder && imageElement) {
-        placeholder.style.display = 'none';
-        imageElement.src = imageUrl;
-        imageElement.style.display = 'block';
+        if (imageUrl) {
+            placeholder.style.display = 'none';
+            imageElement.src = imageUrl;
+            imageElement.style.display = 'block';
+        } else {
+            // Show placeholder if no image URL
+            placeholder.style.display = 'flex'; // Use flex to center text
+            imageElement.src = '';
+            imageElement.style.display = 'none';
+        }
     }
 }
 
 // Add profile images to LLM list items in the collection view
 export function addProfileImagesToLLMList() {
     const llmListItems = document.querySelectorAll('.llm-list-item');
-    
+
     llmListItems.forEach(item => {
         const id = item.getAttribute('data-id');
         if (!id) return;
-        
+
         const llm = llmDataManager.getLLMById(id);
-        if (!llm || !llm.profileImageUrl) return;
-        
-        // Check if this item already has an image container
-        if (item.querySelector('.llm-list-image-container')) return;
-        
+
+        // Remove existing image container if present
+        const existingImageContainer = item.querySelector('.llm-list-image-container');
+        if (existingImageContainer) {
+            item.removeChild(existingImageContainer);
+            item.classList.remove('with-image'); // Remove class if image is removed
+        }
+
+        if (!llm || !llm.profileImageUrl) return; // Exit if no image URL
+
         // Add 'with-image' class to the item for proper grid layout
         item.classList.add('with-image');
-        
+
         // Create image container and image element
         const imageContainer = document.createElement('div');
         imageContainer.className = 'llm-list-image-container';
-        
+
         const image = document.createElement('img');
         image.className = 'llm-list-image';
         image.src = llm.profileImageUrl;
         image.alt = llm.name;
-        
+
         imageContainer.appendChild(image);
-        
+
         // Insert at the beginning of the item
         item.insertBefore(imageContainer, item.firstChild);
     });

@@ -7,6 +7,7 @@ import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips
 // Function to render the attribute grid - moved from llmCreationInterface.js
 export function renderAttributeGrid() {
     const gridContainer = document.getElementById('attribute-grid');
+    if (!gridContainer) return; // Add guard clause
     gridContainer.innerHTML = '';
     
     const attributesArray = attributeSystem.getAttributesArray();
@@ -83,6 +84,7 @@ export function renderAttributeGrid() {
 // Function to update points display - moved from llmCreationInterface.js
 export function updatePointsDisplay() {
     const pointsDisplay = document.getElementById('points-remaining');
+    if (!pointsDisplay) return; // Add guard clause
     const remaining = attributeSystem.getRemainingPoints();
     pointsDisplay.textContent = `${remaining} Points Remaining`;
     
@@ -98,15 +100,10 @@ export function updatePointsDisplay() {
 
 // New function to reset profile image display when opening creation UI
 export function resetProfileImageDisplay() {
-    // Clear current profile image display
-    const placeholder = document.querySelector('.profile-image-placeholder');
-    const imageElement = document.querySelector('.profile-image');
-    
-    if (placeholder && imageElement) {
-        placeholder.style.display = 'block';
-        imageElement.src = '';
-        imageElement.style.display = 'none';
-    }
+    // Use the updated function from llmProfileImageDisplay
+    import('./llmProfileImageDisplay.js').then(module => {
+         module.updateProfileImageDisplay(null); // Pass null to show placeholder
+     });
 }
 
 // Function to reset form elements
@@ -136,8 +133,29 @@ export function resetFormAttributes() {
     const voiceSelect = document.getElementById('llm-tts-voice');
     if (voiceSelect) {
         voiceSelect.selectedIndex = 0;
-        document.getElementById('test-voice-btn').disabled = true;
+         // Find test button - it might not exist yet if TTS module hasn't loaded fully
+         // const testBtn = document.getElementById('test-voice-btn');
+         // if (testBtn) testBtn.disabled = true;
     }
+
+    // Reset model badge selection to default (assistant)
+    import('./modelBadgeSelector.js').then(module => {
+        module.loadModelBadgeSelection('assistant', false); // Apply default attributes
+    });
+
+    // Reset manipulation controls display if an object was selected
+    import('./llmMeshManipulator.js').then(module => {
+        const manipulationControls = document.querySelector('.manipulation-controls');
+        const noSelectionMessage = document.querySelector('.no-selection-message');
+        if (manipulationControls) manipulationControls.style.display = 'none';
+        if (noSelectionMessage) noSelectionMessage.style.display = 'block';
+        const selectedMeshNameEl = document.getElementById('selected-mesh-name');
+        if (selectedMeshNameEl) selectedMeshNameEl.classList.add('hidden');
+
+        // Also clear the global selected mesh reference
+        window.selectedMesh = null;
+        if (typeof setSelectedMesh === 'function') setSelectedMesh(null);
+    });
 }
 
 // New function to initialize profile image UI
@@ -147,16 +165,6 @@ export function setupProfileImageUI() {
         module.setupProfileImageCapture();
     }).catch(error => {
         console.error("Error setting up profile image capture:", error);
-    });
-}
-
-// New function to initialize profile image UI in the appearance tab
-export function setupProfileImageAppearance() {
-    // Import and setup the profile image display in appearance tab
-    import('./llmProfileImageDisplay.js').then(module => {
-        module.setupProfileImageInAppearance();
-    }).catch(error => {
-        console.error("Error setting up profile image appearance:", error);
     });
 }
 

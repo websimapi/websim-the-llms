@@ -1,13 +1,11 @@
 /* New CSS file for color picker related styles */
-
-/* Styles removed as the color picker UI has changed */
-/*.color-picker-container { 
+.color-picker-container {
     display: flex;
     align-items: center;
     gap: 10px;
-}*/
+}
 
-/*.color-input { 
+.color-input {
     width: 80px !important;
     height: 60px !important;
     padding: 0 !important;
@@ -36,9 +34,9 @@
 .color-input::-moz-color-swatch {
     border: none;
     border-radius: 7px;
-}*/
+}
 
-/*.selected-mesh-name { 
+.selected-mesh-name {
     display: inline-block;
     padding: 5px 10px;
     background-color: rgba(60, 179, 113, 0.2);
@@ -53,7 +51,7 @@
 
 .selected-mesh-name.hidden {
     opacity: 0;
-}*/
+}
 
 .part-type {
     color: #fff;
