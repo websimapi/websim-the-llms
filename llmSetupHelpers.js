@@ -35,10 +35,14 @@ function setupUIComponents() {
         }, 100);
     });
     
-    // Initialize mesh manipulator with a slight delay to ensure proper hiding
+    // Initialize mesh manipulator
     import('./llmMeshManipulator.js').then(module => {
         setTimeout(() => {
             module.initMeshManipulator();
+            
+            // Initial state - hide manipulation controls until something is selected
+            const manipulationControls = document.querySelector('.manipulation-controls');
+            if (manipulationControls) manipulationControls.style.display = 'none';
         }, 200);
     });
 }
@@ -51,6 +55,15 @@ function loadLLMData(llm) {
     if (llm.model) {
         import('./modelBadgeSelector.js').then(module => {
             module.loadModelBadgeSelection(llm.model);
+            
+            // We don't need to apply default attributes here since we're loading existing ones
+        });
+    } else {
+        // If no model specified, apply default attributes for "assistant"
+        import('./modelAttributeDefaults.js').then(module => {
+            module.assignDefaultAttributes('assistant', attributeSystem);
+            renderAttributeGrid();
+            updatePointsDisplay();
         });
     }
     

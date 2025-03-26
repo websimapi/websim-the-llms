@@ -12,13 +12,6 @@ export function initMeshManipulator() {
     setupPositionControls();
     setupValueEditing();
     updateTransformUIState();
-    
-    // Hide manipulation controls by default
-    const manipulationControls = document.querySelector('.manipulation-controls');
-    const noSelectionMessage = document.querySelector('.no-selection-message');
-    
-    if (manipulationControls) manipulationControls.style.display = 'none';
-    if (noSelectionMessage) noSelectionMessage.style.display = 'block';
 }
 
 function setupRotationControls() {

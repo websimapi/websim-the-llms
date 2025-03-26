@@ -1,4 +1,7 @@
-// New file for model badge functionality
+import { assignDefaultAttributes } from './modelAttributeDefaults.js';
+import { attributeSystem } from './attributeSystem.js';
+import { renderAttributeGrid, updatePointsDisplay } from './llmCreationInterfaceCompact.js';
+
 export function setupModelBadgeSelector() {
     const modelContainer = document.querySelector('.model-badge-container');
     if (!modelContainer) return;
@@ -28,6 +31,12 @@ export function setupModelBadgeSelector() {
                 if (modelSelect) {
                     modelSelect.value = input.value;
                 }
+                
+                // Apply default attributes for this model type
+                const modelType = input.value;
+                assignDefaultAttributes(modelType, attributeSystem);
+                renderAttributeGrid();
+                updatePointsDisplay();
             }
         });
     });
@@ -39,12 +48,21 @@ export function setupModelBadgeSelector() {
         const selectedBadge = document.querySelector(`.model-badge input[value="${selectedValue}"]`);
         if (selectedBadge) {
             selectedBadge.closest('.model-badge').classList.add('selected');
+            
+            // Apply default attributes for the initial model type
+            assignDefaultAttributes(selectedValue, attributeSystem);
+            
+            // Make sure to render the grid if it exists
+            if (document.getElementById('attribute-grid')) {
+                renderAttributeGrid();
+                updatePointsDisplay();
+            }
         }
     }
 }
 
 // Load existing model type when editing an LLM
-export function loadModelBadgeSelection(modelType) {
+export function loadModelBadgeSelection(modelType, skipAttributeAssignment = false) {
     if (!modelType) return;
     
     // Find the badge with matching model type
@@ -65,6 +83,15 @@ export function loadModelBadgeSelection(modelType) {
         const modelSelect = document.getElementById('llm-model');
         if (modelSelect) {
             modelSelect.value = modelType;
+        }
+        
+        // Apply default attributes only if not editing (skipAttributeAssignment will be true when editing)
+        if (!skipAttributeAssignment) {
+            import('./modelAttributeDefaults.js').then(module => {
+                module.assignDefaultAttributes(modelType, attributeSystem);
+                renderAttributeGrid();
+                updatePointsDisplay();
+            });
         }
     }
 }
