@@ -170,7 +170,7 @@ body {
 
 .menu-button {
     margin-right: 15px;
-    padding: 10px 18px;
+    padding: 10px 18px;  
     background-color: transparent;
     color: white;
     border: none;
@@ -202,8 +202,8 @@ body {
 }
 
 .llm-icon {
-    width: 56px;
-    height: 56px;
+    width: 56px;   
+    height: 56px;  
 }
 
 /* Console Panel Styles */
@@ -436,7 +436,7 @@ input:checked + .llm-toggle-slider:before {
     z-index: 10;
 }
 
-.arc-button-1, .arc-button-3 {
+.arc-button-1, .arc-button-2, .arc-button-3, .arc-button-4 {
     transform: translateY(20px);
 }
 
@@ -463,10 +463,10 @@ input:checked + .llm-toggle-slider:before {
     background: none;
     position: relative;
     overflow: hidden;
-    border-radius: 50%;
-    width: 80px;
-    height: 80px;
-    display: flex;
+    border-radius: 50%; 
+    width: 80px;       
+    height: 80px;      
+    display: flex;     
     justify-content: center;
     align-items: center;
 }
@@ -481,9 +481,9 @@ input:checked + .llm-toggle-slider:before {
 .move-llm-btn:hover .llm-icon {
     filter: hue-rotate(calc(var(--hue, 0) * 1deg));
     animation: rainbow-icon 8s ease infinite;
-    transform: perspective(500px) rotateY(10deg) rotateX(5deg);
+    transform: perspective(500px) rotateY(10deg) rotateX(5deg); 
     transition: transform 0.3s ease;
-    filter: drop-shadow(0 0 5px rgba(255,255,255,0.7));
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.7)); 
 }
 
 .create-llm-btn::before,
@@ -494,8 +494,8 @@ input:checked + .llm-toggle-slider:before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%),
-                transparent 0%,
+    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), 
+                transparent 0%, 
                 rgba(255, 0, 0, 0.4) 10%,
                 rgba(255, 165, 0, 0.4) 20%,
                 rgba(255, 255, 0, 0.4) 30%,
@@ -508,7 +508,7 @@ input:checked + .llm-toggle-slider:before {
     transition: opacity 0.3s;
     pointer-events: none;
     z-index: -1;
-    border-radius: 50%;
+    border-radius: 50%; 
 }
 
 .create-llm-btn:hover::before,
@@ -569,18 +569,15 @@ input:checked + .llm-toggle-slider:before {
 
 .create-llm-sidebar {
     width: 30%;
-    min-width: 350px;
     height: 100%;
     background-color: #1a1a1a;
     padding: 20px;
     overflow-y: auto;
     border-right: 2px solid #3cb371;
-    display: flex;
-    flex-direction: column;
 }
 
 .create-llm-main {
-    flex-grow: 1;
+    width: 70%;
     height: 100%;
     display: flex;
     justify-content: center;
@@ -595,7 +592,6 @@ input:checked + .llm-toggle-slider:before {
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 1px solid #3cb371;
-    flex-shrink: 0;
 }
 
 .create-llm-title {
@@ -617,7 +613,6 @@ input:checked + .llm-toggle-slider:before {
     padding: 15px;
     background-color: #222;
     border-radius: 5px;
-    flex-shrink: 0;
 }
 
 .settings-group-title {
@@ -646,10 +641,34 @@ input:checked + .llm-toggle-slider:before {
     border-radius: 4px;
 }
 
-textarea.setting-input {
+.setting-input[type="textarea"], textarea.setting-input {
     min-height: 80px;
     resize: vertical;
     font-family: 'Arial', sans-serif;
+}
+
+.setting-slider {
+    width: 100%;
+    height: 6px;
+    background: #555;
+    outline: none;
+    -webkit-appearance: none;
+    border-radius: 3px;
+}
+
+.setting-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3cb371;
+    cursor: pointer;
+}
+
+.setting-value {
+    display: inline-block;
+    color: #3cb371;
+    margin-left: 10px;
 }
 
 .humanoid-viewport {
@@ -665,10 +684,7 @@ textarea.setting-input {
 .create-llm-actions {
     display: flex;
     justify-content: space-between;
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid #333;
-    flex-shrink: 0;
+    margin-top: 20px;
 }
 
 .create-llm-button {
@@ -679,7 +695,6 @@ textarea.setting-input {
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-    transition: background-color 0.2s;
 }
 
 .create-llm-button:hover {
@@ -699,12 +714,235 @@ textarea.setting-input {
     font-size: 0.9rem;
     color: #3cb371;
     height: 20px;
-    text-align: center;
 }
 
 #generate-character-btn {
     margin-top: 10px;
     width: 100%;
+}
+
+/* Attribute Grid Styles */
+.attribute-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.attribute-item {
+    background-color: #333;
+    border-radius: 4px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.attribute-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.attribute-name {
+    font-weight: bold;
+    text-transform: capitalize;
+    color: #3cb371;
+}
+
+.attribute-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.attribute-button {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #444;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.attribute-button:hover {
+    background-color: #3cb371;
+}
+
+.attribute-button:disabled {
+    background-color: #555;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.attribute-value {
+    display: flex;
+    width: 100%;
+    height: 20px;
+    background-color: #222;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.attribute-fill {
+    height: 100%;
+    background-color: #3cb371;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.attribute-description {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-top: 5px;
+}
+
+.points-info {
+    font-size: 0.9rem;
+    color: #fff;
+    margin-left: 10px;
+    background-color: rgba(60, 179, 113, 0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* LLM Collection UI Styles */
+#llm-collection-ui {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 200;
+    display: none;
+    flex-direction: column;
+}
+
+#llm-collection-ui.active {
+    display: flex;
+}
+
+.collection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #1a1a1a;
+    border-bottom: 2px solid #3cb371;
+}
+
+.collection-title {
+    color: #3cb371;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.collection-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.collection-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.collection-viewport {
+    flex: 2;
+    background-color: #111;
+    position: relative;
+}
+
+.llm-list {
+    flex: 1;
+    background-color: #222;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.llm-list-item {
+    background-color: #333;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.llm-info h3 {
+    color: #3cb371;
+    margin: 0 0 5px 0;
+}
+
+.llm-type {
+    color: #aaa;
+    margin: 0 0 5px 0;
+    font-size: 0.9rem;
+}
+
+.llm-created {
+    color: #888;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.llm-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.llm-view-btn, .llm-delete-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.llm-view-btn {
+    background-color: #3cb371;
+    color: white;
+}
+
+.llm-delete-btn {
+    background-color: #ff4444;
+    color: white;
+}
+
+.empty-collection {
+    color: #aaa;
+    text-align: center;
+    padding: 50px 0;
+}
+
+.collection-footer {
+    padding: 15px;
+    background-color: #1a1a1a;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: center;
+}
+
+.collection-button {
+    padding: 10px 20px;
+    background-color: #3cb371;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 /* LLM Details Panel Styles */
@@ -714,17 +952,15 @@ textarea.setting-input {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 800px;
-    max-width: 90vw;
     background-color: #333;
     border-radius: 5px;
     z-index: 300;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
     display: none;
-    flex-direction: column;
 }
 
 #llm-details-panel.active {
-    display: flex;
+    display: block;
 }
 
 .details-header {
@@ -734,7 +970,6 @@ textarea.setting-input {
     padding: 15px;
     background-color: #3cb371;
     border-radius: 5px 5px 0 0;
-    flex-shrink: 0;
 }
 
 .details-title {
@@ -756,8 +991,6 @@ textarea.setting-input {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    overflow-y: auto;
-    flex-grow: 1;
 }
 
 .llm-detail-name {
@@ -775,7 +1008,6 @@ textarea.setting-input {
     font-weight: bold;
     margin-left: 10px;
     align-self: flex-start;
-    transition: background-color 0.2s;
 }
 
 .edit-llm-btn:hover {
@@ -794,7 +1026,6 @@ textarea.setting-input {
     border-radius: 5px;
     overflow: hidden;
     margin: 15px 0;
-    flex-shrink: 0;
 }
 
 .llm-detail-attributes {
@@ -822,5 +1053,4 @@ textarea.setting-input {
     height: 100%;
     background-color: #3cb371;
     width: 0%;
-    transition: width 0.3s ease;
 }
