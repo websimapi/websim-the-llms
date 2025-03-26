@@ -1,12 +1,15 @@
 import * as THREE from 'three';
-import { generateCharacterCode, createCustomCharacter } from './characterGenerator.js';
+// Removed generateCharacterCode, createCustomCharacter imports (now handled by handleGenerateCharacter)
+import { createCustomCharacter } from './characterGenerator.js';
 import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { saveLLMData } from './saveLLMData.js';
 import { createStandardMaterials } from './llmCharacterRendererUtils.js';
+// Import createRobotModel from the new file
 import { createRobotModel } from './llmModelCreationRenderer.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
+// Import moved functions from compact file
 import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGenerateCharacter } from './llmCreationInterfaceCompact.js';
 import { prepareModelForIndividualColoring, applyColorToMesh } from './llmMeshColorManager.js';
 import { initMeshManipulator, updateManipulationDisplays } from './llmMeshManipulator.js';
@@ -16,7 +19,8 @@ import { initializeAllComponents } from './llmSetupHelpers.js';
 
 let humanoidScene, humanoidCamera, humanoidRenderer, humanoidClock;
 let robotModel;
-let headMaterial, bodyMaterial, limbsMaterial;
+// Removed material variables, handled within createRobotModel/Utils
+// let headMaterial, bodyMaterial, limbsMaterial;
 let customCharacter = null;
 let generatingCharacter = false;
 let humanoidMixer = null; // Initialize mixer as null
@@ -231,7 +235,7 @@ function initHumanoidPreview(llmToEdit) {
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
-    ground.position.y = -1;
+    ground.position.y = -1; // Position ground slightly below origin
     humanoidScene.add(ground);
 
     // Clear previous models before creating new ones
@@ -317,10 +321,10 @@ function createDefaultRobot(llmToEdit) {
     // Prepare the model for individual part coloring
     prepareModelForIndividualColoring(robotModel);
 
-    // Store material references
-    headMaterial = result.materials.headMaterial;
-    bodyMaterial = result.materials.bodyMaterial;
-    limbsMaterial = result.materials.limbsMaterial;
+    // Store material references - NO LONGER NEEDED HERE
+    // headMaterial = result.materials.headMaterial;
+    // bodyMaterial = result.materials.bodyMaterial;
+    // limbsMaterial = result.materials.limbsMaterial;
 
 
     // Apply stored model data if editing and model data exists
@@ -476,10 +480,10 @@ function updateHumanoidPreview() {
     // Prepare the model for individual part coloring
     prepareModelForIndividualColoring(robotModel);
 
-    // Update stored material references
-    headMaterial = result.materials.headMaterial;
-    bodyMaterial = result.materials.bodyMaterial;
-    limbsMaterial = result.materials.limbsMaterial;
+    // Update stored material references - NO LONGER NEEDED HERE
+    // headMaterial = result.materials.headMaterial;
+    // bodyMaterial = result.materials.bodyMaterial;
+    // limbsMaterial = result.materials.limbsMaterial;
 }
 
 function updateSelectedMeshColor() {
@@ -523,11 +527,12 @@ function animateHumanoid() {
     if (currentModel) {
         const time = Date.now() * 0.001;
 
-        // Gentle bobbing motion
-        currentModel.position.y = Math.sin(time) * 0.05;
+        // Gentle bobbing motion - Use local position for consistency
+        const basePosY = 0; // Robot origin is at ground level
+        currentModel.position.y = basePosY + Math.sin(time) * 0.05;
 
         // Gentle rotation
-        currentModel.rotation.y = Math.sin(time * 0.5) * 0.5;
+        currentModel.rotation.y = Math.sin(time * 0.5) * 0.15; // Reduced rotation range
     }
 
 
