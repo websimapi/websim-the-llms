@@ -6,9 +6,12 @@ import { saveTTSVoiceSelection } from './llmTtsVoiceSelector.js';
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
-    // Get values from form
-    const name = document.getElementById('llm-name').value || `LLM-${Math.floor(Math.random() * 1000)}`;
-    const model = document.getElementById('llm-model').value;
+    // Get values from form - prioritize scene overlay inputs
+    const name = document.getElementById('scene-llm-name')?.value || 
+                 document.getElementById('llm-name')?.value || 
+                 `LLM-${Math.floor(Math.random() * 1000)}`;
+    const model = document.getElementById('scene-llm-model')?.value || 
+                  document.getElementById('llm-model')?.value;
     const color = document.getElementById('llm-color').value;
     // Style field removed, use default value
     const style = 'modern';
