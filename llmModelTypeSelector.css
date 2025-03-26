@@ -132,7 +132,7 @@
 /* Enhanced alignment with name input */
 .setting-item.name-and-type-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 10px;
 }
 
