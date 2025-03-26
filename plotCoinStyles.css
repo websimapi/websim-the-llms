@@ -1,16 +1,30 @@
-/* New file for plot coin styles */
+/* New file for coin animation effects */
 .credit-icon {
   width: 24px;
   height: 24px;
   border-radius: 50%;
   object-fit: scale-down; 
   vertical-align: middle;
-  /* Platinum color styling (lighter and more reflective than silver) */
-  background-color: #e5e4e2;
+  background: linear-gradient(
+    45deg,
+    #e5e4e2 0%,
+    #f7f7f7 25%,
+    #e5e4e2 50%,
+    #f7f7f7 75%,
+    #e5e4e2 100%
+  );
+  background-size: 200% 200%;
   border: 1px solid #c0c0c0;
   box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.7);
   padding: 4px; 
   box-sizing: content-box;
+  animation: platinum-shimmer 3s ease infinite;
+}
+
+@keyframes platinum-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Mobile adjustments */
