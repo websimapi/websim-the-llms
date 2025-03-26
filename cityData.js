@@ -88,42 +88,5 @@ export const cityData = {
             available: true,
             type: "commercial"
         }
-    ],
-    saveGame: function() {
-        // Get LLM data if available
-        const llmData = [];
-        if (typeof llmDataManager !== 'undefined') {
-            llmDataManager.addToCityData(this);
-        }
-        
-        return JSON.stringify({
-            name: this.name,
-            description: this.description,
-            founded: this.founded,
-            size: this.size,
-            lots: this.lots,
-            llms: this.llms || []
-        });
-    },
-    loadGame: function(jsonData) {
-        try {
-            const data = JSON.parse(jsonData);
-            this.name = data.name;
-            this.description = data.description;
-            this.founded = data.founded;
-            this.size = data.size;
-            this.lots = data.lots;
-            
-            // Load LLMs if available
-            if (data.llms && typeof llmDataManager !== 'undefined') {
-                this.llms = data.llms;
-                llmDataManager.importFromCityData(this);
-            }
-            
-            return true;
-        } catch (e) {
-            console.error("Error loading game data:", e);
-            return false;
-        }
-    }
+    ]
 };

@@ -53,6 +53,12 @@
     color: #ff5c5c;
 }
 
+.plot-info-value.websim-credits {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 .plot-info-description {
     margin-top: 8px;
     font-style: italic;
@@ -60,4 +66,20 @@
     font-size: 0.9rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 5px;
+}
+
+.credit-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    vertical-align: middle;
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 768px) {
+    .credit-icon {
+        width: 18px;
+        height: 18px;
+    }
 }
