@@ -9,7 +9,6 @@ import { CameraBoundaryController } from './cameraBoundaryController.js';
 import { createDistanceMist } from './terrainUtils.js';
 import { setupUIInteractions, setupConsolePanel } from './citySceneUI.js';
 import { initPlotHoverInfo } from './plotHoverInfo.js';
-import { createFactoryBuilding } from './factoryBuilding.js'; // Import the factory function
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -60,25 +59,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initCityScene() {
     const cityViewElement = document.getElementById('city-view');
-
+    
     // Initialize Three.js scene
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xe0f5e0);
-
+    
     // Create camera
     const camera = new THREE.PerspectiveCamera(
-        60,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        5000 // Increased far plane for factory visibility
+        60, 
+        window.innerWidth / window.innerHeight, 
+        0.1, 
+        2000
     );
-
+    
     // Set initial camera position further out for cinematic intro
     camera.position.set(50, 30, 50);
     camera.lookAt(0, 0, 0);
-
+    
     // Create renderer
-    const renderer = new THREE.WebGLRenderer({
+    const renderer = new THREE.WebGLRenderer({ 
         antialias: true,
         powerPreference: "high-performance",
         logarithmicDepthBuffer: true
@@ -91,39 +90,32 @@ function initCityScene() {
     renderer.toneMapping = THREE.ACESFilmicToneMapping; // Improved tone mapping
     renderer.toneMappingExposure = 1.2; // Adjust exposure for better lighting
     cityViewElement.appendChild(renderer.domElement);
-
+    
     // Add orbit controls
     const controls = new OrbitControls(camera, renderer.domElement);
-
+    
     // Create infinite terrain instead of just a ground plane
     const terrain = createInfiniteTerrain(scene, 500);
-
+    
     // Add distance mist for better horizon
     const mistLayers = createDistanceMist(scene, 1500, 60);
-
-    // Create and position the factory in the distance
-    const factory = createFactoryBuilding();
-    // Position it far away and potentially slightly offset
-    factory.position.set(0, 0, -1800); // Adjust Z position to place it far back
-    factory.scale.set(1.5, 1.5, 1.5); // Make it larger to appear substantial in the distance
-    scene.add(factory);
-
+    
     // Create camera boundary controller
     const boundaryController = new CameraBoundaryController(camera, controls, terrain.bounds);
-
+    
     // Add grid for reference - 1m x 1m grid squares
-    const gridHelper = new THREE.GridHelper(500, 500, 0x000000, 0x555555);
+    const gridHelper = new THREE.GridHelper(500, 500, 0x000000, 0x555555); 
     scene.add(gridHelper);
-
+    
     // Hide grid by default
     gridHelper.visible = false;
-
+    
     // Store grid reference globally for console access
     window.cityGrid = gridHelper;
-
+    
     // Create building lots from cityData
     createBuildingLots(scene);
-
+    
     // Update orbit controls settings
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -132,57 +124,57 @@ function initCityScene() {
     controls.maxDistance = 350;
     controls.maxPolarAngle = Math.PI / 2.2;
     controls.enabled = false; // Disable controls during intro animation
-
+    
     // Setup advanced lighting - use new function from dedicated file
     setupSceneLighting(scene, renderer);
-
-    // Call imported setup functions
+    
+    // Call imported setup functions 
     setupUIInteractions();
     setupConsolePanel();
-
+    
     // Setup camera intro animation
     let introDuration = 4000; // 4 seconds for intro
     let introStartTime = Date.now();
     let introComplete = false;
     let audioFadeStarted = false;
-
+    
     // Initialize plot hover info after the scene is ready
     initPlotHoverInfo(camera, scene, renderer);
-
+    
     // Add touch support for mobile devices
     renderer.domElement.addEventListener('touchstart', handleTouchStart);
-
+    
     // Handle window resize
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
+    
     // Animation loop
     function animate() {
         requestAnimationFrame(animate);
-
+        
         // Handle intro camera animation
         if (!introComplete) {
             const elapsed = Date.now() - introStartTime;
             const progress = Math.min(elapsed / introDuration, 1);
-
+            
             if (progress < 1) {
                 // Interpolate camera position for smooth pan
                 const targetX = 15; // Increased from 0 to stay further out
                 const targetY = 25; // Increased from 20
                 const targetZ = 30; // Increased from 20 to maintain more distance
-
+                
                 camera.position.x = 50 * (1 - progress) + targetX * progress;
                 camera.position.y = 30 * (1 - progress) + targetY * progress;
                 camera.position.z = 50 * (1 - progress) + targetZ * progress;
                 camera.lookAt(0, 0, 0);
-
+                
                 /*
                 if (progress > 0.3 && !audioFadeStarted) {
                     audioFadeStarted = true;
-
+                    
                     // Use the new music player module
                     import('./musicPlayer.js').then(module => {
                         module.fadeOutMusic(3000);
@@ -198,15 +190,15 @@ function initCityScene() {
             // Apply camera boundary restrictions
             boundaryController.update();
         }
-
+        
         // Call animation functions for other components
         if (window.cityAnimateLightsFn) {
             window.cityAnimateLightsFn();
         }
-
+        
         renderer.render(scene, camera);
     }
-
+    
     animate();
 }
 
