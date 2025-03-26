@@ -1,3 +1,29 @@
+// --- Add character archetypes ---
+export const characterArchetypes = [
+    { name: 'Mage', emoji: '🧙‍♂️' },
+    { name: 'Robot', emoji: '🤖' },
+    { name: 'Chef', emoji: '🧑‍🍳' },
+    { name: 'Doctor', emoji: '👨‍⚕️' },
+    { name: 'Detective', emoji: '🕵️‍♂️' },
+    { name: 'Ghost', emoji: '👻' },
+    { name: 'Genie', emoji: '🧞' },
+    { name: 'Dragon', emoji: '🐉' },
+    { name: 'Space Marine', emoji: '🔫' }, // Note: Emoji might vary across platforms
+    { name: 'King/Queen', emoji: '👑' },
+    { name: 'Trickster', emoji: '🎭' },
+    { name: 'Alien', emoji: '👽' },
+    { name: 'Cyborg', emoji: '🦾' },
+    { name: 'Police', emoji: '👮' }, // Shortened name
+    { name: 'Snake', emoji: '🐍' },
+    { name: 'Cat', emoji: '🐱' },
+    { name: 'Bear', emoji: '🐻' },
+    { name: 'Werewolf', emoji: '🐺' },
+    { name: 'Skeleton', emoji: '💀' },
+    { name: 'Paladin', emoji: '🛡️' },
+    { name: 'Archer', emoji: '🏹' },
+    { name: 'Demon', emoji: '👹' }
+];
+
 export const config = {
     // Loading screen settings
     loadingTime: Math.floor(Math.random() * (120000 - 30000 + 1)) + 30000, // Random time between 30s and 2min

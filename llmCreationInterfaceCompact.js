@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { createCustomCharacter } from './characterGenerator.js';
 import { attributeSystem } from './attributeSystem.js';
 import { setupAttributeTooltips, optimizeUIHeight } from './llmAttributeTooltips.js';
+import { characterArchetypes } from './config.js'; // Import archetypes
 
 // Function to render the attribute grid - moved from llmCreationInterface.js
 export function renderAttributeGrid() {
@@ -169,31 +170,31 @@ export function setupProfileImageUI() {
 }
 
 // Character generation handler - moved from llmCreationInterface.js
-export async function handleGenerateCharacter(generatingCharacter, setGeneratingCharacter) {
+// Modified to accept baseModelType and archetype
+export async function handleGenerateCharacter(generatingCharacter, setGeneratingCharacter, baseModelType, archetype) {
     if (generatingCharacter) return;
-    
-    const promptInput = document.getElementById('llm-custom-prompt');
-    const userPrompt = promptInput.value.trim();
+
     const statusElement = document.getElementById('generation-status');
     const generateBtn = document.getElementById('generate-character-btn');
-    
-    if (userPrompt.length < 5) {
-        statusElement.textContent = "Please enter a more detailed description";
-        return;
+
+    if (!baseModelType || !archetype) {
+        statusElement.textContent = "Please select a base model and archetype.";
+        return { success: false, error: "Missing base model or archetype" };
     }
-    
+
     setGeneratingCharacter(true);
-    statusElement.textContent = "Generating character...";
+    statusElement.textContent = `Generating '${archetype}' ${characterArchetypes.find(a=>a.name===archetype)?.emoji || ''} character...`;
     generateBtn.disabled = true;
-    
+
     try {
-        // Import the function from characterGenerator.js to fix the reference error
+        // Import the function from characterGenerator.js
         const { generateCharacterCode } = await import('./characterGenerator.js');
-        const generatedCode = await generateCharacterCode(userPrompt);
-        
+        // Pass baseModelType and archetype
+        const generatedCode = await generateCharacterCode(baseModelType, archetype);
+
         // Store the generated code for later use
         statusElement.dataset.generatedCode = generatedCode;
-        
+
         // Return the generated code to the caller
         return {
             success: true,
@@ -201,7 +202,7 @@ export async function handleGenerateCharacter(generatingCharacter, setGenerating
         };
     } catch (error) {
         console.error("Failed to generate character:", error);
-        statusElement.textContent = "Failed to generate character. Try again with a different description.";
+        statusElement.textContent = `Failed to generate character: ${error.message}. Try again.`;
         return {
             success: false,
             error: error

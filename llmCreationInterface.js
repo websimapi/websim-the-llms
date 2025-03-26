@@ -15,10 +15,12 @@ import { initializeAllComponents } from './llmSetupHelpers.js';
 // Import preview functions from the new location
 import { initHumanoidPreview, updateSelectedMeshColor, resetPreviewModel, displayGeneratedCharacter, createDefaultRobotModel } from './llmModelCreationRenderer.js';
 import { optimizeUIHeight } from './llmAttributeTooltips.js'; // Keep this for resize handler
+import { characterArchetypes } from './config.js'; // Import archetypes from config
 
 // Removed global preview variables (humanoidScene, etc.) - managed within llmModelCreationRenderer.js now
 // Removed model variables (robotModel, customCharacter, materials) - managed within llmModelCreationRenderer.js
 let generatingCharacter = false; // Keep generation state
+let selectedArchetype = ''; // Store selected archetype
 
 
 // Global function references for helpers (still needed?) - Let's keep them for now just in case
@@ -36,7 +38,10 @@ export function setupLLMCreationInterface(llmToEdit) {
         delete statusElement.dataset.selectedVoice;
     }
     generatingCharacter = false; // Reset generation flag
+    selectedArchetype = ''; // Reset selected archetype
 
+    // Populate emoji archetypes
+    populateArchetypeEmojis();
 
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
@@ -44,17 +49,24 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Initialize attribute system
     attributeSystem.initializeAttributes();
 
-    // If editing an existing LLM, load its attributes
-    if (llmToEdit && llmToEdit.attributes) {
-        let spentPoints = 0;
-        Object.entries(llmToEdit.attributes).forEach(([name, value]) => {
-            if (attributeSystem.attributes[name]) {
-                attributeSystem.attributes[name].value = value;
-                spentPoints += value; // Sum up loaded points
-            }
-        });
-         attributeSystem.pointsSpent = spentPoints; // Set the correct spent points
+    // If editing an existing LLM, load its attributes and archetype
+    if (llmToEdit) {
+        if (llmToEdit.attributes) {
+            let spentPoints = 0;
+            Object.entries(llmToEdit.attributes).forEach(([name, value]) => {
+                if (attributeSystem.attributes[name]) {
+                    attributeSystem.attributes[name].value = value;
+                    spentPoints += value; // Sum up loaded points
+                }
+            });
+            attributeSystem.pointsSpent = spentPoints; // Set the correct spent points
+        }
+        // Load and select the archetype
+        if (llmToEdit.archetype) {
+            selectArchetype(llmToEdit.archetype);
+        }
     }
+
 
     // Render attribute grid AFTER potentially loading attributes
     renderAttributeGrid();
@@ -70,22 +82,31 @@ export function setupLLMCreationInterface(llmToEdit) {
     const generateBtn = document.getElementById('generate-character-btn');
     const newGenerateBtn = generateBtn.cloneNode(true); // Clone to remove listeners
     generateBtn.parentNode.replaceChild(newGenerateBtn, generateBtn);
-    newGenerateBtn.addEventListener('click', () => {
-        handleGenerateCharacter(generatingCharacter, (state) => { // Pass state setter
-            generatingCharacter = state;
-        }).then(result => {
-            if (result && result.success) {
-                // Call the function in the renderer module to display the new character
-                displayGeneratedCharacter(result.code);
-            }
-        });
+    newGenerateBtn.addEventListener('click', async () => { // Make async
+        if (!selectedArchetype) {
+            const statusEl = document.getElementById('generation-status');
+            if (statusEl) statusEl.textContent = "Please select an archetype first.";
+            return;
+        }
+        const baseModelType = document.getElementById('llm-model').value;
+        // Pass archetype and base model type to the handler
+        const result = await handleGenerateCharacter(
+            generatingCharacter,
+            (state) => { generatingCharacter = state; },
+            baseModelType,
+            selectedArchetype // Pass the selected archetype
+        );
+        if (result && result.success) {
+            // Call the function in the renderer module to display the new character
+            displayGeneratedCharacter(result.code);
+        }
     });
 
     // Set form values from existing LLM if editing
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
-        document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
+        // document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || ''; // Textarea removed
         const createUI = document.getElementById('create-llm-ui');
         createUI.setAttribute('data-edit-mode', 'true');
         createUI.setAttribute('data-edit-id', llmToEdit.id);
@@ -94,7 +115,7 @@ export function setupLLMCreationInterface(llmToEdit) {
         createUI.removeAttribute('data-edit-mode');
         createUI.removeAttribute('data-edit-id');
         document.getElementById('llm-color').value = '#3cb371';
-        document.getElementById('llm-custom-prompt').value = '';
+        // document.getElementById('llm-custom-prompt').value = ''; // Textarea removed
         document.getElementById('llm-model').value = 'assistant';
     }
 
@@ -132,6 +153,48 @@ export function setupLLMCreationInterface(llmToEdit) {
     window.addEventListener('resize', optimizeUIHeightHandler);
 }
 
+// --- New function to populate archetype emojis ---
+function populateArchetypeEmojis() {
+    const container = document.getElementById('archetype-emoji-list');
+    if (!container) return;
+    container.innerHTML = ''; // Clear previous
+
+    characterArchetypes.forEach(archetype => {
+        const button = document.createElement('button');
+        button.className = 'emoji-archetype-button';
+        button.dataset.archetype = archetype.name;
+        button.title = archetype.name;
+        button.textContent = archetype.emoji;
+        button.addEventListener('click', () => selectArchetype(archetype.name));
+        container.appendChild(button);
+    });
+}
+
+// --- New function to handle archetype selection ---
+function selectArchetype(archetypeName) {
+    selectedArchetype = archetypeName;
+    const hiddenInput = document.getElementById('selected-archetype');
+    if (hiddenInput) hiddenInput.value = archetypeName;
+
+    // Update button styles
+    const buttons = document.querySelectorAll('.emoji-archetype-button');
+    buttons.forEach(button => {
+        if (button.dataset.archetype === archetypeName) {
+            button.classList.add('selected');
+        } else {
+            button.classList.remove('selected');
+        }
+    });
+
+    // Clear generation status if an archetype is selected
+    const statusEl = document.getElementById('generation-status');
+    if (statusEl && statusEl.textContent === "Please select an archetype first.") {
+        statusEl.textContent = "";
+    }
+
+    console.log("Selected Archetype:", selectedArchetype);
+}
+
 // Wrapper function for resize handler
 function optimizeUIHeightHandler() {
      // Use optimizeUIHeight directly as it's imported
@@ -146,7 +209,7 @@ function resetForm() {
     // Reset other form values
     document.getElementById('llm-model').selectedIndex = 0; // Assuming first option is default
     document.getElementById('llm-color').value = '#3cb371';
-    document.getElementById('llm-custom-prompt').value = '';
+    // document.getElementById('llm-custom-prompt').value = ''; // Textarea removed
 
     // Clear edit mode flags
     const createUI = document.getElementById('create-llm-ui');
@@ -155,6 +218,9 @@ function resetForm() {
 
     // Use imported reset function for attributes and profile image etc.
     resetFormAttributes();
+
+    // Reset archetype selection
+    selectArchetype(''); // Pass empty string to deselect all
 
     // Reset the 3D preview model to the default robot
     resetPreviewModel();
