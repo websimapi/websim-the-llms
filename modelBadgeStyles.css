@@ -65,6 +65,10 @@
     border-left: 4px solid #9b59b6;
 }
 
+.model-badge.humanoid {
+    border-left: 4px solid #8e44ad;
+}
+
 /* Mobile adjustments */
 @media screen and (max-width: 768px) {
     .model-badge {

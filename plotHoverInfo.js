@@ -35,6 +35,18 @@ export function initPlotHoverInfo(mainCamera, mainScene, mainRenderer) {
     
     // Start checking for plot hovers
     checkPlotHovers();
+    
+    // If we have a stored voice to select
+    const statusElement = document.getElementById('generation-status');
+    if (statusElement && statusElement.dataset.profileImageUrl) {
+        const voiceUri = statusElement.dataset.selectedVoice;
+        for (let i = 0; i < voiceSelect.options.length; i++) {
+            if (voiceSelect.options[i].value === voiceUri) {
+                voiceSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
 }
 
 // Create the info panel HTML element

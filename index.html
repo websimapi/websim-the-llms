@@ -111,13 +111,13 @@
                         <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
                     </div>
                     <div class="setting-item">
-                        <label class="setting-label" for="llm-model">Model Type</label>
                         <!-- Hidden select for form compatibility -->
                         <select id="llm-model" class="setting-select" style="display: none;">
                             <option value="assistant">Assistant</option>
                             <option value="creator">Creator</option>
                             <option value="researcher">Researcher</option>
                             <option value="companion">Companion</option>
+                            <option value="humanoid">Humanoid</option>
                         </select>
                         <!-- New badge container -->
                         <div class="model-badge-container">
@@ -157,6 +157,15 @@
                                     </svg>
                                 </div>
                                 <span class="model-badge-label">Companion</span>
+                            </label>
+                            <label class="model-badge humanoid">
+                                <input type="radio" name="model-type" value="humanoid" class="model-badge-input">
+                                <div class="model-badge-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
+                                        <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
+                                    </svg>
+                                </div>
+                                <span class="model-badge-label">Humanoid</span>
                             </label>
                         </div>
                     </div>
