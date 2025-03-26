@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="plotHoverStyles.css">
     <link rel="stylesheet" href="modelBadgeStyles.css">
     <link rel="stylesheet" href="llmFormLayoutStyles.css">
+    <link rel="stylesheet" href="llmRotationControls.css">
     <script type="importmap">
     {
       "imports": {
@@ -281,17 +282,21 @@
             <div class="create-llm-main">
                 <div class="humanoid-viewport">
                     <!-- Humanoid figure will be rendered here with Three.js -->
-                    <!-- Add rotation arrows -->
-                    <button id="rotate-left-arrow" class="rotation-arrow left">
-                        <svg viewBox="0 0 100 100">
-                           <path d="M 75,25 A 40,40 0 0,0 25,75 L 15,65 M 25,75 L 35,85" stroke="white" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                     <button id="rotate-right-arrow" class="rotation-arrow right">
-                        <svg viewBox="0 0 100 100">
-                           <path d="M 25,25 A 40,40 0 0,1 75,75 L 65,85 M 75,75 L 85,65" stroke="white" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
+                    <!-- Add Rotation Arrows -->
+                    <div class="rotation-controls-overlay">
+                        <button id="rotate-left-btn" class="rotate-arrow left">
+                            <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                                <path d="M 75,25 A 40,40 0 0,0 75,75" fill="none" stroke="currentColor" stroke-width="10"/>
+                                <path d="M 75,25 L 65,15 M 75,25 L 85,15" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                        <button id="rotate-right-btn" class="rotate-arrow right">
+                            <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+                                <path d="M 25,25 A 40,40 0 0,1 25,75" fill="none" stroke="currentColor" stroke-width="10"/>
+                                <path d="M 25,25 L 15,15 M 25,25 L 35,15" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
