@@ -19,6 +19,11 @@ function setupUIComponents() {
         module.setupProfileImageAppearance();
     });
     
+    // Set up model type badges
+    import('./llmModelTypeIcons.js').then(module => {
+        module.setupModelTypeBadges();
+    });
+    
     // Set up TTS voice selector
     setupTTSVoiceSelector();
     
