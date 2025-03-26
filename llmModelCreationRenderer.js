@@ -14,9 +14,6 @@ let customCharacter = null; // Keep track of the custom character instance
 let selectedMesh = null; // Track the currently selected mesh
 let humanoidMixer = null; // Animation mixer
 let animationFrameId = null; // Store animation frame ID
-let cameraOrbitCenter = new THREE.Vector3(0, 1, 0); // Point camera orbits around
-let cameraRadius = 4; // Distance from orbit center
-let cameraAngle = 0; // Current angle around Y axis
 
 export function initHumanoidPreview(llmToEdit) {
     const viewport = document.querySelector('.humanoid-viewport');
@@ -36,7 +33,6 @@ export function initHumanoidPreview(llmToEdit) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null; // Reset ID
     }
-    cameraAngle = 0; // Reset camera angle
 
     // Setup Three.js scene
     previewScene = new THREE.Scene();
@@ -49,10 +45,8 @@ export function initHumanoidPreview(llmToEdit) {
         0.1,
         1000
     );
-    // Set initial camera position based on angle and radius
-    updateCameraPosition();
-    // previewCamera.position.set(0, 1.5, cameraRadius); // Initial position
-    previewCamera.lookAt(cameraOrbitCenter); // Look at the orbit center
+    previewCamera.position.set(0, 1.5, 4);
+    previewCamera.lookAt(0, 1, 0);
 
     // Setup renderer
     previewRenderer = new THREE.WebGLRenderer({ antialias: true });
@@ -68,18 +62,6 @@ export function initHumanoidPreview(llmToEdit) {
     // Add click event listener for mesh selection
     previewRenderer.domElement.removeEventListener('click', handleMeshSelection); // Remove previous
     previewRenderer.domElement.addEventListener('click', handleMeshSelection);
-
-    // --- Setup Rotation Controls ---
-    const rotateLeftBtn = document.getElementById('rotate-left-btn');
-    const rotateRightBtn = document.getElementById('rotate-right-btn');
-
-    if (rotateLeftBtn) {
-        rotateLeftBtn.addEventListener('click', () => rotateCamera(15 * (Math.PI / 180))); // Rotate left (positive angle)
-    }
-    if (rotateRightBtn) {
-        rotateRightBtn.addEventListener('click', () => rotateCamera(-15 * (Math.PI / 180))); // Rotate right (negative angle)
-    }
-    // --- End Rotation Controls Setup ---
 
 
     // Setup lighting
@@ -118,25 +100,6 @@ export function initHumanoidPreview(llmToEdit) {
     window.addEventListener('resize', previewResizeHandler);
 }
 
-// --- Camera Rotation Logic ---
-function rotateCamera(angleDelta) {
-    cameraAngle += angleDelta;
-    updateCameraPosition();
-}
-
-function updateCameraPosition() {
-    if (!previewCamera) return;
-    // Calculate camera position on a circle around the orbit center
-    const x = cameraOrbitCenter.x + cameraRadius * Math.sin(cameraAngle);
-    const z = cameraOrbitCenter.z + cameraRadius * Math.cos(cameraAngle);
-    const y = cameraOrbitCenter.y + 0.5; // Slightly above the orbit center height
-
-    previewCamera.position.set(x, y, z);
-    previewCamera.lookAt(cameraOrbitCenter); // Always look at the center point
-}
-// --- End Camera Rotation Logic ---
-
-
 // Helper function to adjust model position vertically
 function positionModelOnGround(model) {
     if (!model) return;
@@ -150,17 +113,18 @@ function positionModelOnGround(model) {
     console.log(`Positioned model ${model.name || model.uuid} on ground. Lowest point: ${lowestPointY}, New Y: ${model.position.y}`);
 }
 
+
 async function loadInitialModel(llmToEdit) {
-    // Clear previous models from the scene first
-    if (robotModel && robotModel.parent) robotModel.parent.remove(robotModel);
-    if (customCharacter && customCharacter.parent) customCharacter.parent.remove(customCharacter);
-    robotModel = null;
-    customCharacter = null;
-    setModels(null, null); // Update global refs
+     // Clear previous models from the scene first
+     if (robotModel && robotModel.parent) robotModel.parent.remove(robotModel);
+     if (customCharacter && customCharacter.parent) customCharacter.parent.remove(customCharacter);
+     robotModel = null;
+     customCharacter = null;
+     setModels(null, null); // Update global refs
 
-    let modelToPosition = null;
+     let modelToPosition = null;
 
-    if (llmToEdit && llmToEdit.customCharacterCode) {
+     if (llmToEdit && llmToEdit.customCharacterCode) {
         try {
             // Dynamically import characterGenerator
             const module = await import('./characterGenerator.js');
@@ -175,14 +139,14 @@ async function loadInitialModel(llmToEdit) {
 
             // Apply saved model data if it exists
             if (llmToEdit.modelData) {
-                try {
+                 try {
                     const storageModule = await import('./llmModelStorage.js');
                     storageModule.applyStoredModelData(customCharacter, llmToEdit);
                     // Re-prepare after applying stored data
                     prepareModelForIndividualColoring(customCharacter);
-                } catch (err) {
+                 } catch (err) {
                     console.error("Error applying stored model data:", err);
-                }
+                 }
             }
 
             // Update status
@@ -237,7 +201,7 @@ export function createDefaultRobotModel(llmToEdit) {
         }).catch(err => console.error("Error applying stored model data to robot:", err));
     }
 
-    // --- Setup Animation ---
+     // --- Setup Animation ---
     if (robotModel.animations && robotModel.animations.length > 0) {
         humanoidMixer = new THREE.AnimationMixer(robotModel);
         const walkAction = humanoidMixer.clipAction(robotModel.animations[0]); // Assuming walk is the first animation
@@ -250,6 +214,7 @@ export function createDefaultRobotModel(llmToEdit) {
     return robotModel; // Return the created model
 }
 
+
 function handleMeshSelection(event) {
     // Clear previous selection highlight visually
     if (selectedMesh && selectedMesh.userData.originalEmissive) {
@@ -258,8 +223,8 @@ function handleMeshSelection(event) {
             if(selectedMesh.userData.originalEmissive instanceof THREE.Color) {
                 selectedMesh.material.emissive.copy(selectedMesh.userData.originalEmissive);
             } else {
-                console.warn("originalEmissive was not a Color object, resetting emissive.");
-                selectedMesh.material.emissive.setHex(0x000000); // Reset to black if unsure
+                 console.warn("originalEmissive was not a Color object, resetting emissive.");
+                 selectedMesh.material.emissive.setHex(0x000000); // Reset to black if unsure
             }
         }
         // Remove the property regardless
@@ -297,9 +262,9 @@ function handleMeshSelection(event) {
 
         // Highlight
         if (selectedMesh.material && selectedMesh.material.emissive) {
-            // Store original only if it doesn't exist or isn't the highlight color
+             // Store original only if it doesn't exist or isn't the highlight color
             if (!selectedMesh.userData.originalEmissive || selectedMesh.material.emissive.getHex() !== 0x555555) {
-                selectedMesh.userData.originalEmissive = selectedMesh.material.emissive.clone();
+                 selectedMesh.userData.originalEmissive = selectedMesh.material.emissive.clone();
             }
             selectedMesh.material.emissive.setHex(0x555555); // Highlight color
         } else if (selectedMesh.material && !selectedMesh.material.emissive) {
@@ -350,40 +315,40 @@ export function updateSelectedMeshColor() {
         // Update originalEmissive based on new color
         if (currentSelectedMesh.material.emissive && currentSelectedMesh.userData.originalEmissive) {
             const emissiveColor = new THREE.Color(color).multiplyScalar(0.2);
-            // Ensure originalEmissive is a Color object before copying
-            if (currentSelectedMesh.userData.originalEmissive instanceof THREE.Color) {
+             // Ensure originalEmissive is a Color object before copying
+             if (currentSelectedMesh.userData.originalEmissive instanceof THREE.Color) {
                 currentSelectedMesh.userData.originalEmissive.copy(emissiveColor);
-            } else {
-                console.warn("Cannot copy to originalEmissive, it's not a Color object.");
-                // Attempt to re-initialize it
-                currentSelectedMesh.userData.originalEmissive = emissiveColor.clone();
-            }
-            // Keep the highlight color distinct if it's currently selected
-            // Use the global selectedMesh reference for comparison consistency
-            const globallySelectedMesh = getGlobalReferences().selectedMesh;
-            if (currentSelectedMesh === globallySelectedMesh) {
-                currentSelectedMesh.material.emissive.setHex(0x555555); // Reapply highlight
-            }
+             } else {
+                 console.warn("Cannot copy to originalEmissive, it's not a Color object.");
+                 // Attempt to re-initialize it
+                 currentSelectedMesh.userData.originalEmissive = emissiveColor.clone();
+             }
+             // Keep the highlight color distinct if it's currently selected
+             // Use the global selectedMesh reference for comparison consistency
+             const globallySelectedMesh = getGlobalReferences().selectedMesh;
+             if (currentSelectedMesh === globallySelectedMesh) {
+                  currentSelectedMesh.material.emissive.setHex(0x555555); // Reapply highlight
+             }
         }
     } else {
         // If no mesh is selected, recreate the default robot with the new color
         // Only do this if a custom character isn't currently displayed
         // Check if currentModels is available before accessing customCharacter
-        if (currentModels && !currentModels.customCharacter) {
-            // Pass the llmToEdit context if available (might be null if creating new)
-            const createUI = document.getElementById('create-llm-ui');
-            let llmToEdit = null;
-            if (createUI && createUI.getAttribute('data-edit-mode') === 'true') {
+         if (currentModels && !currentModels.customCharacter) {
+             // Pass the llmToEdit context if available (might be null if creating new)
+             const createUI = document.getElementById('create-llm-ui');
+             let llmToEdit = null;
+             if (createUI && createUI.getAttribute('data-edit-mode') === 'true') {
                 const editId = createUI.getAttribute('data-edit-id');
                 if(editId) {
                     llmToEdit = llmDataManager.getLLMById(editId);
                 }
-            }
-            // Recreate default robot with current color picker value
-            const newRobot = createDefaultRobotModel(llmToEdit);
-            // Position the newly created robot
-            positionModelOnGround(newRobot);
-        }
+             }
+             // Recreate default robot with current color picker value
+             const newRobot = createDefaultRobotModel(llmToEdit);
+             // Position the newly created robot
+             positionModelOnGround(newRobot);
+         }
     }
 }
 
@@ -421,25 +386,25 @@ function previewResizeHandler() {
 // Function to update the preview when a new custom character is generated
 // This needs to be called from llmCreationInterface after generation completes
 export async function displayGeneratedCharacter(generatedCode) {
-    if (!previewScene) return;
+     if (!previewScene) return;
 
-    // Stop and remove previous animation mixer
-    if (humanoidMixer) {
+     // Stop and remove previous animation mixer
+     if (humanoidMixer) {
         humanoidMixer.stopAllAction();
         humanoidMixer = null;
-    }
+     }
 
-    // Remove previous custom character
-    if (customCharacter && customCharacter.parent) {
-        customCharacter.parent.remove(customCharacter);
-    }
-    // Remove default robot model
-    if (robotModel && robotModel.parent) {
-        robotModel.parent.remove(robotModel);
-    }
-    robotModel = null;
-    customCharacter = null;
-    setModels(null, null); // Clear global refs
+     // Remove previous custom character
+     if (customCharacter && customCharacter.parent) {
+         customCharacter.parent.remove(customCharacter);
+     }
+     // Remove default robot model
+      if (robotModel && robotModel.parent) {
+         robotModel.parent.remove(robotModel);
+     }
+     robotModel = null;
+     customCharacter = null;
+     setModels(null, null); // Clear global refs
 
     try {
         // Dynamically import if needed
@@ -462,9 +427,9 @@ export async function displayGeneratedCharacter(generatedCode) {
         humanoidMixer = null;
 
     } catch (error) {
-        console.error("Error displaying generated character:", error);
-        const statusElement = document.getElementById('generation-status');
-        if(statusElement) statusElement.textContent = "Error displaying generated character.";
+         console.error("Error displaying generated character:", error);
+         const statusElement = document.getElementById('generation-status');
+         if(statusElement) statusElement.textContent = "Error displaying generated character.";
     }
 }
 
@@ -739,13 +704,13 @@ export function createRobotModel(targetScene, color, style) {
     );
 
 
-    // Keyframes for Right Shoulder (opposite of right hip)
+     // Keyframes for Right Shoulder (opposite of right hip)
     const rightShoulderRotateX = new THREE.KeyframeTrack(
         'RightShoulder.rotation[x]',
         times,
         [-shoulderSwing, 0, shoulderSwing, 0, -shoulderSwing].map(v => v)
     );
-    // Keyframes for Right Elbow
+     // Keyframes for Right Elbow
     const rightElbowRotateX = new THREE.KeyframeTrack(
         'RightElbow.rotation[x]',
         times,
@@ -767,6 +732,7 @@ export function createRobotModel(targetScene, color, style) {
 
     // Attach animation clip to the model
     robotGroup.animations = [walkAnimationClip];
+
 
     return {
         model: robotGroup,
