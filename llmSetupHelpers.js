@@ -51,7 +51,7 @@ function loadLLMData(llm) {
     // Load TTS voice selection
     loadTTSVoiceSelection(llm);
     
-    // Load model badge selection
+    // Load model badge selection - set skipAttributeAssignment to true to prevent overriding existing attributes
     if (llm.model) {
         import('./modelBadgeSelector.js').then(module => {
             module.loadModelBadgeSelection(llm.model, true); // Pass true to skip attribute assignment
