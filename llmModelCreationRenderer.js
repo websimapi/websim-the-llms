@@ -5,6 +5,7 @@ import { updateManipulationDisplays } from './llmMeshManipulator.js';
 import { setGlobalReferences, setModels, setSelectedMesh, getGlobalReferences } from './threeJSGlobals.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'; // Import OrbitControls
 import { llmDataManager } from './llmDataManager.js'; // Needed for loading data
+import { serializeMaterial } from './llmCharacterRendererUtils.js'; // Need this for saving colors
 
 // --- Moved from llmCreationInterface.js ---
 
@@ -99,7 +100,7 @@ export function initHumanoidPreview(llmToEdit) {
     ground.position.y = -0.01; // Place ground slightly below origin y=0
     previewScene.add(ground);
 
-    // Load the correct model (custom or default)
+    // Load the correct model (custom or default), DO NOT AWAIT HERE
     loadInitialModel(llmToEdit); // Await this to ensure model is loaded before positioning
 
     // Setup animation clock
@@ -477,6 +478,57 @@ export async function displayGeneratedCharacter(generatedCode) {
 // Function to reset the preview to the default robot
 export async function resetPreviewModel() { // Make async
     await loadInitialModel(); // Call with no llmToEdit to load default
+}
+
+// New function to restore the default robot model while preserving colors
+export async function restoreDefaultRobotModel() {
+    if (!previewScene) return;
+    console.log("Restoring default robot model...");
+
+    // 1. Get current model and serialize its colors by name
+    const currentModel = customCharacter || robotModel;
+    const currentColors = {};
+    if (currentModel) {
+        currentModel.traverse(child => {
+            if (child.isMesh && child.name && child.material) {
+                currentColors[child.name] = serializeMaterial(child.material); // Save serialized material props
+            }
+        });
+    }
+    console.log("Saved colors from current model:", currentColors);
+
+    // 2. Stop animation and remove current model(s)
+    if (humanoidMixer) {
+        humanoidMixer.stopAllAction();
+        humanoidMixer = null;
+    }
+    if (customCharacter && customCharacter.parent) customCharacter.parent.remove(customCharacter);
+    if (robotModel && robotModel.parent) robotModel.parent.remove(robotModel);
+    customCharacter = null;
+    robotModel = null;
+    setModels(null, null);
+    setSelectedMesh(null); // Deselect mesh
+
+    // 3. Create the default robot model
+    // Use the current color picker value as the base color
+    const baseColor = document.getElementById('llm-color')?.value || '#3cb371';
+    const result = await createRobotModel(previewScene, baseColor, 'modern'); // Use base color
+    robotModel = result.model; // Store new robot model
+    setModels(robotModel, null); // Update global reference
+
+    // 4. Apply stored colors to the new robot model
+    robotModel.traverse(child => {
+        if (child.isMesh && child.name && currentColors[child.name]) {
+            const savedMaterialData = currentColors[child.name];
+            if (savedMaterialData.color) {
+                applyColorToMesh(child, savedMaterialData.color); // Apply saved color
+            }
+        }
+    });
+
+    // 5. Position the new robot model on the ground
+    positionModelOnGround(robotModel);
+    console.log("Default robot restored and colors applied.");
 }
 
 // --- Create Robot Model with Hierarchy and Animation ---

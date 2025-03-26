@@ -13,7 +13,7 @@ import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGe
 import { setGlobalReferences, setModels, setSelectedMesh, getGlobalReferences } from './threeJSGlobals.js';
 import { initializeAllComponents } from './llmSetupHelpers.js';
 // Import preview functions from the new location
-import { initHumanoidPreview, updateSelectedMeshColor, resetPreviewModel, displayGeneratedCharacter, createDefaultRobotModel } from './llmModelCreationRenderer.js';
+import { initHumanoidPreview, updateSelectedMeshColor, resetPreviewModel, displayGeneratedCharacter, createDefaultRobotModel, restoreDefaultRobotModel } from './llmModelCreationRenderer.js';
 import { optimizeUIHeight } from './llmAttributeTooltips.js'; // Keep this for resize handler
 
 // Removed global preview variables (humanoidScene, etc.) - managed within llmModelCreationRenderer.js now
@@ -81,6 +81,12 @@ export function setupLLMCreationInterface(llmToEdit) {
         });
     });
 
+    // Setup restore robot button
+    const restoreBtn = document.getElementById('restore-robot-design-btn');
+    const newRestoreBtn = restoreBtn.cloneNode(true);
+    restoreBtn.parentNode.replaceChild(newRestoreBtn, restoreBtn);
+    newRestoreBtn.addEventListener('click', handleRestoreRobotDesign);
+
     // Set form values from existing LLM if editing
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
@@ -138,6 +144,15 @@ function optimizeUIHeightHandler() {
      optimizeUIHeight();
 }
 
+// Function to handle restoring the default robot design
+async function handleRestoreRobotDesign() { // Make async
+    // Clear generated code reference
+    const statusElement = document.getElementById('generation-status');
+    if (statusElement) delete statusElement.dataset.generatedCode;
+
+    // Call the restore function in the renderer module
+    await restoreDefaultRobotModel();
+}
 
 function resetForm() {
     // Reset name with random number
