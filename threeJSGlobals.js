@@ -11,7 +11,7 @@ export function setGlobalReferences(scene, camera, renderer) {
     currentHumanoidScene = scene;
     humanoidCamera = camera;
     humanoidRenderer = renderer;
-    
+
     // Also set window variables for backward compatibility
     window.currentHumanoidScene = scene;
     window.humanoidCamera = camera;
@@ -22,7 +22,9 @@ export function getGlobalReferences() {
     return {
         scene: currentHumanoidScene,
         camera: humanoidCamera,
-        renderer: humanoidRenderer
+        renderer: humanoidRenderer,
+        selectedMesh: selectedMesh, 
+        models: getModels() 
     };
 }
 

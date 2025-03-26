@@ -28,7 +28,7 @@ export function initHumanoidPreview(llmToEdit) {
     customCharacter = null;
     selectedMesh = null;
     humanoidMixer = null;
-    if (animationFrameId) cancelAnimationFrame(animationFrameId); // Cancel any previous animation loop
+    cancelAnimationFrame(animationFrameId); // Cancel any previous animation loop
 
     // Setup Three.js scene
     previewScene = new THREE.Scene();
@@ -121,26 +121,7 @@ function loadInitialModel(llmToEdit) {
                         storageModule.applyStoredModelData(customCharacter, llmToEdit);
                         // Re-prepare after applying stored data
                         prepareModelForIndividualColoring(customCharacter);
-
-                         // Adjust position AGAIN after applying stored data
-                         if(customCharacter) {
-                            const parent = customCharacter.parent || previewScene; // Get parent (might be scene directly)
-                            parent.updateMatrixWorld(true); // Update world matrix before getting bounding box
-                            const tempBox = new THREE.Box3().setFromObject(customCharacter);
-                            const lowestPointY = tempBox.min.y;
-                            customCharacter.position.y = -lowestPointY + 0.01;
-                         }
-
                     }).catch(err => console.error("Error applying stored model data:", err));
-                } else {
-                    // Adjust position immediately if not loading data
-                     if(customCharacter) {
-                        const parent = customCharacter.parent || previewScene; // Get parent (might be scene directly)
-                        parent.updateMatrixWorld(true); // Update world matrix before getting bounding box
-                        const tempBox = new THREE.Box3().setFromObject(customCharacter);
-                        const lowestPointY = tempBox.min.y;
-                        customCharacter.position.y = -lowestPointY + 0.01;
-                     }
                 }
 
                 // Update status
@@ -165,63 +146,38 @@ function loadInitialModel(llmToEdit) {
     }
 }
 
-
+// Renamed from createDefaultRobot
 export function createDefaultRobotModel(llmToEdit) {
-    // Clear previous robot model if it exists
-    if (robotModel && robotModel.parent) robotModel.parent.remove(robotModel);
-    robotModel = null; // Reset reference
-
-    // Ensure previewScene is available
-    if (!previewScene) {
-        console.error("Cannot create default robot: previewScene is not initialized.");
-        return null;
-    }
-
-    // Get current selected color or color from edit data, or default
-    const uiColor = document.getElementById('llm-color')?.value || '#3cb371';
-    const color = llmToEdit?.color || uiColor;
-    // Use style from llmToEdit or default - ensure 'modern' is the fallback
+    // Get current selected color or color from edit data
+    const color = llmToEdit?.color || document.getElementById('llm-color')?.value || '#3cb371';
     const style = llmToEdit?.style || 'modern';
 
-    // Use the internal detailed robot creation function
-    // Pass the global previewScene so it gets added correctly
-    const result = createRobotModel(previewScene, color, style); // Pass scene, color, style
+    // Create the robot model using the imported function
+    // Pass the previewScene so it gets added correctly
+    const result = createRobotModel(previewScene, color, style); // Pass scene here
     robotModel = result.model;
 
-    // Update global references (only robot model is created here)
-    setModels(robotModel, customCharacter); // Keep custom character reference if it exists
+    // Update global references
+    setModels(robotModel, null);
 
     // Prepare the model for individual part coloring
     prepareModelForIndividualColoring(robotModel);
 
     // Apply stored model data if editing and model data exists
-    // Make sure we only apply robot data if no custom character exists or if explicitly editing the robot version
-    if (llmToEdit && llmToEdit.modelData && (!llmToEdit.customCharacterCode || !customCharacter) ) {
+    if (llmToEdit && llmToEdit.modelData && !llmToEdit.customCharacterCode) {
         import('./llmModelStorage.js').then(module => {
             module.applyStoredModelData(robotModel, llmToEdit);
             // Ensure model is prepared for individual coloring after applying stored data
             prepareModelForIndividualColoring(robotModel);
-
-             // Adjust position AGAIN after applying stored data potentially changes it
-             if(robotModel) {
-                const parent = robotModel.parent || previewScene; // Get parent (might be scene directly)
-                parent.updateMatrixWorld(true); // Update world matrix before getting bounding box
-                const tempBox = new THREE.Box3().setFromObject(robotModel);
-                const lowestPointY = tempBox.min.y;
-                robotModel.position.y = -lowestPointY + 0.01;
-             }
-
         }).catch(err => console.error("Error applying stored model data to robot:", err));
-    } else {
-         // Adjust position immediately if not loading data
-         if(robotModel) {
-            const parent = robotModel.parent || previewScene; // Get parent (might be scene directly)
-            parent.updateMatrixWorld(true); // Update world matrix before getting bounding box
-            const tempBox = new THREE.Box3().setFromObject(robotModel);
-            const lowestPointY = tempBox.min.y;
-            robotModel.position.y = -lowestPointY + 0.01;
-         }
     }
+
+     // Adjust position after potential data loading
+     if(robotModel) {
+        const tempBox = new THREE.Box3().setFromObject(robotModel);
+        const lowestPointY = tempBox.min.y;
+        robotModel.position.y = -lowestPointY + 0.01;
+     }
 
     return robotModel; // Return the created model
 }
@@ -275,7 +231,10 @@ function handleMeshSelection(event) {
 
         // Update color picker
         if (selectedMesh.material.color) {
-            document.getElementById('llm-color').value = '#' + selectedMesh.material.color.getHexString();
+            const colorPicker = document.getElementById('llm-color');
+            if(colorPicker) {
+                colorPicker.value = '#' + selectedMesh.material.color.getHexString();
+            }
         }
 
         // Update name display
@@ -306,44 +265,56 @@ function handleMeshSelection(event) {
 export function updateSelectedMeshColor() {
     const colorInput = document.getElementById('llm-color');
     if (!colorInput) return;
-    const color = colorInput.value; // Get the color from the input
-    const { scene, camera, renderer, selectedMesh: currentSelectedMesh } = getGlobalReferences(); // Get globals including selectedMesh
+    const color = colorInput.value;
+    const { selectedMesh: currentSelectedMesh, models: currentModels } = getGlobalReferences(); // Use destructured values
 
     if (currentSelectedMesh && currentSelectedMesh.material) {
-        // Apply color to the selected mesh
         applyColorToMesh(currentSelectedMesh, color);
-        // Update emissive for highlight state consistency
-        if (currentSelectedMesh.material.emissive) {
-            const baseEmissiveColor = new THREE.Color(color).multiplyScalar(0.2);
-            if (currentSelectedMesh.userData.originalEmissive) {
-                 currentSelectedMesh.userData.originalEmissive.copy(baseEmissiveColor);
+        // Update originalEmissive based on new color
+        if (currentSelectedMesh.material.emissive && currentSelectedMesh.userData.originalEmissive) {
+            const emissiveColor = new THREE.Color(color).multiplyScalar(0.2);
+            currentSelectedMesh.userData.originalEmissive.copy(emissiveColor);
+            // Keep the highlight color distinct if it's currently selected
+            // Use the global selectedMesh reference for comparison consistency
+            if (currentSelectedMesh === getGlobalReferences().selectedMesh) {
+                 currentSelectedMesh.material.emissive.setHex(0x555555); // Reapply highlight
             }
-            // Reapply selection highlight
-            currentSelectedMesh.material.emissive.setHex(0x555555);
         }
     } else {
         // If no mesh is selected, recreate the default robot with the new color
         // Only do this if a custom character isn't currently displayed
-         const { customCharacter: globalCustomCharacter } = getGlobalReferences(); // Destructure custom character from globals
-         if (!globalCustomCharacter) {
-             // Call createDefaultRobotModel without llmToEdit
-             // It will use the current color from the UI input inside its logic
-             createDefaultRobotModel(null);
+        // Check if currentModels is available before accessing customCharacter
+         if (currentModels && !currentModels.customCharacter) {
+             // Pass the llmToEdit context if available (might be null if creating new)
+             const createUI = document.getElementById('create-llm-ui');
+             let llmToEdit = null;
+             if (createUI && createUI.getAttribute('data-edit-mode') === 'true') {
+                const editId = createUI.getAttribute('data-edit-id');
+                if(editId) {
+                    llmToEdit = llmDataManager.getLLMById(editId);
+                }
+             }
+             createDefaultRobotModel(llmToEdit); // Recreate default robot with current color picker value
          }
     }
 }
-
 
 // Renamed animateHumanoid to animatePreview
 let animationFrameId = null;
 function animatePreview() {
     if (!previewScene || !previewCamera || !previewRenderer) {
-        // console.log("Skipping preview animation: scene/camera/renderer missing");
-        // Schedule next frame check even if current one is skipped
-        animationFrameId = requestAnimationFrame(animatePreview);
+        console.log("Skipping preview animation: scene/camera/renderer missing");
         return;
     }
     animationFrameId = requestAnimationFrame(animatePreview);
+
+    const currentModel = customCharacter || robotModel;
+    // Simple idle animation (applied directly in createRobotModel now)
+    // if (currentModel) {
+    //     const time = Date.now() * 0.001;
+    //     currentModel.position.y = (currentModel.userData.baseY || 0) + Math.sin(time) * 0.05;
+    //     currentModel.rotation.y = (currentModel.userData.baseRotY || 0) + Math.sin(time * 0.5) * 0.1;
+    // }
 
     if (humanoidMixer) {
         humanoidMixer.update(previewClock.getDelta());
@@ -390,8 +361,6 @@ export function displayGeneratedCharacter(generatedCode) {
             setModels(null, customCharacter); // Update global refs
 
              // Adjust position after creation
-             const parent = customCharacter.parent || previewScene; // Get parent (might be scene directly)
-             parent.updateMatrixWorld(true); // Update world matrix before getting bounding box
              const tempBox = new THREE.Box3().setFromObject(customCharacter);
              const lowestPointY = tempBox.min.y;
              customCharacter.position.y = -lowestPointY + 0.01;
@@ -421,7 +390,7 @@ export function resetPreviewModel() {
 
 // --- Original createRobotModel ---
 // (This is the detailed version, ensure it matches the one in the thought process)
-export function createRobotModel(targetScene, color = '#3cb371', style = 'modern') {
+export function createRobotModel(targetScene, color, style) {
     // If targetScene is null, create a temporary group to hold the model
     const parent = targetScene || new THREE.Group();
 
@@ -464,7 +433,7 @@ export function createRobotModel(targetScene, color = '#3cb371', style = 'modern
 
     const torsoShape = new THREE.Shape();
     const tx = -0.25, ty = -0.4, tWidth = 0.5, tHeight = 0.8, tRadius = 0.1;
-    torsoShape.moveTo(tx, ty + tRadius).lineTo(tx, ty + tHeight - tRadius).quadraticCurveTo(tx, ty + tHeight, tx + tRadius, ty + tHeight).lineTo(tx + tWidth - tRadius, ty + tHeight).quadraticCurveTo(tx + tWidth, ty + tHeight, tx + tWidth, ty + tHeight - tRadius).lineTo(tx + tWidth, ty + radius).quadraticCurveTo(tx + tWidth, ty, tx + tWidth - tRadius, ty).lineTo(tx + tRadius, ty).quadraticCurveTo(tx, ty, tx, ty + tRadius);
+    torsoShape.moveTo(tx, ty + tRadius).lineTo(tx, ty + tHeight - tRadius).quadraticCurveTo(tx, ty + tHeight, tx + tRadius, ty + tHeight).lineTo(tx + tWidth - tRadius, ty + tHeight).quadraticCurveTo(tx + tWidth, ty + tHeight, tx + tWidth, ty + tHeight - tRadius).lineTo(tx + tWidth, ty + tRadius).quadraticCurveTo(tx + tWidth, ty, tx + tWidth - tRadius, ty).lineTo(tx + tRadius, ty).quadraticCurveTo(tx, ty, tx, ty + tRadius);
     const torsoExtrudeSettings = { depth: 0.25, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2 };
     const torsoGeometry = new THREE.ExtrudeGeometry(torsoShape, torsoExtrudeSettings);
     torsoGeometry.center();
@@ -567,6 +536,10 @@ export function createRobotModel(targetScene, color = '#3cb371', style = 'modern
      const lowestPointY = tempBox.min.y;
      // Adjust the group's position relative to its parent
      robotGroup.position.y = -lowestPointY + 0.01; // Small offset above ground
+
+    // Store base position for animation if needed
+    // robotGroup.userData.baseY = robotGroup.position.y;
+    // robotGroup.userData.baseRotY = robotGroup.rotation.y;
 
 
     return {
