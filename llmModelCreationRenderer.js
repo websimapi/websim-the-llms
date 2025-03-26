@@ -160,7 +160,8 @@ export function createRobotModel(humanoidScene, color, style) {
     leftLowerArm.name = "LeftArm_Lower";
     robotGroup.add(leftLowerArm);
 
-    const leftHand = createDetailedHand(materials); // Use helper function
+    // Use helper function for Left Hand
+    const leftHand = createDetailedHand(materials, 'left');
     leftHand.position.set(leftLowerArm.position.x, leftLowerArm.position.y - armSegmentLength / 2 - 0.06, 0); // Below lower arm
     leftHand.name = "LeftArm_Hand";
     robotGroup.add(leftHand);
@@ -181,7 +182,8 @@ export function createRobotModel(humanoidScene, color, style) {
     rightLowerArm.name = "RightArm_Lower";
     robotGroup.add(rightLowerArm);
 
-    const rightHand = createDetailedHand(materials); // Use helper function
+    // Use helper function for Right Hand
+    const rightHand = createDetailedHand(materials, 'right');
     rightHand.position.set(rightLowerArm.position.x, rightLowerArm.position.y - armSegmentLength / 2 - 0.06, 0); // Below lower arm
     rightHand.name = "RightArm_Hand";
     robotGroup.add(rightHand);
@@ -285,8 +287,8 @@ export function createRobotModel(humanoidScene, color, style) {
     };
 }
 
-// Helper function to create a more detailed hand
-function createDetailedHand(materials) {
+// Helper function to create a more detailed hand - MODIFIED
+function createDetailedHand(materials, side) {
     const handGroup = new THREE.Group();
 
     // Palm
@@ -297,30 +299,36 @@ function createDetailedHand(materials) {
 
     // Fingers (simplified cylinders)
     const fingerGeometry = new THREE.CylinderGeometry(0.015, 0.01, 0.08);
+    const fingerMaterial = materials.limbsMaterial.clone(); // Use separate material if needed
 
-    // Finger 1
-    const finger1 = new THREE.Mesh(fingerGeometry, materials.limbsMaterial);
+    // Finger 1 (Index)
+    const finger1 = new THREE.Mesh(fingerGeometry, fingerMaterial);
     finger1.position.set(-0.03, -0.06, 0);
     finger1.name = "Hand_Finger1";
     handGroup.add(finger1);
 
-    // Finger 2
-    const finger2 = new THREE.Mesh(fingerGeometry, materials.limbsMaterial);
-    finger2.position.set(0, -0.065, 0); // Slightly lower middle finger
+    // Finger 2 (Middle)
+    const finger2 = new THREE.Mesh(fingerGeometry.clone(), fingerMaterial); // Clone geometry
+    finger2.scale.y = 1.05; // Slightly longer middle finger
+    finger2.position.set(0, -0.065, 0);
     finger2.name = "Hand_Finger2";
     handGroup.add(finger2);
 
-    // Finger 3
-    const finger3 = new THREE.Mesh(fingerGeometry, materials.limbsMaterial);
+    // Finger 3 (Ring)
+    const finger3 = new THREE.Mesh(fingerGeometry, fingerMaterial);
     finger3.position.set(0.03, -0.06, 0);
     finger3.name = "Hand_Finger3";
     handGroup.add(finger3);
 
-    // Thumb
+    // Thumb (Corrected positioning based on side)
     const thumbGeometry = new THREE.CylinderGeometry(0.018, 0.012, 0.06);
-    const thumb = new THREE.Mesh(thumbGeometry, materials.limbsMaterial);
-    thumb.position.set(-0.05, 0.02, 0.02);
-    thumb.rotation.z = Math.PI / 4; // Angle thumb slightly
+    const thumb = new THREE.Mesh(thumbGeometry, fingerMaterial);
+    const thumbX = side === 'left' ? -0.05 : 0.05; // Correct X position
+    const thumbZRotation = side === 'left' ? Math.PI / 4 : -Math.PI / 4; // Correct Z rotation
+
+    thumb.position.set(thumbX, 0.02, 0.02); // Position relative to palm center
+    thumb.rotation.z = thumbZRotation; // Angle thumb slightly
+    thumb.rotation.y = Math.PI / 12; // Angle thumb slightly forward
     thumb.name = "Hand_Thumb";
     handGroup.add(thumb);
 
