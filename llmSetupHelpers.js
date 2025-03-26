@@ -35,17 +35,10 @@ function setupUIComponents() {
         }, 100);
     });
     
-    // Initialize mesh manipulator
+    // Initialize mesh manipulator with a slight delay to ensure proper hiding
     import('./llmMeshManipulator.js').then(module => {
         setTimeout(() => {
             module.initMeshManipulator();
-            
-            // Initial state - hide manipulation controls and advanced toggle until something is selected
-            const manipulationControls = document.querySelector('.manipulation-controls');
-            if (manipulationControls) manipulationControls.style.display = 'none';
-            
-            const advancedToggle = document.getElementById('advanced-settings-toggle');
-            if (advancedToggle) advancedToggle.style.display = 'none';
         }, 200);
     });
 }

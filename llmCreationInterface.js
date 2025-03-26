@@ -306,8 +306,6 @@ function handleMeshSelection(event) {
     
     // Get the selected mesh name display element
     const selectedMeshNameEl = document.getElementById('selected-mesh-name');
-    // Get the advanced settings toggle
-    const advancedToggle = document.getElementById('advanced-settings-toggle');
     
     if (intersects.length > 0) {
         // Unhighlight previous selection
@@ -361,11 +359,6 @@ function handleMeshSelection(event) {
             selectedMeshNameEl.classList.remove('hidden');
         }
         
-        // Show the advanced settings toggle when a mesh is selected
-        if (advancedToggle) {
-            advancedToggle.style.display = 'flex';
-        }
-        
         window.selectedMesh = selectedMesh;
         setSelectedMesh(selectedMesh);
         updateManipulationDisplays();
@@ -380,11 +373,6 @@ function handleMeshSelection(event) {
         // Hide the selected mesh name
         if (selectedMeshNameEl) {
             selectedMeshNameEl.classList.add('hidden');
-        }
-        
-        // Hide the advanced settings toggle when no mesh is selected
-        if (advancedToggle) {
-            advancedToggle.style.display = 'none';
         }
         
         window.selectedMesh = null;
