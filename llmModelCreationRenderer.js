@@ -55,6 +55,7 @@ export function initHumanoidPreview(llmToEdit) {
     previewRenderer = new THREE.WebGLRenderer({ antialias: true });
     previewRenderer.setSize(viewport.clientWidth, viewport.clientHeight);
     previewRenderer.shadowMap.enabled = true;
+    previewRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
     viewport.appendChild(previewRenderer.domElement);
 
     // Set global references (important for other modules like profile image capture)
@@ -197,8 +198,15 @@ export function createDefaultRobotModel(llmToEdit) {
     const result = createRobotModel(previewScene, color, style); // Pass scene here
     robotModel = result.model;
 
-    // Position the robot higher to prevent ground clipping
-    robotModel.position.y = 0.1; // Changed from 1 to 0.1 for consistent positioning
+    // Configure shadow maps settings for better visualization
+    if (previewRenderer) {
+        previewRenderer.shadowMap.enabled = true;
+        previewRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
+
+    // Let's make a more robust positioning calculation
+    const groundY = 0;
+    robotModel.position.y = groundY + 0.1; // Position slightly above ground
 
     // Update global references
     setModels(robotModel, null);
