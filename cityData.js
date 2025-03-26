@@ -27,7 +27,8 @@ export const cityData = {
             z: -50,
             price: 30,
             available: true,
-            type: "residential"
+            type: "residential",
+            requirements: ["humanoid"]
         },
         {
             id: 3,
@@ -39,7 +40,8 @@ export const cityData = {
             z: -50,
             price: 32,
             available: true,
-            type: "residential"
+            type: "residential",
+            requirements: ["humanoid"]
         },
         {
             id: 4,
@@ -51,7 +53,8 @@ export const cityData = {
             z: 50,
             price: 28,
             available: true,
-            type: "residential"
+            type: "residential",
+            requirements: ["humanoid"]
         },
         {
             id: 5,
@@ -63,7 +66,8 @@ export const cityData = {
             z: 50,
             price: 31,
             available: true,
-            type: "residential"
+            type: "residential",
+            requirements: ["humanoid"]
         },
         {
             id: 6,

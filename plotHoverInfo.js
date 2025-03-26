@@ -179,7 +179,7 @@ function showInfoPanel(plot, clientX, clientY) {
             </div>`;
     
     // Add requirements section for commercial plots
-    if (plotData.type === 'commercial' && plotData.requirements && plotData.requirements.length > 0) {
+    if ((plotData.type === 'commercial' || plotData.type === 'residential') && plotData.requirements && plotData.requirements.length > 0) {
         htmlContent += `
             <div class="plot-info-requirements">
                 <div class="requirements-title">Required Models:</div>
