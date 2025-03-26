@@ -272,7 +272,7 @@ export function updateSelectedMeshColor() {
             const emissiveColor = new THREE.Color(color).multiplyScalar(0.2);
             currentSelectedMesh.userData.originalEmissive.copy(emissiveColor);
             // Keep the highlight color distinct if it's currently selected
-            if (currentSelectedMesh === selectedMesh) { // Check if it's the active selection
+            if (currentSelectedMesh) { // Check if we are working on a selected mesh
                  currentSelectedMesh.material.emissive.setHex(0x555555); // Reapply highlight
             }
         }
@@ -281,7 +281,7 @@ export function updateSelectedMeshColor() {
         // Only do this if a custom character isn't currently displayed
          const currentModels = getGlobalReferences().models;
          if (!currentModels.customCharacter) {
-             createDefaultRobotModel(); // Recreate default robot with current color picker value
+             createDefaultRobotModel(null, color); // Pass current color, no LLM data needed here
          }
     }
 }
@@ -377,7 +377,7 @@ export function resetPreviewModel() {
 
 // --- Original createRobotModel ---
 // (This is the detailed version, ensure it matches the one in the thought process)
-export function createRobotModel(targetScene, color, style) {
+export function createRobotModel(targetScene, color = '#3cb371', style = 'modern') {
     // If targetScene is null, create a temporary group to hold the model
     const parent = targetScene || new THREE.Group();
 
@@ -420,7 +420,7 @@ export function createRobotModel(targetScene, color, style) {
 
     const torsoShape = new THREE.Shape();
     const tx = -0.25, ty = -0.4, tWidth = 0.5, tHeight = 0.8, tRadius = 0.1;
-    torsoShape.moveTo(tx, ty + tRadius).lineTo(tx, ty + tHeight - tRadius).quadraticCurveTo(tx, ty + tHeight, tx + tRadius, ty + tHeight).lineTo(tx + tWidth - tRadius, ty + tHeight).quadraticCurveTo(tx + tWidth, ty + tHeight, tx + tWidth, ty + tHeight - tRadius).lineTo(tx + tWidth, ty + tRadius).quadraticCurveTo(tx + tWidth, ty, tx + tWidth - tRadius, ty).lineTo(tx + tRadius, ty).quadraticCurveTo(tx, ty, tx, ty + tRadius);
+    torsoShape.moveTo(tx, ty + tRadius).lineTo(tx, ty + tHeight - tRadius).quadraticCurveTo(tx, ty + tHeight, tx + tRadius, ty + tHeight).lineTo(tx + tWidth - tRadius, ty + tHeight).quadraticCurveTo(tx + tWidth, ty + tHeight, tx + tWidth, ty + tHeight - tRadius).lineTo(tx + tWidth, ty + radius).quadraticCurveTo(tx + tWidth, ty, tx + tWidth - tRadius, ty).lineTo(tx + tRadius, ty).quadraticCurveTo(tx, ty, tx, ty + tRadius);
     const torsoExtrudeSettings = { depth: 0.25, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2 };
     const torsoGeometry = new THREE.ExtrudeGeometry(torsoShape, torsoExtrudeSettings);
     torsoGeometry.center();
