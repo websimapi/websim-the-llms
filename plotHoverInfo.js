@@ -43,6 +43,12 @@ function createInfoPanel() {
     infoPanel.className = 'plot-info-panel';
     infoPanel.style.display = 'none';
     document.body.appendChild(infoPanel);
+    
+    // Add the coin styles
+    const coinStyles = document.createElement('link');
+    coinStyles.rel = 'stylesheet';
+    coinStyles.href = 'plotCoinStyles.css';
+    document.head.appendChild(coinStyles);
 }
 
 // Handle mouse movement

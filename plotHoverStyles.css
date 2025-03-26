@@ -69,23 +69,23 @@
 }
 
 .credit-icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     object-fit: cover;
     vertical-align: middle;
-    /* Changed from silver to bronze color scheme */
-    background-color: #cd7f32;
-    border: 1px solid #a06728;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,222,173,0.5);
-    padding: 1px;
+    /* New styling for the credit icon to look like a silver coin */
+    background-color: #c0c0c0;
+    border: 1px solid #a0a0a0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.5);
+    padding: 2px;
     box-sizing: content-box;
 }
 
 /* Mobile adjustments */
 @media screen and (max-width: 768px) {
     .credit-icon {
-        width: 22px;
-        height: 22px;
+        width: 18px;
+        height: 18px;
     }
 }
