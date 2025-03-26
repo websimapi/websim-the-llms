@@ -86,6 +86,12 @@ function showInfoPanel(plot) {
     
     if (!plotData) return;
     
+    // Calculate estimated construction time
+    const minSeconds = plotData.price * 3;
+    const maxSeconds = plotData.price * 7;
+    const minTimeFormatted = formatTime(minSeconds);
+    const maxTimeFormatted = formatTime(maxSeconds);
+    
     // Update content
     infoPanel.innerHTML = `
         <div class="plot-info-header">${plotData.name}</div>
@@ -103,6 +109,10 @@ function showInfoPanel(plot) {
                 <span class="plot-info-value websim-credits">${plotData.price} <img src="/websim-credit.png" class="credit-icon" alt="Credits"></span>
             </div>
             <div class="plot-info-row">
+                <span class="plot-info-label">Est. Construction:</span>
+                <span class="plot-info-value">${minTimeFormatted} - ${maxTimeFormatted}</span>
+            </div>
+            <div class="plot-info-row">
                 <span class="plot-info-label">Status:</span>
                 <span class="plot-info-value ${plotData.available ? 'available' : 'unavailable'}">
                     ${plotData.available ? 'Available' : 'Occupied'}
@@ -114,6 +124,21 @@ function showInfoPanel(plot) {
     
     // Show the panel
     infoPanel.style.display = 'block';
+}
+
+// Format seconds into a more readable time format
+function formatTime(seconds) {
+    if (seconds < 60) {
+        return `${seconds} sec`;
+    } else if (seconds < 3600) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return secs > 0 ? `${mins} min ${secs} sec` : `${mins} min`;
+    } else {
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        return mins > 0 ? `${hours} hr ${mins} min` : `${hours} hr`;
+    }
 }
 
 // Continuous check for plot hovers
