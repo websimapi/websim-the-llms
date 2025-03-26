@@ -1,31 +1,95 @@
-@@ -19,7 +19,8 @@
-             z: 0,
-             price: 50,
-             available: true,
--            type: "commercial"
-+            type: "commercial",
-+            requirements: ["assistant", "researcher"] // Example: Needs an assistant and a researcher
-         },
-         {
-             id: 2,
-@@ -61,7 +62,8 @@
-             z: 0,
-             price: 45,
-             available: true,
--            type: "commercial"
-+            type: "commercial",
-+            requirements: ["creator", "humanoid"] // Example: Needs a creator and a humanoid
-         },
-         {
-             id: 7,
-@@ -72,7 +74,8 @@
-             z: 0,
-             price: 42,
-             available: true,
--            type: "commercial"
-+            type: "commercial",
-+            requirements: ["researcher", "assistant"] // Example: Needs a researcher and an assistant
-         }
-     ]
- };
-
+export const cityData = {
+    name: "Promptopia",
+    description: "A peaceful city where LLMs live and thrive",
+    founded: new Date().toISOString(),
+    size: "small",
+    lots: [
+        {
+            id: 1,
+            name: "Central Hub",
+            description: "Prime location in the center of town",
+            width: 30,
+            height: 30,
+            x: 0,
+            z: 0,
+            price: 50,
+            available: true,
+            type: "commercial",
+            requirements: ["assistant", "creator", "researcher"]
+        },
+        {
+            id: 2,
+            name: "North Residence",
+            description: "Cozy spot with great views",
+            width: 20,
+            height: 20,
+            x: -50,
+            z: -50,
+            price: 30,
+            available: true,
+            type: "residential"
+        },
+        {
+            id: 3,
+            name: "East Residence",
+            description: "Spacious lot with morning sunlight",
+            width: 20,
+            height: 20,
+            x: 50,
+            z: -50,
+            price: 32,
+            available: true,
+            type: "residential"
+        },
+        {
+            id: 4,
+            name: "South Residence",
+            description: "Private lot with garden space",
+            width: 20,
+            height: 20,
+            x: -50,
+            z: 50,
+            price: 28,
+            available: true,
+            type: "residential"
+        },
+        {
+            id: 5,
+            name: "West Residence",
+            description: "Beautiful sunset views",
+            width: 20,
+            height: 20,
+            x: 50,
+            z: 50,
+            price: 31,
+            available: true,
+            type: "residential"
+        },
+        {
+            id: 6,
+            name: "Innovation Park",
+            description: "Perfect for tech startups",
+            width: 25,
+            height: 15,
+            x: -80,
+            z: 0,
+            price: 45,
+            available: true,
+            type: "commercial",
+            requirements: ["creator", "researcher"]
+        },
+        {
+            id: 7,
+            name: "Training Ground",
+            description: "Ideal for educational facilities",
+            width: 15,
+            height: 25,
+            x: 80,
+            z: 0,
+            price: 42,
+            available: true,
+            type: "commercial",
+            requirements: ["assistant", "companion"]
+        }
+    ]
+};

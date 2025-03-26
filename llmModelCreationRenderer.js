@@ -736,7 +736,7 @@ export function createRobotModel(targetScene, color, style) {
             leftHipRotateX, leftKneeRotateX,
             rightHipRotateX, rightKneeRotateX,
             leftShoulderRotateX, leftElbowRotateX,
-            rightShoulderRotateX, rightElbowRotateX,
+            rightShoulderRotateX, rightElbowRotateX
         ]
     );
 
