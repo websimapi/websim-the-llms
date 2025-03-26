@@ -7,21 +7,18 @@ import { saveLLMData } from './saveLLMData.js';
 // Removed createStandardMaterials, handled in renderer
 // Moved createRobotModel import to llmModelCreationRenderer.js
 // Removed tooltip imports, handled in helpers
-import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGenerateCharacter } from './llmCreationInterfaceCompact.js';
+import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGenerateCharacter, setupEmojiSelector, getSelectedEmojis, clearSelectedEmojis, loadSelectedEmojis } from './llmCreationInterfaceCompact.js'; 
 // Removed mesh color manager imports, handled in renderer/manipulator
 // Removed manipulator imports, handled in helpers
 import { setGlobalReferences, setModels, setSelectedMesh, getGlobalReferences } from './threeJSGlobals.js';
 import { initializeAllComponents } from './llmSetupHelpers.js';
 // Import preview functions from the new location
 import { initHumanoidPreview, updateSelectedMeshColor, resetPreviewModel, displayGeneratedCharacter, createDefaultRobotModel } from './llmModelCreationRenderer.js';
-import { optimizeUIHeight } from './llmAttributeTooltips.js'; // Keep this for resize handler
-import { characterArchetypes } from './config.js'; // Import archetypes from config
+import { optimizeUIHeight } from './llmAttributeTooltips.js'; 
 
 // Removed global preview variables (humanoidScene, etc.) - managed within llmModelCreationRenderer.js now
 // Removed model variables (robotModel, customCharacter, materials) - managed within llmModelCreationRenderer.js
-let generatingCharacter = false; // Keep generation state
-let selectedArchetype = ''; // Store selected archetype
-
+let generatingCharacter = false; 
 
 // Global function references for helpers (still needed?) - Let's keep them for now just in case
 window.renderAttributeGrid = renderAttributeGrid;
@@ -37,11 +34,8 @@ export function setupLLMCreationInterface(llmToEdit) {
         delete statusElement.dataset.profileImageUrl;
         delete statusElement.dataset.selectedVoice;
     }
-    generatingCharacter = false; // Reset generation flag
-    selectedArchetype = ''; // Reset selected archetype
+    generatingCharacter = false; 
 
-    // Populate emoji archetypes
-    populateArchetypeEmojis();
 
     // Setup default values for the form
     document.getElementById('llm-name').value = llmToEdit ? llmToEdit.name : `LLM-${Math.floor(Math.random() * 1000)}`;
@@ -49,64 +43,58 @@ export function setupLLMCreationInterface(llmToEdit) {
     // Initialize attribute system
     attributeSystem.initializeAttributes();
 
-    // If editing an existing LLM, load its attributes and archetype
-    if (llmToEdit) {
-        if (llmToEdit.attributes) {
-            let spentPoints = 0;
-            Object.entries(llmToEdit.attributes).forEach(([name, value]) => {
-                if (attributeSystem.attributes[name]) {
-                    attributeSystem.attributes[name].value = value;
-                    spentPoints += value; // Sum up loaded points
-                }
-            });
-            attributeSystem.pointsSpent = spentPoints; // Set the correct spent points
-        }
-        // Load and select the archetype
-        if (llmToEdit.archetype) {
-            selectArchetype(llmToEdit.archetype);
-        }
-    }
+    // If editing an existing LLM, load its attributes
+    if (llmToEdit && llmToEdit.attributes) {
+        let spentPoints = 0;
+        Object.entries(llmToEdit.attributes).forEach(([name, value]) => {
+            if (attributeSystem.attributes[name]) {
+                attributeSystem.attributes[name].value = value;
+                spentPoints += value; 
+            }
+        });
+         attributeSystem.pointsSpent = spentPoints; 
 
+    }
 
     // Render attribute grid AFTER potentially loading attributes
     renderAttributeGrid();
     updatePointsDisplay();
 
+    // Setup Emoji Selector
+    setupEmojiSelector();
+
     // Add event listeners for form elements that should update the humanoid preview
     const colorInput = document.getElementById('llm-color');
-    colorInput.removeEventListener('input', updateSelectedMeshColor); // Use the function from the renderer module
+    colorInput.removeEventListener('input', updateSelectedMeshColor); 
     colorInput.addEventListener('input', updateSelectedMeshColor);
 
 
     // Setup character generation button
     const generateBtn = document.getElementById('generate-character-btn');
-    const newGenerateBtn = generateBtn.cloneNode(true); // Clone to remove listeners
+    const newGenerateBtn = generateBtn.cloneNode(true); 
     generateBtn.parentNode.replaceChild(newGenerateBtn, generateBtn);
-    newGenerateBtn.addEventListener('click', async () => { // Make async
-        if (!selectedArchetype) {
-            const statusEl = document.getElementById('generation-status');
-            if (statusEl) statusEl.textContent = "Please select an archetype first.";
-            return;
-        }
-        const baseModelType = document.getElementById('llm-model').value;
-        // Pass archetype and base model type to the handler
-        const result = await handleGenerateCharacter(
-            generatingCharacter,
-            (state) => { generatingCharacter = state; },
-            baseModelType,
-            selectedArchetype // Pass the selected archetype
-        );
-        if (result && result.success) {
-            // Call the function in the renderer module to display the new character
-            displayGeneratedCharacter(result.code);
-        }
+    newGenerateBtn.addEventListener('click', () => {
+        const selectedEmojis = getSelectedEmojis(); 
+        handleGenerateCharacter(generatingCharacter, (state) => { 
+            generatingCharacter = state;
+        }, selectedEmojis).then(result => { 
+            if (result && result.success) {
+                // Call the function in the renderer module to display the new character
+                displayGeneratedCharacter(result.code);
+            }
+        });
     });
 
     // Set form values from existing LLM if editing
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
-        // document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || ''; // Textarea removed
+        // Load emojis instead of custom prompt
+        if (llmToEdit.selectedEmojis) {
+            loadSelectedEmojis(llmToEdit.selectedEmojis);
+        } else {
+            clearSelectedEmojis(); 
+        }
         const createUI = document.getElementById('create-llm-ui');
         createUI.setAttribute('data-edit-mode', 'true');
         createUI.setAttribute('data-edit-id', llmToEdit.id);
@@ -115,12 +103,12 @@ export function setupLLMCreationInterface(llmToEdit) {
         createUI.removeAttribute('data-edit-mode');
         createUI.removeAttribute('data-edit-id');
         document.getElementById('llm-color').value = '#3cb371';
-        // document.getElementById('llm-custom-prompt').value = ''; // Textarea removed
+        clearSelectedEmojis(); 
         document.getElementById('llm-model').value = 'assistant';
     }
 
     // Initialize the humanoid preview using the function from the renderer module
-    initHumanoidPreview(llmToEdit); // Pass llmToEdit
+    initHumanoidPreview(llmToEdit); 
 
     // Add event listener for create/save button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
@@ -149,50 +137,8 @@ export function setupLLMCreationInterface(llmToEdit) {
     initializeAllComponents(llmToEdit);
 
     // Handle window resize for optimizing UI height
-    window.removeEventListener('resize', optimizeUIHeightHandler); // Remove previous listener
+    window.removeEventListener('resize', optimizeUIHeightHandler); 
     window.addEventListener('resize', optimizeUIHeightHandler);
-}
-
-// --- New function to populate archetype emojis ---
-function populateArchetypeEmojis() {
-    const container = document.getElementById('archetype-emoji-list');
-    if (!container) return;
-    container.innerHTML = ''; // Clear previous
-
-    characterArchetypes.forEach(archetype => {
-        const button = document.createElement('button');
-        button.className = 'emoji-archetype-button';
-        button.dataset.archetype = archetype.name;
-        button.title = archetype.name;
-        button.textContent = archetype.emoji;
-        button.addEventListener('click', () => selectArchetype(archetype.name));
-        container.appendChild(button);
-    });
-}
-
-// --- New function to handle archetype selection ---
-function selectArchetype(archetypeName) {
-    selectedArchetype = archetypeName;
-    const hiddenInput = document.getElementById('selected-archetype');
-    if (hiddenInput) hiddenInput.value = archetypeName;
-
-    // Update button styles
-    const buttons = document.querySelectorAll('.emoji-archetype-button');
-    buttons.forEach(button => {
-        if (button.dataset.archetype === archetypeName) {
-            button.classList.add('selected');
-        } else {
-            button.classList.remove('selected');
-        }
-    });
-
-    // Clear generation status if an archetype is selected
-    const statusEl = document.getElementById('generation-status');
-    if (statusEl && statusEl.textContent === "Please select an archetype first.") {
-        statusEl.textContent = "";
-    }
-
-    console.log("Selected Archetype:", selectedArchetype);
 }
 
 // Wrapper function for resize handler
@@ -207,9 +153,10 @@ function resetForm() {
     document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
 
     // Reset other form values
-    document.getElementById('llm-model').selectedIndex = 0; // Assuming first option is default
+    document.getElementById('llm-model').selectedIndex = 0; 
     document.getElementById('llm-color').value = '#3cb371';
-    // document.getElementById('llm-custom-prompt').value = ''; // Textarea removed
+    // Clear selected emojis
+    clearSelectedEmojis(); 
 
     // Clear edit mode flags
     const createUI = document.getElementById('create-llm-ui');
@@ -218,9 +165,6 @@ function resetForm() {
 
     // Use imported reset function for attributes and profile image etc.
     resetFormAttributes();
-
-    // Reset archetype selection
-    selectArchetype(''); // Pass empty string to deselect all
 
     // Reset the 3D preview model to the default robot
     resetPreviewModel();

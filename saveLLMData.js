@@ -3,6 +3,7 @@ import { setupLLMCollectionView } from './llmCollectionView.js';
 import { attributeSystem } from './attributeSystem.js';
 import { storeModelData } from './llmModelStorage.js';
 import { saveTTSVoiceSelection } from './llmTtsVoiceSelector.js';
+import { getSelectedEmojis } from './llmCreationInterfaceCompact.js'; // Import function to get selected emojis
 
 // Function to save LLM data - moved from llmCreationInterface.js to reduce file size
 export function saveLLMData() {
@@ -12,10 +13,10 @@ export function saveLLMData() {
     const color = document.getElementById('llm-color').value;
     // Style field removed, use default value
     const style = 'modern';
-    // const customPrompt = document.getElementById('llm-custom-prompt').value; // Textarea removed
-    const archetype = document.getElementById('selected-archetype')?.value || ''; // Get selected archetype
+    // Get selected emojis instead of custom prompt
+    const selectedEmojis = getSelectedEmojis();
 
-    console.log('Saving LLM with style:', style, 'Archetype:', archetype);
+    console.log('Saving LLM with style:', style);
 
     // Get attributes
     const attributes = attributeSystem.exportAttributes();
@@ -26,10 +27,10 @@ export function saveLLMData() {
         model,
         color,
         style,
-        // customPrompt, // Removed
-        archetype, // Added archetype
+        selectedEmojis, // Store selected emojis
         attributes,
-        customCharacterCode: null
+        customCharacterCode: null,
+        customPrompt: null // Explicitly nullify old field
     };
 
     // If we have a custom character, save its code
@@ -87,12 +88,13 @@ export function saveLLMData() {
             if (!llmData.customCharacterCode && existingLLM.customCharacterCode) {
                 llmData.customCharacterCode = existingLLM.customCharacterCode;
             }
-            // Keep existing archetype if not changed (though UI forces selection for generation)
-            if (!llmData.archetype && existingLLM.archetype) {
-                llmData.archetype = existingLLM.archetype;
-            }
 
-            console.log('Updating LLM with ID:', editId, 'Style:', llmData.style, 'Archetype:', llmData.archetype);
+             // Preserve emojis if none were selected during edit (or if field didn't exist before)
+             if ((!llmData.selectedEmojis || llmData.selectedEmojis.length === 0) && existingLLM.selectedEmojis) {
+                 llmData.selectedEmojis = existingLLM.selectedEmojis;
+             }
+
+            console.log('Updating LLM with ID:', editId, 'Style:', llmData.style);
             llmDataManager.updateLLM(llmData);
         } else {
             console.error("Could not find LLM with ID:", editId);
@@ -101,7 +103,7 @@ export function saveLLMData() {
         }
     } else {
         // Save as new LLM
-        console.log('Adding new LLM with style:', llmData.style, 'Archetype:', llmData.archetype);
+        console.log('Adding new LLM with style:', llmData.style);
         savedLLMId = llmDataManager.addLLM(llmData);
     }
 
