@@ -12,7 +12,7 @@ export const cityData = {
             height: 30,
             x: 0,
             z: 0,
-            price: 50,
+            price: 5,
             available: true,
             type: "commercial"
         },
@@ -24,7 +24,7 @@ export const cityData = {
             height: 20,
             x: -50,
             z: -50,
-            price: 30,
+            price: 3,
             available: true,
             type: "residential"
         },
@@ -36,7 +36,7 @@ export const cityData = {
             height: 20,
             x: 50,
             z: -50,
-            price: 32,
+            price: 3,
             available: true,
             type: "residential"
         },
@@ -48,7 +48,7 @@ export const cityData = {
             height: 20,
             x: -50,
             z: 50,
-            price: 28,
+            price: 3,
             available: true,
             type: "residential"
         },
@@ -60,7 +60,7 @@ export const cityData = {
             height: 20,
             x: 50,
             z: 50,
-            price: 31,
+            price: 3,
             available: true,
             type: "residential"
         },
@@ -72,7 +72,7 @@ export const cityData = {
             height: 15,
             x: -80,
             z: 0,
-            price: 45,
+            price: 4,
             available: true,
             type: "commercial"
         },
@@ -84,7 +84,7 @@ export const cityData = {
             height: 25,
             x: 80,
             z: 0,
-            price: 42,
+            price: 4,
             available: true,
             type: "commercial"
         }

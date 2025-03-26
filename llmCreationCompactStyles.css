@@ -25,13 +25,11 @@
     /* Adjust the name input to accommodate the model type selector */
     .setting-item .model-type-selector + .setting-input {
         flex: 1;
-        margin-left: 0;
     }
     
     /* More compact form elements */
     .setting-input, .setting-select {
         padding: 6px;
-        width: 100%;
     }
     
     /* Compact attribute grid */

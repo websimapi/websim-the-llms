@@ -5,7 +5,12 @@
     align-items: center;
     gap: 10px;
     margin-right: 10px;
-    flex-shrink: 0;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.model-type-selector.loading {
+    opacity: 0;
 }
 
 .model-type-display {
@@ -122,4 +127,27 @@
     .model-type-dropdown {
         width: 180px;
     }
+}
+
+/* Enhanced alignment with name input */
+.setting-item.name-and-type-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-item.name-and-type-container .setting-label {
+    flex-shrink: 0;
+    min-width: 60px;
+}
+
+.setting-item.name-and-type-container .inputs-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.setting-item.name-and-type-container .setting-input {
+    flex: 1;
 }

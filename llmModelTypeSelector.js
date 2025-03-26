@@ -1,7 +1,14 @@
 // Model type selector functionality
 export function setupModelTypeSelector() {
-    // Ensure we have the expected HTML structure
-    createModelTypeSelectorHTML();
+    // Use the existing HTML structure created during preloading
+    const selector = document.querySelector('.model-type-selector');
+    if (!selector) {
+        // Create it if it doesn't exist yet
+        createModelTypeSelectorHTML();
+    } else {
+        // Just make sure it's visible
+        selector.classList.remove('loading');
+    }
     
     // Get references to the elements
     const selectorDisplay = document.querySelector('.model-type-display');
@@ -123,21 +130,47 @@ function populateDropdown(dropdown, modelTypes, selectedValue) {
 }
 
 // Create the HTML structure for the model type selector
-function createModelTypeSelectorHTML() {
+export function createModelTypeSelectorHTML(isPreloading = false) {
     // Only create if it doesn't already exist
     if (document.querySelector('.model-type-selector')) return;
     
     // Get the original select container
-    const nameInputContainer = document.getElementById('llm-name').parentElement;
+    const nameInputContainer = document.getElementById('llm-name')?.parentElement;
+    if (!nameInputContainer) return;
     
-    // Make sure the nameInputContainer has flex display
-    nameInputContainer.style.display = 'flex';
-    nameInputContainer.style.alignItems = 'center';
-    nameInputContainer.style.gap = '10px';
+    // First, adjust the HTML structure for better alignment
+    if (!nameInputContainer.classList.contains('name-and-type-container')) {
+        nameInputContainer.classList.add('name-and-type-container');
+        
+        // Extract the existing label
+        const label = nameInputContainer.querySelector('label');
+        
+        // Create a container for the inputs
+        const inputsContainer = document.createElement('div');
+        inputsContainer.className = 'inputs-container';
+        
+        // Move the input to the container
+        const input = nameInputContainer.querySelector('input');
+        if (input) {
+            nameInputContainer.removeChild(input);
+            inputsContainer.appendChild(input);
+        }
+        
+        // Add the inputs container after the label
+        if (label) {
+            nameInputContainer.insertBefore(inputsContainer, label.nextSibling);
+        } else {
+            nameInputContainer.appendChild(inputsContainer);
+        }
+    }
+    
+    // Reference to the container for inputs
+    const inputsContainer = nameInputContainer.querySelector('.inputs-container');
+    if (!inputsContainer) return;
     
     // Create model type selector HTML
     const selectorHTML = `
-        <div class="model-type-selector">
+        <div class="model-type-selector ${isPreloading ? 'loading' : ''}">
             <div class="model-type-display">
                 <div class="model-type-icon"></div>
                 <div class="model-type-arrow">
@@ -148,6 +181,14 @@ function createModelTypeSelectorHTML() {
         </div>
     `;
     
-    // Insert the new selector before the existing name input
-    nameInputContainer.insertAdjacentHTML('afterbegin', selectorHTML);
+    // Insert the new selector at the beginning of the inputs container
+    inputsContainer.insertAdjacentHTML('afterbegin', selectorHTML);
+    
+    // If preloading, wait until the create UI is active before revealing
+    if (isPreloading) {
+        setTimeout(() => {
+            const selector = document.querySelector('.model-type-selector');
+            if (selector) selector.classList.remove('loading');
+        }, 100);
+    }
 }
