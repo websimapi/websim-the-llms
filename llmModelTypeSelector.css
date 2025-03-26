@@ -1,0 +1,115 @@
+/* Styles for model type selector */
+.model-type-selector {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.model-type-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 160px;
+}
+
+.model-type-display:hover {
+    background-color: #444;
+}
+
+.model-type-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.model-type-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.model-type-name {
+    flex-grow: 1;
+    color: white;
+}
+
+.model-type-arrow {
+    width: 14px;
+    height: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.model-type-arrow svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+.model-type-display.active .model-type-arrow {
+    transform: rotate(180deg);
+}
+
+.model-type-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 200px;
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    margin-top: 5px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+    overflow: hidden;
+}
+
+.model-type-dropdown.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.model-type-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.model-type-option:hover {
+    background-color: #444;
+}
+
+.model-type-option.selected {
+    background-color: rgba(60, 179, 113, 0.2);
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 768px) {
+    .model-type-display {
+        width: 140px;
+    }
+    
+    .model-type-dropdown {
+        width: 180px;
+    }
+}

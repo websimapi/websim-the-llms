@@ -19,11 +19,6 @@ function setupUIComponents() {
         module.setupProfileImageAppearance();
     });
     
-    // Set up scene overlays for name and model type
-    import('./llmSceneOverlay.js').then(module => {
-        module.setupSceneOverlays();
-    });
-    
     // Set up TTS voice selector
     setupTTSVoiceSelector();
     
@@ -45,16 +40,18 @@ function setupUIComponents() {
             if (manipulationControls) manipulationControls.style.display = 'none';
         }, 200);
     });
+
+    // Initialize enhanced UI components
+    import('./llmCreationInterfaceEnhanced.js').then(module => {
+        setTimeout(() => {
+            module.initializeUIEnhancements();
+        }, 150);
+    });
 }
 
 function loadLLMData(llm) {
     // Load TTS voice selection
     loadTTSVoiceSelection(llm);
-    
-    // Load scene overlay data
-    import('./llmSceneOverlay.js').then(module => {
-        module.loadSceneOverlayData(llm);
-    });
     
     // Load profile image if available
     if (llm.profileImageUrl) {
