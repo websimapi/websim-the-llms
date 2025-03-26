@@ -4,7 +4,6 @@ import { safeSetEmissive } from './threeJSGlobals.js';
 
 let raycaster, mouse, camera, scene, renderer;
 let infoPanel, activePlotId;
-let touchTimeout; // For hiding panel after touch ends
 
 // Initialize hover functionality
 export function initPlotHoverInfo(mainCamera, mainScene, mainRenderer) {
@@ -12,30 +11,42 @@ export function initPlotHoverInfo(mainCamera, mainScene, mainRenderer) {
     camera = mainCamera;
     scene = mainScene;
     renderer = mainRenderer;
-
+    
     // Create raycaster for hover detection
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
-
+    
     // Create info panel HTML element
     createInfoPanel();
-
+    
     // Add event listeners
     const canvas = renderer.domElement;
     canvas.addEventListener('mousemove', onMouseMove);
     canvas.addEventListener('mouseleave', hideInfoPanel);
-
+    
     // Add touch event handling for mobile
     canvas.addEventListener('touchstart', onTouchStart);
     canvas.addEventListener('touchend', onTouchEnd);
-
+    
     // Expose handlers globally for other modules
     window.plotHoverHandlers = {
         onTouchStart: onTouchStart
     };
-
+    
     // Start checking for plot hovers
     checkPlotHovers();
+    
+    // If we have a stored voice to select
+    const statusElement = document.getElementById('generation-status');
+    if (statusElement && statusElement.dataset.profileImageUrl) {
+        const voiceUri = statusElement.dataset.selectedVoice;
+        for (let i = 0; i < voiceSelect.options.length; i++) {
+            if (voiceSelect.options[i].value === voiceUri) {
+                voiceSelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
 }
 
 // Create the info panel HTML element
@@ -43,9 +54,8 @@ function createInfoPanel() {
     infoPanel = document.createElement('div');
     infoPanel.className = 'plot-info-panel';
     infoPanel.style.display = 'none';
-    infoPanel.style.opacity = '0'; // Start hidden for smooth transition
     document.body.appendChild(infoPanel);
-
+    
     // Add the coin styles
     const coinStyles = document.createElement('link');
     coinStyles.rel = 'stylesheet';
@@ -58,22 +68,18 @@ function onMouseMove(event) {
     // Calculate mouse position in normalized device coordinates
     const canvas = renderer.domElement;
     const rect = canvas.getBoundingClientRect();
-
+    
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    // Update info panel position to follow cursor, ensuring it stays on screen
-    positionPanel(event.clientX, event.clientY);
+    
+    // Update info panel position, keeping it within viewport
+    updateInfoPanelPosition(event.clientX, event.clientY);
 }
 
 // Hide the info panel
 function hideInfoPanel() {
-    infoPanel.style.opacity = '0';
-    setTimeout(() => {
-        if (infoPanel.style.opacity === '0') { // Only hide if still meant to be hidden
-             infoPanel.style.display = 'none';
-        }
-    }, 200); // Match transition time
+    infoPanel.style.display = 'none';
+    infoPanel.style.opacity = 0; // Hide with opacity transition
 
     // Reset any highlighted plots
     if (activePlotId) {
@@ -128,46 +134,11 @@ function showInfoPanel(plot) {
         </div>
     `;
 
-    // Show the panel (make visible before positioning calculations)
+    // Show the panel
     infoPanel.style.display = 'block';
-    requestAnimationFrame(() => { // Use rAF to ensure display is updated before opacity change
-        infoPanel.style.opacity = '1';
+    requestAnimationFrame(() => { // Ensure display:block is applied before opacity transition
+        infoPanel.style.opacity = 1;
     });
-}
-
-// Position the panel relative to coordinates, keeping it within the screen bounds
-function positionPanel(clientX, clientY) {
-    const panelWidth = infoPanel.offsetWidth;
-    const panelHeight = infoPanel.offsetHeight;
-    const buffer = 15; // Spacing from cursor and screen edges
-
-    let left = clientX + buffer;
-    let top = clientY + buffer;
-
-    // Adjust if panel goes off the right edge
-    if (left + panelWidth > window.innerWidth) {
-        left = clientX - panelWidth - buffer;
-        // If it also goes off the left edge now, position near center
-        if (left < 0) {
-             left = (window.innerWidth - panelWidth) / 2;
-        }
-    }
-
-    // Adjust if panel goes off the bottom edge
-    if (top + panelHeight > window.innerHeight) {
-        top = clientY - panelHeight - buffer;
-         // If it also goes off the top edge now, position near center
-         if (top < 0) {
-             top = (window.innerHeight - panelHeight) / 2;
-         }
-    }
-
-    // Ensure it doesn't go off the left or top edge initially
-    if (left < 0) left = buffer;
-    if (top < 0) top = buffer;
-
-    infoPanel.style.left = `${left}px`;
-    infoPanel.style.top = `${top}px`;
 }
 
 // Format seconds into a more readable time format
@@ -183,6 +154,41 @@ function formatTime(seconds) {
         const mins = Math.floor((seconds % 3600) / 60);
         return mins > 0 ? `${hours}hr ${mins}m` : `${hours}hr`;
     }
+}
+
+// New function to update info panel position and keep it within bounds
+function updateInfoPanelPosition(clientX, clientY) {
+    if (!infoPanel) return;
+
+    const panelWidth = infoPanel.offsetWidth;
+    const panelHeight = infoPanel.offsetHeight;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const buffer = 10; // Buffer from screen edge
+
+    let targetLeft = clientX + 15;
+    let targetTop = clientY + 15;
+
+    // Adjust horizontal position if panel goes off-screen right
+    if (targetLeft + panelWidth + buffer > viewportWidth) {
+        targetLeft = clientX - panelWidth - 15;
+        // If it still goes off-screen left, reset to near edge
+        if (targetLeft < buffer) {
+            targetLeft = buffer;
+        }
+    }
+
+    // Adjust vertical position if panel goes off-screen bottom
+    if (targetTop + panelHeight + buffer > viewportHeight) {
+        targetTop = clientY - panelHeight - 15;
+         // If it still goes off-screen top, reset to near edge
+        if (targetTop < buffer) {
+            targetTop = buffer;
+        }
+    }
+
+    infoPanel.style.left = `${targetLeft}px`;
+    infoPanel.style.top = `${targetTop}px`;
 }
 
 // Continuous check for plot hovers
@@ -205,68 +211,54 @@ function checkPlotHovers() {
     // First try direct hits on the plot outlines
     let intersects = raycaster.intersectObjects(plotObjects, true);
 
-    // If no hits, check against the plot bounding boxes, which are larger
-    if (intersects.length === 0) {
-        // Create a box for each plot to check against
+    // If no direct hits, check against bounding boxes for hover detection
+    let intersectedPlot = null;
+    if (intersects.length > 0) {
+        let obj = intersects[0].object;
+        while (obj && (!obj.userData || obj.userData.type !== 'lot')) {
+            obj = obj.parent;
+            if (!obj) break;
+        }
+        intersectedPlot = obj;
+    } else {
+        // Check bounding boxes only if no direct hit
+        const intersectPoint = new THREE.Vector3();
         for (const plot of plotObjects) {
-            // Create a bounding box if not already created
             if (!plot.userData.boundingBox) {
                 const box = new THREE.Box3().setFromObject(plot);
-                // Store the box in userData
                 plot.userData.boundingBox = box;
             }
-
-            // Check if ray intersects the bounding box
-            const intersectPoint = new THREE.Vector3();
             if (raycaster.ray.intersectsBox(plot.userData.boundingBox, intersectPoint)) {
-                // Create a fake intersection with the plot
-                intersects.push({
-                    object: plot,
-                    distance: raycaster.ray.origin.distanceTo(intersectPoint)
-                });
-                break; // Only need one hit
+                intersectedPlot = plot; // Consider this plot as intersected
+                break;
             }
         }
     }
 
-    if (intersects.length > 0) {
-        // Find the actual plot parent object (not the construction tape or cones)
-        let plot = intersects[0].object;
+    if (intersectedPlot && intersectedPlot.userData && intersectedPlot.userData.id) {
+        // We have a valid hovered plot
+        const plotId = intersectedPlot.userData.id;
 
-        // Traverse up to find the parent plot
-        while (plot && (!plot.userData || plot.userData.type !== 'lot')) {
-            plot = plot.parent;
-            if (!plot) break; // Safety check
-        }
-
-        if (plot && plot.userData && plot.userData.id) {
-            // If we're hovering over a different plot, reset the previous one
-            if (activePlotId && activePlotId !== plot.userData.id) {
+        if (activePlotId !== plotId) {
+            // Reset previous highlight if any
+            if (activePlotId) {
                 const previousPlot = findPlotObject(activePlotId);
-                if (previousPlot) {
-                    resetPlotHighlight(previousPlot);
-                }
+                if (previousPlot) resetPlotHighlight(previousPlot);
             }
-
-            // Only show/highlight if it's a new plot
-            if (activePlotId !== plot.userData.id) {
-                // Highlight the current plot
-                highlightPlot(plot);
-
-                // Show info panel
-                showInfoPanel(plot);
-
-                // Store current active plot ID
-                activePlotId = plot.userData.id;
-            }
-
-            return; // Exit early
+            // Highlight the new plot
+            highlightPlot(intersectedPlot);
+            activePlotId = plotId;
         }
-    }
 
-    // If no intersections, hide panel (unless it's being kept visible by touch timer)
-    if (infoPanel.style.opacity !== '0' && !touchTimeout) {
-        hideInfoPanel();
+        // Show or update info panel
+        showInfoPanel(intersectedPlot);
+
+    } else {
+        // No intersection or invalid plot found
+        if (infoPanel.style.display !== 'none') {
+            hideInfoPanel();
+        }
+        // No need to reset activePlotId here, hideInfoPanel handles it
     }
 }
 
@@ -290,7 +282,7 @@ function highlightPlot(plot) {
             if (!child.userData.originalMaterial) {
                 child.userData.originalMaterial = child.material.clone();
             }
-
+            
             // Highlight based on mesh type
             if (child.name && child.name.includes('tape')) {
                 // Safely set emissive properties
@@ -319,7 +311,7 @@ function resetPlotHighlight(plot) {
                 if (child.material.emissive && child.userData.originalMaterial.emissive) {
                     child.material.emissive.copy(child.userData.originalMaterial.emissive);
                 }
-                if (child.material.emissiveIntensity !== undefined &&
+                if (child.material.emissiveIntensity !== undefined && 
                     child.userData.originalMaterial.emissiveIntensity !== undefined) {
                     child.material.emissiveIntensity = child.userData.originalMaterial.emissiveIntensity;
                 }
@@ -339,11 +331,6 @@ function onTouchStart(event) {
     if (event.cancelable) {
         event.preventDefault();
     }
-    // Clear any existing hide timeout
-    if (touchTimeout) {
-        clearTimeout(touchTimeout);
-        touchTimeout = null;
-    }
 
     // Use the first touch point
     if (event.touches && event.touches.length > 0) {
@@ -356,26 +343,19 @@ function onTouchStart(event) {
         mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
 
-        // Position panel near touch point, respecting screen bounds
-        positionPanel(touch.clientX, touch.clientY);
+        // Position panel near touch point, ensuring it stays within bounds
+        updateInfoPanelPosition(touch.clientX, touch.clientY);
 
         // Force an immediate check for plot intersection
         checkPlotHovers();
 
-        // Keep the panel visible (opacity 1)
-        infoPanel.style.opacity = '1';
-        infoPanel.style.display = 'block';
+        // For mobile, we'll keep the panel visible until touch end or timeout
+        // No need to do anything else here
     }
 }
 
 // Handle touch end
 function onTouchEnd(event) {
-    // Hide panel after a delay, unless another touch starts
-    if (touchTimeout) {
-        clearTimeout(touchTimeout);
-    }
-    touchTimeout = setTimeout(() => {
-        hideInfoPanel();
-        touchTimeout = null;
-    }, 3000); // Keep visible for 3 seconds
+    // Keep panel visible for a short time to allow reading
+    setTimeout(hideInfoPanel, 3000);
 }
