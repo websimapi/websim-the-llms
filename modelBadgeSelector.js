@@ -15,6 +15,14 @@ export function setupModelBadgeSelector() {
             // Get the radio input inside this badge
             const input = this.querySelector('input[type="radio"]');
             if (input) {
+                // Get current and new model type values
+                const previousValue = document.getElementById('llm-model').value;
+                const newValue = input.value;
+                
+                // Check if we're in edit mode
+                const createUI = document.getElementById('create-llm-ui');
+                const isEditMode = createUI.getAttribute('data-edit-mode') === 'true';
+                
                 // Check the input
                 input.checked = true;
                 
@@ -32,11 +40,16 @@ export function setupModelBadgeSelector() {
                     modelSelect.value = input.value;
                 }
                 
-                // Apply default attributes for this model type
-                const modelType = input.value;
-                assignDefaultAttributes(modelType, attributeSystem);
-                renderAttributeGrid();
-                updatePointsDisplay();
+                // Only assign default attributes if:
+                // 1. Not in edit mode, OR
+                // 2. In edit mode AND actually changing the model type
+                if (!isEditMode || (isEditMode && previousValue !== newValue)) {
+                    // Apply default attributes for this model type
+                    const modelType = input.value;
+                    assignDefaultAttributes(modelType, attributeSystem);
+                    renderAttributeGrid();
+                    updatePointsDisplay();
+                }
             }
         });
     });
@@ -62,7 +75,7 @@ export function setupModelBadgeSelector() {
 }
 
 // Load existing model type when editing an LLM
-export function loadModelBadgeSelection(modelType, skipAttributeAssignment = true) {
+export function loadModelBadgeSelection(modelType, skipAttributeAssignment = false) {
     if (!modelType) return;
     
     // Find the badge with matching model type
