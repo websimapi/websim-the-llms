@@ -210,15 +210,17 @@ export function createRobotModel(humanoidScene, color, style) {
 
     const leftLegGroup = new THREE.Group();
     leftLegGroup.name = "LeftLeg";
-    const leftHipWorldPos = new THREE.Vector3();
-    leftHip.getWorldPosition(leftHipWorldPos);
-    leftLegGroup.position.copy(leftHipWorldPos);
     robotGroup.add(leftLegGroup); 
 
     const leftUpperLeg = new THREE.Mesh(legGeometry, materials.limbsMaterial);
     leftUpperLeg.position.y = -legSegmentLength / 2 - legRadius;
     leftUpperLeg.name = "LeftLeg_Upper";
     leftLegGroup.add(leftUpperLeg);
+
+    robotGroup.updateMatrixWorld(true); 
+    const leftHipWorldPos = new THREE.Vector3();
+    leftHip.getWorldPosition(leftHipWorldPos);
+    leftLegGroup.position.copy(leftHipWorldPos);
 
     const leftKnee = new THREE.Mesh(kneeGeometry, materials.limbsMaterial);
     leftKnee.position.y = leftUpperLeg.position.y - legSegmentLength / 2 - legRadius * 1.1;
@@ -239,15 +241,17 @@ export function createRobotModel(humanoidScene, color, style) {
 
     const rightLegGroup = new THREE.Group();
     rightLegGroup.name = "RightLeg";
-    const rightHipWorldPos = new THREE.Vector3();
-    rightHip.getWorldPosition(rightHipWorldPos);
-    rightLegGroup.position.copy(rightHipWorldPos);
     robotGroup.add(rightLegGroup); 
 
     const rightUpperLeg = new THREE.Mesh(legGeometry, materials.limbsMaterial);
     rightUpperLeg.position.y = -legSegmentLength / 2 - legRadius;
     rightUpperLeg.name = "RightLeg_Upper";
     rightLegGroup.add(rightUpperLeg);
+
+    robotGroup.updateMatrixWorld(true); 
+    const rightHipWorldPos = new THREE.Vector3();
+    rightHip.getWorldPosition(rightHipWorldPos);
+    rightLegGroup.position.copy(rightHipWorldPos);
 
     const rightKnee = new THREE.Mesh(kneeGeometry, materials.limbsMaterial);
     rightKnee.position.y = rightUpperLeg.position.y - legSegmentLength / 2 - legRadius * 1.1;
