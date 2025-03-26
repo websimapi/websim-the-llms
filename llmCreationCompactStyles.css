@@ -129,10 +129,10 @@
         margin-bottom: 0;
     }
     
-    /* Hide the name and model fields as they now appear in scene overlay */
+    /* Hide the original name and model fields that now appear in scene overlay */
     .settings-group:first-child .setting-item:nth-child(1),
     .settings-group:first-child .setting-item:nth-child(2) {
-        display: none !important;
+        display: none;
     }
     
     /* Optimize create LLM UI layout to reduce height */
