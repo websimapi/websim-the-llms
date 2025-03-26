@@ -7,18 +7,19 @@ import { saveLLMData } from './saveLLMData.js';
 // Removed createStandardMaterials, handled in renderer
 // Moved createRobotModel import to llmModelCreationRenderer.js
 // Removed tooltip imports, handled in helpers
-import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGenerateCharacter, setupEmojiSelector, getSelectedEmojis, clearSelectedEmojis, loadSelectedEmojis } from './llmCreationInterfaceCompact.js'; 
+import { renderAttributeGrid, updatePointsDisplay, resetFormAttributes, handleGenerateCharacter } from './llmCreationInterfaceCompact.js';
 // Removed mesh color manager imports, handled in renderer/manipulator
 // Removed manipulator imports, handled in helpers
 import { setGlobalReferences, setModels, setSelectedMesh, getGlobalReferences } from './threeJSGlobals.js';
 import { initializeAllComponents } from './llmSetupHelpers.js';
 // Import preview functions from the new location
 import { initHumanoidPreview, updateSelectedMeshColor, resetPreviewModel, displayGeneratedCharacter, createDefaultRobotModel } from './llmModelCreationRenderer.js';
-import { optimizeUIHeight } from './llmAttributeTooltips.js'; 
+import { optimizeUIHeight } from './llmAttributeTooltips.js'; // Keep this for resize handler
 
 // Removed global preview variables (humanoidScene, etc.) - managed within llmModelCreationRenderer.js now
 // Removed model variables (robotModel, customCharacter, materials) - managed within llmModelCreationRenderer.js
-let generatingCharacter = false; 
+let generatingCharacter = false; // Keep generation state
+
 
 // Global function references for helpers (still needed?) - Let's keep them for now just in case
 window.renderAttributeGrid = renderAttributeGrid;
@@ -34,7 +35,7 @@ export function setupLLMCreationInterface(llmToEdit) {
         delete statusElement.dataset.profileImageUrl;
         delete statusElement.dataset.selectedVoice;
     }
-    generatingCharacter = false; 
+    generatingCharacter = false; // Reset generation flag
 
 
     // Setup default values for the form
@@ -49,35 +50,30 @@ export function setupLLMCreationInterface(llmToEdit) {
         Object.entries(llmToEdit.attributes).forEach(([name, value]) => {
             if (attributeSystem.attributes[name]) {
                 attributeSystem.attributes[name].value = value;
-                spentPoints += value; 
+                spentPoints += value; // Sum up loaded points
             }
         });
-         attributeSystem.pointsSpent = spentPoints; 
-
+         attributeSystem.pointsSpent = spentPoints; // Set the correct spent points
     }
 
     // Render attribute grid AFTER potentially loading attributes
     renderAttributeGrid();
     updatePointsDisplay();
 
-    // Setup Emoji Selector
-    setupEmojiSelector();
-
     // Add event listeners for form elements that should update the humanoid preview
     const colorInput = document.getElementById('llm-color');
-    colorInput.removeEventListener('input', updateSelectedMeshColor); 
+    colorInput.removeEventListener('input', updateSelectedMeshColor); // Use the function from the renderer module
     colorInput.addEventListener('input', updateSelectedMeshColor);
 
 
     // Setup character generation button
     const generateBtn = document.getElementById('generate-character-btn');
-    const newGenerateBtn = generateBtn.cloneNode(true); 
+    const newGenerateBtn = generateBtn.cloneNode(true); // Clone to remove listeners
     generateBtn.parentNode.replaceChild(newGenerateBtn, generateBtn);
     newGenerateBtn.addEventListener('click', () => {
-        const selectedEmojis = getSelectedEmojis(); 
-        handleGenerateCharacter(generatingCharacter, (state) => { 
+        handleGenerateCharacter(generatingCharacter, (state) => { // Pass state setter
             generatingCharacter = state;
-        }, selectedEmojis).then(result => { 
+        }).then(result => {
             if (result && result.success) {
                 // Call the function in the renderer module to display the new character
                 displayGeneratedCharacter(result.code);
@@ -89,12 +85,7 @@ export function setupLLMCreationInterface(llmToEdit) {
     if (llmToEdit) {
         document.getElementById('llm-model').value = llmToEdit.model || 'assistant';
         document.getElementById('llm-color').value = llmToEdit.color || '#3cb371';
-        // Load emojis instead of custom prompt
-        if (llmToEdit.selectedEmojis) {
-            loadSelectedEmojis(llmToEdit.selectedEmojis);
-        } else {
-            clearSelectedEmojis(); 
-        }
+        document.getElementById('llm-custom-prompt').value = llmToEdit.customPrompt || '';
         const createUI = document.getElementById('create-llm-ui');
         createUI.setAttribute('data-edit-mode', 'true');
         createUI.setAttribute('data-edit-id', llmToEdit.id);
@@ -103,12 +94,12 @@ export function setupLLMCreationInterface(llmToEdit) {
         createUI.removeAttribute('data-edit-mode');
         createUI.removeAttribute('data-edit-id');
         document.getElementById('llm-color').value = '#3cb371';
-        clearSelectedEmojis(); 
+        document.getElementById('llm-custom-prompt').value = '';
         document.getElementById('llm-model').value = 'assistant';
     }
 
     // Initialize the humanoid preview using the function from the renderer module
-    initHumanoidPreview(llmToEdit); 
+    initHumanoidPreview(llmToEdit); // Pass llmToEdit
 
     // Add event listener for create/save button
     const createLLMButton = document.querySelector('.create-llm-actions .create-llm-button:not(.secondary)');
@@ -137,7 +128,7 @@ export function setupLLMCreationInterface(llmToEdit) {
     initializeAllComponents(llmToEdit);
 
     // Handle window resize for optimizing UI height
-    window.removeEventListener('resize', optimizeUIHeightHandler); 
+    window.removeEventListener('resize', optimizeUIHeightHandler); // Remove previous listener
     window.addEventListener('resize', optimizeUIHeightHandler);
 }
 
@@ -153,10 +144,9 @@ function resetForm() {
     document.getElementById('llm-name').value = `LLM-${Math.floor(Math.random() * 1000)}`;
 
     // Reset other form values
-    document.getElementById('llm-model').selectedIndex = 0; 
+    document.getElementById('llm-model').selectedIndex = 0; // Assuming first option is default
     document.getElementById('llm-color').value = '#3cb371';
-    // Clear selected emojis
-    clearSelectedEmojis(); 
+    document.getElementById('llm-custom-prompt').value = '';
 
     // Clear edit mode flags
     const createUI = document.getElementById('create-llm-ui');
