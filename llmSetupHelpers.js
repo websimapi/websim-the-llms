@@ -1,7 +1,7 @@
-// New file to hold code that would have gone into the maxed-out files
 import { setupTTSVoiceSelector, loadTTSVoiceSelection } from './llmTtsVoiceSelector.js';
 import { setupProfileImageDisplay } from './llmProfileImageDisplay.js';
 import { attributeSystem } from './attributeSystem.js'; // Import attributeSystem
+import { setupProfileImageCapture } from './llmProfileImageUI.js'; // Import the capture setup function
 
 // Initialize all UI components for LLM creation
 export function initializeAllComponents(llmToEdit) {
@@ -25,8 +25,11 @@ export function initializeAllComponents(llmToEdit) {
 
 // Modified setupUIComponents to accept llmToEdit
 function setupUIComponents(llmToEdit = null) {
-    // Set up profile image UI, passing llmToEdit to handle image loading correctly
+    // Set up profile image display area in the basic info section
     setupProfileImageDisplay(llmToEdit);
+
+    // Set up the profile image capture button in the 3D viewport
+    setupProfileImageCapture();
 
     // Set up TTS voice selector
     setupTTSVoiceSelector();
