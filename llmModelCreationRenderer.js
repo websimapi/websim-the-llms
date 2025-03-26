@@ -320,17 +320,5 @@ function createDetailedHand(materials, side) {
     finger3.name = "Hand_Finger3";
     handGroup.add(finger3);
 
-    // Thumb (Corrected positioning based on side)
-    const thumbGeometry = new THREE.CylinderGeometry(0.018, 0.012, 0.06);
-    const thumb = new THREE.Mesh(thumbGeometry, fingerMaterial);
-    const thumbX = side === 'left' ? -0.05 : 0.05; // Correct X position
-    const thumbZRotation = side === 'left' ? Math.PI / 4 : -Math.PI / 4; // Correct Z rotation
-
-    thumb.position.set(thumbX, 0.02, 0.02); // Position relative to palm center
-    thumb.rotation.z = thumbZRotation; // Angle thumb slightly
-    thumb.rotation.y = Math.PI / 12; // Angle thumb slightly forward
-    thumb.name = "Hand_Thumb";
-    handGroup.add(thumb);
-
     return handGroup;
 }
