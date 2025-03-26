@@ -82,8 +82,19 @@
     box-sizing: content-box;
 }
 
-/* Mobile adjustments */
+/* Mobile adjustments for fixed position */
 @media screen and (max-width: 768px) {
+    .plot-info-panel.mobile-fixed {
+        position: fixed;
+        left: 50%;
+        bottom: 20px; /* Position at the bottom */
+        top: auto; /* Override top positioning */
+        transform: translateX(-50%);
+        width: 90%; /* Make it wider on mobile */
+        max-width: 400px;
+        z-index: 1001; /* Ensure it's above other elements */
+    }
+
     .credit-icon {
         width: 18px;
         height: 18px;
