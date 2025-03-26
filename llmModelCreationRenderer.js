@@ -5,15 +5,13 @@ export function createRobotModel(humanoidScene, color, style) {
     const materials = createStandardMaterials(color, style);
 
     const robotGroup = new THREE.Group();
-    robotGroup.name = "RobotModel";
+    robotGroup.name = "RobotModel"; 
 
-    // --- Head ---
     const headGroup = new THREE.Group();
     headGroup.name = "Head";
     headGroup.position.y = 1.6; 
     robotGroup.add(headGroup);
 
-    // Rounded box for the head
     const headShape = new THREE.Shape();
     const x = -0.2, y = -0.2;
     const width = 0.4, height = 0.4;
@@ -36,7 +34,6 @@ export function createRobotModel(humanoidScene, color, style) {
     headMain.name = "Head_Main";
     headGroup.add(headMain);
 
-    // Eyes
     const eyeGeometry = new THREE.SphereGeometry(0.05, 16, 8); 
     const leftEye = new THREE.Mesh(eyeGeometry, materials.eyeMaterial);
     leftEye.position.set(-0.08, 0.04, 0.16); 
@@ -48,12 +45,11 @@ export function createRobotModel(humanoidScene, color, style) {
     rightEye.name = "Head_RightEye";
     headGroup.add(rightEye);
 
-    // Antenna
     const antennaBase = new THREE.Mesh(
         new THREE.CylinderGeometry(0.02, 0.02, 0.05),
         materials.limbsMaterial
     );
-    antennaBase.position.set(0, 0.22, 0); 
+    antennaBase.position.set(0, 0.22, 0);
     antennaBase.name = "Head_AntennaBase";
     headGroup.add(antennaBase);
 
@@ -61,7 +57,7 @@ export function createRobotModel(humanoidScene, color, style) {
         new THREE.CylinderGeometry(0.008, 0.008, 0.15), 
         materials.limbsMaterial
     );
-    antenna.position.set(0, 0.3, 0); 
+    antenna.position.set(0, 0.3, 0);
     antenna.name = "Head_Antenna";
     headGroup.add(antenna);
 
@@ -69,17 +65,15 @@ export function createRobotModel(humanoidScene, color, style) {
         new THREE.SphereGeometry(0.02, 12, 8), 
         materials.antennaTipMaterial
     );
-    antennaTip.position.set(0, 0.38, 0); 
+    antennaTip.position.set(0, 0.38, 0);
     antennaTip.name = "Head_AntennaTip";
     headGroup.add(antennaTip);
 
-    // --- Torso ---
     const torsoGroup = new THREE.Group();
     torsoGroup.name = "Torso";
     torsoGroup.position.y = 1.05; 
     robotGroup.add(torsoGroup);
 
-    // Rounded box for the torso
     const torsoShape = new THREE.Shape();
     const tx = -0.25, ty = -0.4;
     const tWidth = 0.5, tHeight = 0.8;
@@ -89,20 +83,19 @@ export function createRobotModel(humanoidScene, color, style) {
     torsoShape.quadraticCurveTo(tx, ty + tHeight, tx + tRadius, ty + tHeight);
     torsoShape.lineTo(tx + tWidth - tRadius, ty + tHeight);
     torsoShape.quadraticCurveTo(tx + tWidth, ty + tHeight, tx + tWidth, ty + tHeight - tRadius);
-    torsoShape.lineTo(tx + tWidth, ty + tRadius); 
+    torsoShape.lineTo(tx + tWidth, ty + radius);
     torsoShape.quadraticCurveTo(tx + tWidth, ty, tx + tWidth - tRadius, ty);
     torsoShape.lineTo(tx + tRadius, ty);
     torsoShape.quadraticCurveTo(tx, ty, tx, ty + tRadius);
 
     const torsoExtrudeSettings = { depth: 0.25, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2 };
     const torsoGeometry = new THREE.ExtrudeGeometry(torsoShape, torsoExtrudeSettings);
-    torsoGeometry.center(); 
+    torsoGeometry.center();
 
     const torsoMain = new THREE.Mesh(torsoGeometry, materials.bodyMaterial);
     torsoMain.name = "Body_Torso";
     torsoGroup.add(torsoMain);
 
-    // Chest Light
     const chestLight = new THREE.Mesh(
         new THREE.CircleGeometry(0.08, 32), 
         materials.chestLightMaterial
@@ -111,7 +104,6 @@ export function createRobotModel(humanoidScene, color, style) {
     chestLight.name = "Body_ChestLight";
     torsoGroup.add(chestLight);
 
-    // Neck
     const neck = new THREE.Mesh(
         new THREE.CylinderGeometry(0.08, 0.1, 0.15), 
         materials.limbsMaterial
@@ -120,96 +112,80 @@ export function createRobotModel(humanoidScene, color, style) {
     neck.name = "Body_Neck";
     torsoGroup.add(neck);
 
-    // Shoulders
     const shoulderGeometry = new THREE.SphereGeometry(0.1, 16, 8);
     const leftShoulder = new THREE.Mesh(shoulderGeometry, materials.limbsMaterial);
-    leftShoulder.position.set(-0.3, 0.3, 0); 
+    leftShoulder.position.set(-0.3, 0.3, 0);
     leftShoulder.name = "Body_LeftShoulder";
     torsoGroup.add(leftShoulder);
 
     const rightShoulder = new THREE.Mesh(shoulderGeometry, materials.limbsMaterial);
-    rightShoulder.position.set(0.3, 0.3, 0); 
+    rightShoulder.position.set(0.3, 0.3, 0);
     rightShoulder.name = "Body_RightShoulder";
     torsoGroup.add(rightShoulder);
 
-    // --- Arms ---
     const armSegmentLength = 0.3;
     const armRadius = 0.06;
     const armGeometry = new THREE.CapsuleGeometry(armRadius, armSegmentLength, 4, 8);
     const elbowGeometry = new THREE.SphereGeometry(armRadius * 1.1, 12, 8);
 
-    // Left Arm Group 
     const leftArmGroup = new THREE.Group();
     leftArmGroup.name = "LeftArm";
     leftArmGroup.position.copy(leftShoulder.position); 
-    torsoGroup.add(leftArmGroup); 
+    torsoGroup.add(leftArmGroup);
 
-    // Left Upper Arm 
     const leftUpperArm = new THREE.Mesh(armGeometry, materials.limbsMaterial);
     leftUpperArm.position.y = -armSegmentLength / 2 - armRadius; 
     leftUpperArm.name = "LeftArm_Upper";
     leftArmGroup.add(leftUpperArm);
 
-    // Left Elbow 
     const leftElbow = new THREE.Mesh(elbowGeometry, materials.limbsMaterial);
     leftElbow.position.y = leftUpperArm.position.y - armSegmentLength / 2 - armRadius * 1.1;
     leftElbow.name = "LeftArm_Elbow";
     leftArmGroup.add(leftElbow);
 
-    // Left Lower Arm 
     const leftLowerArm = new THREE.Mesh(armGeometry, materials.limbsMaterial);
     leftLowerArm.position.y = leftElbow.position.y - armSegmentLength / 2 - armRadius;
     leftLowerArm.name = "LeftArm_Lower";
     leftArmGroup.add(leftLowerArm);
 
-    // Left Hand 
     const leftHand = new THREE.Mesh(
         new THREE.BoxGeometry(0.1, 0.12, 0.1), 
         materials.limbsMaterial 
     );
-    leftHand.position.y = leftLowerArm.position.y - armSegmentLength / 2 - 0.06; 
+    leftHand.position.y = leftLowerArm.position.y - armSegmentLength / 2 - 0.06;
     leftHand.name = "LeftArm_Hand";
     leftArmGroup.add(leftHand);
     leftArmGroup.rotation.z = Math.PI / 8; 
 
-
-    // Right Arm Group 
     const rightArmGroup = new THREE.Group();
     rightArmGroup.name = "RightArm";
     rightArmGroup.position.copy(rightShoulder.position); 
-    torsoGroup.add(rightArmGroup); 
+    torsoGroup.add(rightArmGroup);
 
-    // Right Upper Arm 
     const rightUpperArm = new THREE.Mesh(armGeometry, materials.limbsMaterial);
     rightUpperArm.position.y = -armSegmentLength / 2 - armRadius; 
     rightUpperArm.name = "RightArm_Upper";
     rightArmGroup.add(rightUpperArm);
 
-    // Right Elbow 
     const rightElbow = new THREE.Mesh(elbowGeometry, materials.limbsMaterial);
     rightElbow.position.y = rightUpperArm.position.y - armSegmentLength / 2 - armRadius * 1.1;
     rightElbow.name = "RightArm_Elbow";
     rightArmGroup.add(rightElbow);
 
-    // Right Lower Arm 
     const rightLowerArm = new THREE.Mesh(armGeometry, materials.limbsMaterial);
     rightLowerArm.position.y = rightElbow.position.y - armSegmentLength / 2 - armRadius;
     rightLowerArm.name = "RightArm_Lower";
     rightArmGroup.add(rightLowerArm);
 
-    // Right Hand 
     const rightHand = new THREE.Mesh(
         new THREE.BoxGeometry(0.1, 0.12, 0.1), 
         materials.limbsMaterial 
     );
-    rightHand.position.y = rightLowerArm.position.y - armSegmentLength / 2 - 0.06; 
+    rightHand.position.y = rightLowerArm.position.y - armSegmentLength / 2 - 0.06;
     rightHand.name = "RightArm_Hand";
     rightArmGroup.add(rightHand);
     rightArmGroup.rotation.z = -Math.PI / 8; 
 
-
-    // --- Pelvis & Legs ---
-    // Pelvis 
     const pelvis = new THREE.Mesh(
         new THREE.BoxGeometry(0.3, 0.15, 0.2), 
         materials.bodyMaterial
@@ -218,24 +194,20 @@ export function createRobotModel(humanoidScene, color, style) {
     pelvis.name = "Body_Pelvis";
     torsoGroup.add(pelvis);
 
-    // Hips 
     const hipGeometry = new THREE.SphereGeometry(0.08, 12, 8);
     const leftHip = new THREE.Mesh(hipGeometry, materials.limbsMaterial);
-    leftHip.position.set(-0.1, -0.05, 0); 
+    leftHip.position.set(-0.1, -0.05, 0);
     pelvis.add(leftHip); 
 
     const rightHip = new THREE.Mesh(hipGeometry, materials.limbsMaterial);
-    rightHip.position.set(0.1, -0.05, 0); 
+    rightHip.position.set(0.1, -0.05, 0);
     pelvis.add(rightHip); 
 
-
-    // Legs 
     const legSegmentLength = 0.35;
     const legRadius = 0.07;
     const legGeometry = new THREE.CapsuleGeometry(legRadius, legSegmentLength, 4, 8);
     const kneeGeometry = new THREE.SphereGeometry(legRadius * 1.1, 12, 8);
 
-    // Left Leg Group 
     const leftLegGroup = new THREE.Group();
     leftLegGroup.name = "LeftLeg";
     const leftHipWorldPos = new THREE.Vector3();
@@ -243,33 +215,28 @@ export function createRobotModel(humanoidScene, color, style) {
     leftLegGroup.position.copy(leftHipWorldPos);
     robotGroup.add(leftLegGroup); 
 
-    // Left Upper Leg 
     const leftUpperLeg = new THREE.Mesh(legGeometry, materials.limbsMaterial);
-    leftUpperLeg.position.y = -legSegmentLength / 2 - legRadius; 
+    leftUpperLeg.position.y = -legSegmentLength / 2 - legRadius;
     leftUpperLeg.name = "LeftLeg_Upper";
     leftLegGroup.add(leftUpperLeg);
 
-    // Left Knee 
     const leftKnee = new THREE.Mesh(kneeGeometry, materials.limbsMaterial);
     leftKnee.position.y = leftUpperLeg.position.y - legSegmentLength / 2 - legRadius * 1.1;
     leftKnee.name = "LeftLeg_Knee";
     leftLegGroup.add(leftKnee);
 
-    // Left Lower Leg 
     const leftLowerLeg = new THREE.Mesh(legGeometry, materials.limbsMaterial);
     leftLowerLeg.position.y = leftKnee.position.y - legSegmentLength / 2 - legRadius;
     leftLowerLeg.name = "LeftLeg_Lower";
     leftLegGroup.add(leftLowerLeg);
 
-    // Left Foot 
-    const footGeometry = new THREE.BoxGeometry(0.15, 0.08, 0.22); 
+    const footGeometry = new THREE.BoxGeometry(0.15, 0.08, 0.22);
     const leftFoot = new THREE.Mesh(footGeometry, materials.limbsMaterial);
-    leftFoot.position.y = leftLowerLeg.position.y - legSegmentLength / 2 - 0.04; 
+    leftFoot.position.y = leftLowerLeg.position.y - legSegmentLength / 2 - 0.04;
     leftFoot.position.z = 0.05; 
     leftFoot.name = "LeftLeg_Foot";
     leftLegGroup.add(leftFoot);
 
-    // Right Leg Group 
     const rightLegGroup = new THREE.Group();
     rightLegGroup.name = "RightLeg";
     const rightHipWorldPos = new THREE.Vector3();
@@ -277,32 +244,27 @@ export function createRobotModel(humanoidScene, color, style) {
     rightLegGroup.position.copy(rightHipWorldPos);
     robotGroup.add(rightLegGroup); 
 
-    // Right Upper Leg 
     const rightUpperLeg = new THREE.Mesh(legGeometry, materials.limbsMaterial);
-    rightUpperLeg.position.y = -legSegmentLength / 2 - legRadius; 
+    rightUpperLeg.position.y = -legSegmentLength / 2 - legRadius;
     rightUpperLeg.name = "RightLeg_Upper";
     rightLegGroup.add(rightUpperLeg);
 
-    // Right Knee 
     const rightKnee = new THREE.Mesh(kneeGeometry, materials.limbsMaterial);
     rightKnee.position.y = rightUpperLeg.position.y - legSegmentLength / 2 - legRadius * 1.1;
     rightKnee.name = "RightLeg_Knee";
     rightLegGroup.add(rightKnee);
 
-    // Right Lower Leg 
     const rightLowerLeg = new THREE.Mesh(legGeometry, materials.limbsMaterial);
     rightLowerLeg.position.y = rightKnee.position.y - legSegmentLength / 2 - legRadius;
     rightLowerLeg.name = "RightLeg_Lower";
     rightLegGroup.add(rightLowerLeg);
 
-    // Right Foot 
     const rightFoot = new THREE.Mesh(footGeometry, materials.limbsMaterial);
-    rightFoot.position.y = rightLowerLeg.position.y - legSegmentLength / 2 - 0.04; 
+    rightFoot.position.y = rightLowerLeg.position.y - legSegmentLength / 2 - 0.04;
     rightFoot.position.z = 0.05; 
     rightFoot.name = "RightLeg_Foot";
     rightLegGroup.add(rightFoot);
 
-    // --- Final Adjustments ---
     robotGroup.traverse((child) => {
         if (child.isMesh) {
             child.castShadow = true;
@@ -313,8 +275,8 @@ export function createRobotModel(humanoidScene, color, style) {
     const tempBox = new THREE.Box3();
     const lowestPoint = new THREE.Vector3(0, Infinity, 0);
     robotGroup.traverse(child => {
-        if (child.name.includes("Foot") && child.isMesh) {
-            tempBox.setFromObject(child, true); 
+        if (child.name.includes("Foot")) {
+            tempBox.setFromObject(child);
             if (tempBox.min.y < lowestPoint.y) {
                 lowestPoint.y = tempBox.min.y;
             }
@@ -330,3 +292,4 @@ export function createRobotModel(humanoidScene, color, style) {
         materials: materials 
     };
 }
+
