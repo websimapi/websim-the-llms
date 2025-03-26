@@ -244,8 +244,13 @@ function displayEmptyState(viewportElement) {
 }
 
 function addSelectionIndicator(model) {
-    // Remove any existing selection indicators first
-    clearSelectionIndicators();
+    // Ensure scene exists before clearing indicators that might be attached to it
+    if (scene) {
+        clearSelectionIndicators();
+    } else {
+        // If scene doesn't exist, just clear indicators potentially attached to the model
+        clearModelAttachedIndicators(model);
+    }
 
     // Create a ring around the model
     const ringGeometry = new THREE.RingGeometry(1.5, 1.7, 32);
@@ -268,8 +273,12 @@ function addSelectionIndicator(model) {
     ring.position.x = model.position.x;
     ring.position.z = model.position.z;
 
-    // Add to scene
-    scene.add(ring);
+    // Add ring to scene only if scene exists
+    if (scene) {
+        scene.add(ring);
+    } else {
+        console.warn("Scene not available, cannot add selection ring.");
+    }
 
     // Add a highlight effect
     const highlight = new THREE.PointLight(0x3cb371, 1, 3);
@@ -287,33 +296,51 @@ function addSelectionIndicator(model) {
 
     // Store a reference to the selection indicators ON THE MODEL
     model.userData.selectionIndicators = {
-        ring: ring, // Store ring separately for scene removal
+        ring: scene ? ring : null, // Store ring only if added to scene
         lights: [highlight, bottomLight]
     };
 }
 
 // Renamed function to specifically clear indicators
 function clearSelectionIndicators() {
-    // Remove rings from the scene
-    const ringsToRemove = [];
-    scene.traverse(child => {
-        if (child.userData?.isSelectionRing) {
-            ringsToRemove.push(child);
-        }
-    });
-    ringsToRemove.forEach(ring => scene.remove(ring));
+    // Check if scene exists before operating on it
+    if (scene) {
+        // Remove rings from the scene
+        const ringsToRemove = [];
+        scene.traverse(child => {
+            if (child.userData?.isSelectionRing) {
+                ringsToRemove.push(child);
+            }
+        });
+        ringsToRemove.forEach(ring => scene.remove(ring));
+    }
 
-    // Remove lights attached to models
+    // Remove lights attached to models (this part is safe even if scene is null)
     llmModels.forEach(model => {
-        if (model?.userData?.selectionIndicators?.lights) {
-            model.userData.selectionIndicators.lights.forEach(light => {
-                if (light.parent === model) { // Ensure it's still attached
-                    model.remove(light);
-                }
-            });
-            delete model.userData.selectionIndicators; // Clear the reference
-        }
+       clearModelAttachedIndicators(model);
     });
+}
+
+// Helper function to clear indicators attached directly to a model
+function clearModelAttachedIndicators(model) {
+     if (model?.userData?.selectionIndicators?.lights) {
+        model.userData.selectionIndicators.lights.forEach(light => {
+            // Check parentage before removing, in case model was already removed from scene hierarchy elsewhere
+            if (light.parent === model) {
+                model.remove(light);
+            }
+        });
+        // Clear the reference on the model itself
+        delete model.userData.selectionIndicators;
+    }
+     // Also ensure the ring reference is cleared if it exists, even if scene was null
+     if (model?.userData?.selectionIndicators?.ring) {
+         delete model.userData.selectionIndicators.ring;
+     }
+     // Final cleanup on the userData object if selectionIndicators is now empty
+     if (model?.userData?.selectionIndicators && Object.keys(model.userData.selectionIndicators).length === 0) {
+          delete model.userData.selectionIndicators;
+     }
 }
 
 // Function to select a model by ID
@@ -323,7 +350,7 @@ export function selectModel(id) {
     // Set new selection ID
     selectedModelId = id;
 
-    // Clear any previous selection indicators
+    // Clear any previous selection indicators (respecting scene existence)
     clearSelectionIndicators();
 
     // Find the newly selected model among the currently displayed models
@@ -455,12 +482,12 @@ export function cleanupCarousel() {
         cancelAnimationFrame(animationId);
         animationId = null;
     }
-    
-    // Clean up selection indicators
-    clearSelectionIndicators();
-    
-    // Clean up models
+
+    // Clean up models and selection indicators ONLY IF scene exists
     if (scene) {
+        // Moved clearSelectionIndicators inside the check
+        clearSelectionIndicators();
+
         llmModels.forEach(model => {
             if (model && model.parent) {
                 model.parent.remove(model);
@@ -479,14 +506,20 @@ export function cleanupCarousel() {
                 });
             }
         });
+    } else {
+        // If scene is already null, still try to clean indicators attached to models in memory
+         llmModels.forEach(model => {
+             clearModelAttachedIndicators(model);
+         });
     }
-    
+
+
     // Remove renderer canvas
     if (renderer && renderer.domElement.parentNode) {
         renderer.domElement.parentNode.removeChild(renderer.domElement);
     }
-    
-    // Clear arrays and references
+
+    // Clear arrays and references AFTER cleanup attempts
     llmModels = [];
     carouselLLMs = [];
     scene = null;
@@ -495,8 +528,8 @@ export function cleanupCarousel() {
     selectedModelId = null;
     leftArrow = null;
     rightArrow = null;
-    
+
     // Clear global references if they were set
-    if (window.carouselScene === scene) window.carouselScene = null;
+    if (window.carouselScene === scene) window.carouselScene = null; // scene is already null here, so redundant but safe
     if (window.carouselCamera === camera) window.carouselCamera = null;
 }
