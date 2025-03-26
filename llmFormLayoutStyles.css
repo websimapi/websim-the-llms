@@ -1,0 +1,31 @@
+/* New CSS file for specific form layout adjustments */
+
+.name-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Adjust spacing between label and input */
+}
+
+.name-input-container .setting-label {
+    margin-bottom: 0; /* Remove bottom margin from label */
+    flex-shrink: 0; /* Prevent label from shrinking */
+    width: auto; /* Allow label to take its natural width */
+    white-space: nowrap; /* Prevent label text wrapping */
+}
+
+.name-input-container .setting-input {
+    flex-grow: 1; /* Allow input to take remaining space */
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 768px) {
+    .name-input-container {
+        flex-direction: column; /* Stack label and input vertically */
+        align-items: flex-start; /* Align items to the start */
+        gap: 5px; /* Adjust vertical spacing */
+    }
+
+    .name-input-container .setting-label {
+        margin-bottom: 5px; /* Add back some margin for vertical layout */
+    }
+}

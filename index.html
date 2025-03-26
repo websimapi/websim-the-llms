@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="musicPlayerToggle.css">
     <link rel="stylesheet" href="plotHoverStyles.css">
     <link rel="stylesheet" href="modelBadgeStyles.css">
+    <link rel="stylesheet" href="llmFormLayoutStyles.css">
     <script type="importmap">
     {
       "imports": {
@@ -107,8 +108,10 @@
                 <div class="settings-group">
                     <div class="settings-group-title">Basic Information</div>
                     <div class="setting-item">
-                        <label class="setting-label" for="llm-name">Name</label>
-                        <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
+                        <div class="name-input-container"> 
+                            <label class="setting-label" for="llm-name">Name</label>
+                            <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
+                        </div>
                     </div>
                     <div class="setting-item">
                         <!-- Hidden select for form compatibility -->
