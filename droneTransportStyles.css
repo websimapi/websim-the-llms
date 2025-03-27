@@ -28,6 +28,36 @@
     text-align: center;
 }
 
+/* New LLM Info Section Styles */
+.drone-llm-info {
+    background-color: rgba(60, 179, 113, 0.1);
+    border: 1px solid rgba(60, 179, 113, 0.3);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.llm-info-header {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-bottom: 4px;
+}
+
+.llm-info-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.llm-info-model {
+    font-size: 0.9rem;
+    color: #ddd;
+    text-transform: capitalize;
+}
+/* End New LLM Info Section Styles */
+
+
 .drone-instructions {
     margin-bottom: 15px;
 }
@@ -48,6 +78,8 @@
 .touch-control-row {
     display: flex;
     gap: 5px;
+    width: 100%;
+    justify-content: center;
 }
 
 .drone-touch-btn {
@@ -94,5 +126,22 @@
     
     .drone-touch-controls {
         display: flex;
+    }
+    
+    .drone-controls-info {
+        width: 90vw;
+        max-width: 300px;
+    }
+    
+    /* Make touch buttons slightly larger */
+    .drone-touch-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 1.8rem;
+    }
+    
+    .drone-transport-ui {
+        left: 50%;
+        transform: translateX(-50%);
     }
 }
