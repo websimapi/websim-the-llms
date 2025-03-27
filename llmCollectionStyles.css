@@ -179,57 +179,6 @@
     color: #3cb371;
 }
 
-/* Transport item styling */
-.llm-list-item.transport-item {
-    background-color: rgba(60, 179, 113, 0.15);
-    border-left: 4px solid #3cb371;
-    margin-bottom: 20px;
-}
-
-.llm-list-item.transport-item:hover {
-    background-color: rgba(60, 179, 113, 0.3);
-}
-
-.llm-list-item.transport-item .llm-model-icon {
-    background-color: rgba(60, 179, 113, 0.3);
-}
-
-.llm-list-item.transport-item .drone-icon {
-    animation: hover-drone 2s ease-in-out infinite;
-}
-
-@keyframes hover-drone {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-    100% { transform: translateY(0); }
-}
-
-/* Plot assignment indicator */
-.plot-assignment {
-    display: flex;
-    align-items: center;
-    padding: 5px 10px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    margin: 5px 0;
-}
-
-.plot-icon {
-    margin-right: 8px;
-    font-size: 1.2em;
-}
-
-.plot-name {
-    font-size: 0.9em;
-    color: #eee;
-}
-
-/* List items with plot assignments */
-.llm-list-item.with-plot {
-    border-left-width: 4px;
-    border-left-style: dashed;
-}
-
 /* Styling for edit selected button */
 .collection-button.secondary {
     background-color: #555;
@@ -244,6 +193,51 @@
     background-color: #444;
     cursor: not-allowed;
     opacity: 0.7;
+}
+
+/* Add new transport button styles */
+.transport-button-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 250;
+}
+
+.transport-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #3cb371;
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s, background-color 0.3s;
+}
+
+.transport-button:hover {
+    transform: scale(1.1);
+    background-color: #2a8c5a;
+}
+
+.transport-button:active {
+    transform: scale(0.95);
+}
+
+.transport-button svg {
+    width: 36px;
+    height: 36px;
+    fill: white;
+}
+
+.transport-button .propeller {
+    transform-origin: center;
+}
+
+.transport-button:hover .propeller {
+    animation: spin-propeller 0.5s linear infinite;
 }
 
 /* Fix for viewport rendering */

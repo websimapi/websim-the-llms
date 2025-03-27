@@ -306,6 +306,7 @@ function clearSelection() {
     selectedModelId = null;
 }
 
+// Function to select a model by ID
 export function selectModel(id) {
     if (id === selectedModelId) return; // Already selected
     
@@ -334,6 +335,7 @@ export function selectModel(id) {
     updateListSelection(id);
 }
 
+// Update the list view to highlight selected item
 function updateListSelection(id) {
     // Remove previous highlights
     document.querySelectorAll('.llm-list-item').forEach(item => {
@@ -357,6 +359,7 @@ function updateListSelection(id) {
     }
 }
 
+// Get the ID of the currently selected model
 export function getSelectedModelId() {
     return selectedModelId;
 }

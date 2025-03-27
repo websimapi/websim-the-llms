@@ -37,8 +37,7 @@ export function initPlotHoverInfo(mainCamera, mainScene, mainRenderer) {
 
     // Expose handlers globally for other modules (if needed)
     window.plotHoverHandlers = {
-        onTouchStart: onTouchStart,
-        onPlotClick: () => {}
+        onTouchStart: onTouchStart
     };
 
     // Start checking for plot hovers (will work for both mouse and touch)
@@ -220,36 +219,6 @@ function showInfoPanel(plot, clientX, clientY) {
         infoPanel.style.left = `${clientX + 15}px`;
         infoPanel.style.top = `${clientY + 15}px`;
     }
-
-    // Store current active plot ID
-    activePlotId = plot.userData.id;
-
-    // Add click functionality for plot selection during transport mode
-    if (window.currentTransportLLMId && window.plotHoverHandlers && 
-        typeof window.plotHoverHandlers.onPlotClick === 'function') {
-        // Make the panel interactive during transport mode
-        infoPanel.style.pointerEvents = 'auto';
-        
-        // Add a "Select Plot" button if not already present
-        if (!infoPanel.querySelector('.select-plot-btn')) {
-            const selectBtn = document.createElement('button');
-            selectBtn.className = 'select-plot-btn';
-            selectBtn.textContent = 'Transport Here';
-            selectBtn.addEventListener('click', function() {
-                window.plotHoverHandlers.onPlotClick(plot.userData.id);
-            });
-            
-            // Add button to the panel
-            const content = infoPanel.querySelector('.plot-info-content');
-            if (content) {
-                content.appendChild(document.createElement('hr'));
-                content.appendChild(selectBtn);
-            }
-        }
-    } else {
-        // Reset to non-interactive
-        infoPanel.style.pointerEvents = 'none';
-    }
 }
 
 // Format seconds into a more readable time format
@@ -381,6 +350,9 @@ function _performHoverCheck(clientX, clientY) {
 
             // Show info panel (pass coordinates for positioning)
             showInfoPanel(plot, clientX, clientY);
+
+            // Store current active plot ID
+            activePlotId = plot.userData.id;
         }
     }
 

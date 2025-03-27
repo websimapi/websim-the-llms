@@ -57,13 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-let scene;
-
 function initCityScene() {
     const cityViewElement = document.getElementById('city-view');
     
     // Initialize Three.js scene
-    scene = new THREE.Scene();
+    const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xe0f5e0);
     
     // Create camera
@@ -345,45 +343,4 @@ export function toggleConsolePanel() {
     } else {
         consolePanel.classList.add('hidden');
     }
-}
-
-export function placeLLMInPlot(llm, plot) {
-    // Find the plot object in the 3D scene
-    let plotObject = null;
-    scene?.traverse(obj => {
-        if (obj.userData && obj.userData.type === 'lot' && obj.userData.id === plot.id) {
-            plotObject = obj;
-        }
-    });
-    
-    if (!plotObject) {
-        console.error("Could not find plot object in scene");
-        return;
-    }
-    
-    // Import necessary modules
-    import('./llmCharacterRenderer.js').then(module => {
-        // Create the LLM model
-        const llmModel = module.renderLLMCharacter(THREE, llm);
-        
-        // Position it within the plot boundaries
-        // Calculate center position of the plot
-        const plotCenter = new THREE.Vector3(
-            plotObject.position.x,
-            0.1, // Just above ground level
-            plotObject.position.z
-        );
-        
-        // Set the model position
-        llmModel.position.copy(plotCenter);
-        
-        // Add the model to the scene
-        scene.add(llmModel);
-        
-        // Mark the plot as occupied in the visual elements
-        plotObject.userData.occupied = true;
-        plotObject.userData.occupiedBy = llm.id;
-        
-        console.log(`Placed ${llm.name} in plot ${plot.name}`);
-    });
 }
