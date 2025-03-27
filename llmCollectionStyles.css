@@ -197,9 +197,10 @@
 
 /* Add new transport button styles */
 .transport-button-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
+    position: absolute;
+    top: 50%;
+    left: 20px;
+    transform: translateY(-50%);
     z-index: 250;
 }
 
