@@ -10,7 +10,8 @@ let droneModel, llmModel;
 let droneControls = { forward: false, backward: false, left: false, right: false, up: false, down: false };
 let dronePosition = new THREE.Vector3(0, 15, 0); // Initial position, will be updated
 let droneRotation = new THREE.Euler(0, 0, 0);
-let droneSpeed = 0.25;
+let droneSpeed = 0.25; // Base speed
+let droneRotationSpeed = 0.05; // Rotation speed
 let droneAnimationId = null;
 let originalCameraPosition, originalCameraTarget;
 let droneContainer;
@@ -53,7 +54,7 @@ export function activateDroneTransport(llmId) {
     originalCameraTarget = mainCityControls.target.clone();
 
     // Determine drone starting position (back of the map, high up)
-    const mapSize = config.citySize || 500; // Use primaryGroundSize from terrain or config
+    const mapSize = config.primaryGroundSize || 500; // Use primaryGroundSize from terrain or config
     dronePosition.set(
         0,                      // Center X
         50,                     // Start high up
@@ -90,8 +91,8 @@ function createDroneUI(llm) {
     } else {
         profileImageHTML = `
             <div class="placeholder-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                     <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z" fill="currentColor"/>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                     <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
                  </svg>
             </div>
         `;
@@ -123,11 +124,11 @@ function createDroneUI(llm) {
             </div>
 
             <div class="drone-instructions">
-                <p>Use WASD to move horizontally</p>
-                <p>Use E/Q to go up/down</p>
-                <p>Use arrow keys to rotate</p>
-                <p>Press 'P' to place LLM</p>
-                <p>Press 'Esc' to cancel</p>
+                <p><strong>WASD:</strong> Move Horizontally</p>
+                <p><strong>E / Q:</strong> Move Up / Down</p>
+                <p><strong>← / →:</strong> Rotate</p>
+                <p><strong>P:</strong> Place LLM</p>
+                <p><strong>Esc:</strong> Cancel</p>
             </div>
             <div class="drone-touch-controls">
                 <div class="touch-control-row">
@@ -196,11 +197,11 @@ function createDroneUI(llm) {
 }
 
 function handleRotationControl(control) {
-    const rotationAmount = 0.1;
+    // Use droneRotationSpeed for touch rotation
     if (control === 'rotate-left') {
-        rotateY(rotationAmount);
+        rotateY(droneRotationSpeed * 2); // Make touch rotation slightly faster
     } else if (control === 'rotate-right') {
-        rotateY(-rotationAmount);
+        rotateY(-droneRotationSpeed * 2);
     }
 }
 
@@ -292,7 +293,10 @@ function createPropeller() {
 }
 
 function setupDroneControls() {
-    // Keyboard controls
+    // Clear existing listeners first to avoid duplicates
+    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('keyup', handleKeyUp);
+    // Add new listeners
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 }
@@ -300,8 +304,8 @@ function setupDroneControls() {
 function handleKeyDown(event) {
     if (!droneActive) return;
 
-    // Prevent default browser behavior for arrow keys, WASD, QE etc.
-     if (['w', 's', 'a', 'd', 'q', 'e', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'escape'].includes(event.key.toLowerCase())) {
+    // Prevent default browser behavior for control keys
+     if (['w', 's', 'a', 'd', 'q', 'e', 'arrowleft', 'arrowright', 'p', 'escape'].includes(event.key.toLowerCase())) {
          event.preventDefault();
      }
 
@@ -309,15 +313,13 @@ function handleKeyDown(event) {
     switch(event.key.toLowerCase()) { // Use lowercase for consistency
         case 'w': droneControls.forward = true; break;
         case 's': droneControls.backward = true; break;
-        case 'a': droneControls.left = true; break;
-        case 'd': droneControls.right = true; break;
-        case 'q': droneControls.down = true; break;
-        case 'e': droneControls.up = true; break;
-        case 'arrowleft': rotateY(0.1); break;
-        case 'arrowright': rotateY(-0.1); break;
+        case 'a': droneControls.left = true; break; // Strafe left
+        case 'd': droneControls.right = true; break; // Strafe right
+        case 'q': droneControls.down = true; break; // Descend
+        case 'e': droneControls.up = true; break; // Ascend
+        case 'arrowleft': rotateY(droneRotationSpeed); break; // Yaw left
+        case 'arrowright': rotateY(-droneRotationSpeed); break; // Yaw right
         // Arrow Up/Down for pitch removed for simplicity, could be added back
-        // case 'arrowup': rotateX(-0.1); break;
-        // case 'arrowdown': rotateX(0.1); break;
         case 'p': landDrone(); break; // 'P' to place/land
         case 'escape': landDrone(true); break; // Escape to cancel without placing
     }
@@ -345,7 +347,6 @@ function rotateY(amount) {
 function updateDronePosition() {
     if (!droneModel || !mainCityCamera || !mainCityControls) return; // Check if main components are available
 
-    // Define movement vectors
     const moveSpeed = droneSpeed;
     const direction = new THREE.Vector3(0, 0, 0);
 
@@ -360,13 +361,15 @@ function updateDronePosition() {
     // Apply controls to direction
     if (droneControls.forward) direction.add(forwardDir);
     if (droneControls.backward) direction.sub(forwardDir);
-    if (droneControls.right) direction.add(rightDir);
-    if (droneControls.left) direction.sub(rightDir);
+    if (droneControls.right) direction.add(rightDir); // Strafe right
+    if (droneControls.left) direction.sub(rightDir); // Strafe left
     if (droneControls.up) direction.y += 1; // Vertical movement is independent of rotation
     if (droneControls.down) direction.y -= 1;
 
-    // Normalize horizontal/vertical movement separately if needed, or just normalize the final vector
-    if (direction.length() > 0) direction.normalize();
+    // Normalize the direction vector if it's not zero
+    if (direction.lengthSq() > 0) { // Use lengthSq for performance
+        direction.normalize();
+    }
 
     // Apply movement
     droneModel.position.add(direction.multiplyScalar(moveSpeed));
@@ -405,14 +408,14 @@ function positionCameraForDroneView(instant = false) {
      if (instant) {
          mainCityCamera.position.copy(targetPos);
          mainCityControls.target.copy(lookAtPos); // Set orbit controls target as well
+         mainCityCamera.lookAt(mainCityControls.target); // Ensure camera looks at the target initially
      } else {
          // Smoothly move camera and target
          mainCityCamera.position.lerp(targetPos, 0.05);
          mainCityControls.target.lerp(lookAtPos, 0.05); // Smoothly move orbit controls target
+         // Camera's lookAt is handled automatically by OrbitControls when updating
      }
-     // Ensure camera looks at the (potentially moving) target
-      mainCityCamera.lookAt(mainCityControls.target);
-      mainCityControls.update(); // Important to update controls after changing target/position
+     mainCityControls.update(); // Update controls to reflect new target/position
 }
 
 function animateDrone() {
@@ -464,7 +467,7 @@ function landDrone(cancel = false) {
 
     // Restore main camera controls and position
      if (mainCityControls) {
-         mainCityControls.enabled = true;
+         mainCityControls.enabled = true; // Re-enable orbit controls
          if (originalCameraPosition && originalCameraTarget) {
              // Smoothly transition back to original camera position/target
              const transitionDuration = 1000; // 1 second transition
@@ -473,12 +476,11 @@ function landDrone(cancel = false) {
              function transitionBack() {
                  const elapsed = Date.now() - startTime;
                  const progress = Math.min(elapsed / transitionDuration, 1);
+                 const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
 
-                 mainCityCamera.position.lerpVectors(mainCityCamera.position, originalCameraPosition, progress * 0.1); // Use LERP for smoother transition
-                 mainCityControls.target.lerpVectors(mainCityControls.target, originalCameraTarget, progress * 0.1);
-                 mainCityCamera.lookAt(mainCityControls.target); // Keep looking at the target
-                 mainCityControls.update();
-
+                 // LERP towards original position and target
+                 mainCityCamera.position.lerp(originalCameraPosition, easeProgress * 0.15); // Adjust lerp factor for speed
+                 mainCityControls.target.lerp(originalCameraTarget, easeProgress * 0.15);
 
                  if (progress < 1) {
                      requestAnimationFrame(transitionBack);
@@ -486,9 +488,9 @@ function landDrone(cancel = false) {
                       // Ensure final position/target are set exactly
                       mainCityCamera.position.copy(originalCameraPosition);
                       mainCityControls.target.copy(originalCameraTarget);
-                      mainCityCamera.lookAt(mainCityControls.target);
-                      mainCityControls.update();
                  }
+                 // Update controls in each step of the transition
+                 mainCityControls.update();
              }
              transitionBack();
 
