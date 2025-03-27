@@ -15,6 +15,7 @@ import { initializeAllComponents } from './llmSetupHelpers.js';
 // Import preview functions from the new location
 import { initHumanoidPreview, updateSelectedMeshColor, resetPreviewModel, displayGeneratedCharacter, createDefaultRobotModel, restoreDefaultRobotModel } from './llmModelCreationRenderer.js';
 import { optimizeUIHeight } from './llmAttributeTooltips.js'; // Keep this for resize handler
+import { showConfirmationModal } from './confirmationModal.js'; // Import the custom modal function
 
 // Removed global preview variables (humanoidScene, etc.) - managed within llmModelCreationRenderer.js now
 // Removed model variables (robotModel, customCharacter, materials) - managed within llmModelCreationRenderer.js
@@ -86,11 +87,16 @@ export function setupLLMCreationInterface(llmToEdit) {
     const newRestoreBtn = restoreBtn.cloneNode(true); // Clone to remove listeners
     restoreBtn.parentNode.replaceChild(newRestoreBtn, restoreBtn);
     newRestoreBtn.addEventListener('click', () => {
-        // Add confirmation dialog
-        const confirmed = confirm("Are you sure you want to restore the default robot design? This will replace the current custom character, but attempt to keep colors.");
-        if (confirmed) {
-            handleRestoreRobotDesign();
-        }
+        // Use the custom confirmation modal
+        showConfirmationModal(
+            "Are you sure you want to restore the default robot design? This will replace the current custom character, but attempt to keep colors.",
+            () => { // onConfirm
+                handleRestoreRobotDesign();
+            },
+            () => { // onCancel
+                console.log("Restore cancelled.");
+            }
+        );
     });
 
     // Set form values from existing LLM if editing
