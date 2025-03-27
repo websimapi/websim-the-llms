@@ -57,8 +57,8 @@ export function activateDroneTransport(llmId) {
     const mapSize = config.primaryGroundSize || 500; // Use primaryGroundSize from terrain or config
     dronePosition.set(
         0,                      // Center X
-        50,                     // Start high up
-        mapSize / 2 - 10        // Start at the 'back' edge (positive Z) with a small buffer
+        30,                     // Start lower (closer to city height)
+        mapSize / 4             // Start closer to the center (e.g., 1/4 map size from edge)
     );
     droneRotation.set(0, Math.PI, 0); // Face towards the center of the map (negative Z)
 
@@ -124,15 +124,11 @@ function createDroneUI(llm) {
             </div>
 
             <div class="drone-instructions">
-                <p><strong>W / ↑:</strong> Move Forward</p>
-                <p><strong>S / ↓:</strong> Move Backward</p>
-                <p><strong>A / ←:</strong> Move Left</p>
-                <p><strong>D / →:</strong> Move Right</p>
-                <p><strong>E:</strong> Move Up</p>
-                <p><strong>Q:</strong> Move Down</p>
+                <p><strong>WASD:</strong> Move Horizontally</p>
+                <p><strong>E / Q:</strong> Move Up / Down</p>
+                <p><strong>← / →:</strong> Rotate</p>
                 <p><strong>P:</strong> Place LLM</p>
                 <p><strong>Esc:</strong> Cancel</p>
-                <div class="keyboard-hint">All arrow keys work for movement!</div>
             </div>
             <div class="drone-touch-controls">
                 <div class="touch-control-row">
@@ -213,6 +209,14 @@ function initDroneScene(llm) {
     // Create the drone model
     createDroneWithLLM(llm);
 
+    // Position the drone at the calculated starting point
+    if (droneModel) { // Ensure droneModel exists before positioning
+        droneModel.position.copy(dronePosition);
+        droneModel.rotation.copy(droneRotation);
+    } else {
+        console.error("Drone model not created, cannot set initial position.");
+    }
+
     // Start animation loop (will control drone and camera)
     animateDrone();
 }
@@ -258,10 +262,6 @@ function createDroneWithLLM(llm) {
          console.error("Main city scene not available when creating drone.");
          return; // Exit if scene isn't ready
     }
-
-    // Position the drone at the calculated starting point
-    droneModel.position.copy(dronePosition);
-    droneModel.rotation.copy(droneRotation);
 }
 
 function createPropeller() {
@@ -309,30 +309,21 @@ function handleKeyDown(event) {
     if (!droneActive) return;
 
     // Prevent default browser behavior for control keys
-     if (['w', 's', 'a', 'd', 'q', 'e', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'p', 'escape'].includes(event.key.toLowerCase())) {
+     if (['w', 's', 'a', 'd', 'q', 'e', 'arrowleft', 'arrowright', 'p', 'escape'].includes(event.key.toLowerCase())) {
          event.preventDefault();
      }
 
 
     switch(event.key.toLowerCase()) { // Use lowercase for consistency
-        case 'w': 
-        case 'arrowup': 
-            droneControls.forward = true; 
-            break;
-        case 's': 
-        case 'arrowdown': 
-            droneControls.backward = true; 
-            break;
-        case 'a': 
-        case 'arrowleft': 
-            droneControls.left = true; 
-            break; // Strafe left
-        case 'd': 
-        case 'arrowright': 
-            droneControls.right = true; 
-            break; // Strafe right
+        case 'w': droneControls.forward = true; break;
+        case 's': droneControls.backward = true; break;
+        case 'a': droneControls.left = true; break; // Strafe left
+        case 'd': droneControls.right = true; break; // Strafe right
         case 'q': droneControls.down = true; break; // Descend
         case 'e': droneControls.up = true; break; // Ascend
+        case 'arrowleft': rotateY(droneRotationSpeed); break; // Yaw left
+        case 'arrowright': rotateY(-droneRotationSpeed); break; // Yaw right
+        // Arrow Up/Down for pitch removed for simplicity, could be added back
         case 'p': landDrone(); break; // 'P' to place/land
         case 'escape': landDrone(true); break; // Escape to cancel without placing
     }
@@ -342,22 +333,10 @@ function handleKeyUp(event) {
     if (!droneActive) return;
 
     switch(event.key.toLowerCase()) { // Use lowercase for consistency
-        case 'w':
-        case 'arrowup':
-            droneControls.forward = false; 
-            break;
-        case 's':
-        case 'arrowdown':
-            droneControls.backward = false; 
-            break;
-        case 'a':
-        case 'arrowleft':
-            droneControls.left = false; 
-            break;
-        case 'd':
-        case 'arrowright':
-            droneControls.right = false; 
-            break;
+        case 'w': droneControls.forward = false; break;
+        case 's': droneControls.backward = false; break;
+        case 'a': droneControls.left = false; break;
+        case 'd': droneControls.right = false; break;
         case 'q': droneControls.down = false; break;
         case 'e': droneControls.up = false; break;
     }

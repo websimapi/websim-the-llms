@@ -157,17 +157,9 @@
 .drone-instructions strong {
     color: #3cb371;
     display: inline-block;
-    width: 80px; 
+    width: 60px; 
     text-align: right;
     margin-right: 5px;
-}
-
-.keyboard-hint {
-    color: #ff9f43;
-    font-style: italic;
-    font-size: 0.8rem;
-    margin-top: 8px;
-    text-align: center;
 }
 
 .drone-touch-controls {
