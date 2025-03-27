@@ -335,7 +335,11 @@ export function selectModel(id) {
     updateListSelection(id);
 }
 
-// Update the list view to highlight selected item
+// Get the ID of the currently selected model
+export function getSelectedModelId() {
+    return selectedModelId;
+}
+
 function updateListSelection(id) {
     // Remove previous highlights
     document.querySelectorAll('.llm-list-item').forEach(item => {
@@ -357,11 +361,6 @@ function updateListSelection(id) {
     if (modelToSelect) {
         addSelectionIndicator(modelToSelect);
     }
-}
-
-// Get the ID of the currently selected model
-export function getSelectedModelId() {
-    return selectedModelId;
 }
 
 function animateCarousel() {
