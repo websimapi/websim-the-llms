@@ -1,5 +1,5 @@
 // New file for credits overlay functionality
-import { marked } from 'marked';
+import marked from 'marked';
 
 export function setupCredits() {
     const creditsButton = document.getElementById('credits-button');
