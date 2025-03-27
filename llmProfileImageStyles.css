@@ -252,6 +252,33 @@
     object-fit: cover;
 }
 
+.llm-list-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #777;
+    background-color: #333;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.llm-list-image-placeholder:hover {
+    background-color: #444;
+    color: #3cb371;
+}
+
+.camera-placeholder {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.camera-placeholder:hover {
+    transform: scale(1.05);
+    border-color: #3cb371;
+}
+
 /* Mobile responsiveness */
 @media screen and (max-width: 768px) {
     .profile-image-preview-container {

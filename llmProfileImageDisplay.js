@@ -105,21 +105,39 @@ export function addProfileImagesToLLMList() {
             item.classList.remove('with-image'); // Remove class if image is removed
         }
 
-        if (!llm || !llm.profileImageUrl) return; // Exit if no image URL
-
-        // Add 'with-image' class to the item for proper grid layout
+        // Always add image container now, whether there's an image or not
         item.classList.add('with-image');
-
+        
         // Create image container and image element
         const imageContainer = document.createElement('div');
         imageContainer.className = 'llm-list-image-container';
 
-        const image = document.createElement('img');
-        image.className = 'llm-list-image';
-        image.src = llm.profileImageUrl;
-        image.alt = llm.name;
-
-        imageContainer.appendChild(image);
+        if (llm && llm.profileImageUrl) {
+            // Add actual image if available
+            const image = document.createElement('img');
+            image.className = 'llm-list-image';
+            image.src = llm.profileImageUrl;
+            image.alt = llm.name;
+            imageContainer.appendChild(image);
+        } else {
+            // Add placeholder with camera icon if no image
+            const placeholder = document.createElement('div');
+            placeholder.className = 'llm-list-image-placeholder';
+            placeholder.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" fill="currentColor"/>
+                    <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="currentColor"/>
+                </svg>
+            `;
+            imageContainer.appendChild(placeholder);
+            
+            // Add click handler to open edit mode with camera focus
+            imageContainer.classList.add('camera-placeholder');
+            imageContainer.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent triggering parent click
+                handleProfileImagePlaceholderClick(llm.id);
+            });
+        }
 
         // Get the llm-info element to insert before
         const llmInfo = item.querySelector('.llm-info');
@@ -130,5 +148,33 @@ export function addProfileImagesToLLMList() {
             // Fallback - insert at the beginning of the item
             item.insertBefore(imageContainer, item.firstChild);
         }
+    });
+}
+
+// Handle clicking on a placeholder image
+function handleProfileImagePlaceholderClick(llmId) {
+    const llm = llmDataManager.getLLMById(llmId);
+    if (!llm) return;
+    
+    // Close the collection UI
+    document.getElementById('llm-collection-ui').classList.remove('active');
+    
+    // Open the creation UI in edit mode
+    const createUI = document.getElementById('create-llm-ui');
+    createUI.classList.add('active');
+    createUI.setAttribute('data-edit-mode', 'true');
+    createUI.setAttribute('data-edit-id', llmId);
+    
+    // Set up the creation interface with the LLM data
+    import('./llmCreationInterface.js').then(module => {
+        module.setupLLMCreationInterface(llm);
+        
+        // Trigger camera button click after a short delay to allow UI to initialize
+        setTimeout(() => {
+            const cameraButton = document.getElementById('capture-profile-image');
+            if (cameraButton) {
+                cameraButton.click();
+            }
+        }, 500);
     });
 }
