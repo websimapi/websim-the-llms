@@ -231,7 +231,7 @@ function displayEmptyState(viewportElement) {
 
 function addSelectionIndicator(model) {
     // Remove any existing selection indicators first
-    clearSelection();
+    clearVisualSelection();
     
     // Create a ring around the model
     const ringGeometry = new THREE.RingGeometry(1.5, 1.7, 32);
@@ -276,70 +276,72 @@ function addSelectionIndicator(model) {
     model.userData.selectionRing = ring; // Store direct reference to ring
 }
 
-function clearSelection() {
-    // First find and remove all existing selection rings in the scene
+// Function to clear only visual selection indicators
+function clearVisualSelection() {
+    if (!scene) return; // Guard clause if scene is not initialized
+
     const selectionRings = [];
     scene.children.forEach(child => {
         if (child.userData && child.userData.isSelectionRing) {
             selectionRings.push(child);
         }
     });
-    
-    // Remove rings outside of the loop to avoid modifying the collection while iterating
-    selectionRings.forEach(ring => {
-        scene.remove(ring);
-    });
-    
-    // Then remove other indicators from models
+    selectionRings.forEach(ring => scene.remove(ring));
+
     llmModels.forEach(model => {
         if (model && model.userData.selectionIndicators) {
             model.userData.selectionIndicators.forEach(indicator => {
-                if (indicator.parent === model) {
-                    model.remove(indicator);
-                }
+                if (indicator.parent === model) model.remove(indicator);
             });
             delete model.userData.selectionIndicators;
             delete model.userData.selectionRing;
         }
     });
-    
-    selectedModelId = null;
 }
 
 // Function to select a model by ID
 export function selectModel(id) {
-    if (id === selectedModelId) return; // Already selected
-    
-    // Set new selection
+    if (!id) {
+        console.warn("Attempted to select model with invalid ID:", id);
+        return;
+    }
+    // Don't proceed if already selected
+    if (id === selectedModelId) {
+        console.log(`Model ${id} already selected.`);
+        return;
+    }
+
+    console.log(`Attempting to select model ID: ${id}`);
+
+    // Clear previous visual selection indicators
+    clearVisualSelection();
+
+    // Update the selected ID *now*
     selectedModelId = id;
-    
-    // Clear any previous selection
-    clearSelection();
-    
-    // Find model with this ID
+    console.log(`Selected model ID set to: ${selectedModelId}`);
+
+    // Find the model in the current view to add indicators
     const selectedModel = llmModels.find(model => model.userData.id === id);
     if (selectedModel) {
-        addSelectionIndicator(selectedModel);
-        
-        // Find the index of the selected LLM
+        addSelectionIndicator(selectedModel); // Add new indicators
+
+        // Pan to the selected model if it's not the current one
         const llmIndex = carouselLLMs.findIndex(llm => llm.id === id);
         if (llmIndex !== -1 && llmIndex !== currentIndex) {
-            // Pan to the selected model if it's not the current one
-            currentIndex = llmIndex;
-            updateCarouselModels();
-            updateArrowVisibility();
+             currentIndex = llmIndex;
+             updateCarouselModels(); // This will re-render models and implicitly add indicator via updateCarouselModels calling addSelectionIndicator if needed
+             updateArrowVisibility();
         }
+    } else {
+         console.warn(`Model with ID ${id} not found in current carousel view. Selection ID set, but no visual indicator added.`);
+         // If the model isn't visible (e.g., large collection), still update the list
     }
-    
-    // Update list view highlighting
+
+    // Update list view highlighting regardless of visual presence
     updateListSelection(id);
 }
 
-// Get the ID of the currently selected model
-export function getSelectedModelId() {
-    return selectedModelId;
-}
-
+// Update the list view to highlight selected item
 function updateListSelection(id) {
     // Remove previous highlights
     document.querySelectorAll('.llm-list-item').forEach(item => {
@@ -352,15 +354,18 @@ function updateListSelection(id) {
         selectedItem.classList.add('selected');
     }
     
-    // Ensure the model is actually highlighted in the scene
-    // Clear all existing selection effects first
-    clearSelection();
-    
-    // Find the model with this ID and reapply selection effects
+    // If selection happened via list, ensure carousel visuals update if needed
     const modelToSelect = llmModels.find(model => model.userData.id === id);
-    if (modelToSelect) {
-        addSelectionIndicator(modelToSelect);
+    if (modelToSelect && !modelToSelect.userData.selectionRing) { // Check if already visually selected
+        clearVisualSelection(); // Clear any other visual selection
+        addSelectionIndicator(modelToSelect); // Apply visual selection
     }
+}
+
+// Get the ID of the currently selected model
+export function getSelectedModelId() {
+    console.log("Getting selected model ID:", selectedModelId); // Add log
+    return selectedModelId;
 }
 
 function animateCarousel() {
@@ -425,12 +430,7 @@ export function cleanupCarousel() {
     
     // Clean up all models and selection indicators
     if (scene) {
-        // Clean up selection indicators in scene
-        scene.children.forEach(child => {
-            if (child.userData && (child.userData.isSelectionRing || child.userData.isSelectionIndicator)) {
-                scene.remove(child);
-            }
-        });
+        clearVisualSelection(); // Use the visual clearing function
         
         // Clean up models
         llmModels.forEach(model => {
@@ -444,5 +444,6 @@ export function cleanupCarousel() {
     scene = null;
     camera = null;
     renderer = null;
-    selectedModelId = null; // Reset selection when cleaning up
+    selectedModelId = null; // Reset selection ID *only* when cleaning up the entire carousel
+    console.log("Carousel cleaned up, selectedModelId reset."); // Add log
 }
