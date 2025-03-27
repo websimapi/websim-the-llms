@@ -67,6 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingLLMToggle.checked = useLLMTips;
     });
 
+    // Add this new global variable to track where the user came from
+    let createLLMOpenedFrom = 'plot'; // Default to plot view
+    
     // Start experience button
     startButton.addEventListener('click', () => {
         startOverlay.style.display = 'none';

@@ -16,6 +16,8 @@ function setupMenuButtons() {
         createLLMButton.addEventListener('click', () => {
             console.log('Create new LLM clicked');
             document.getElementById('create-llm-ui').classList.add('active');
+            // Set global variable to track that create LLM was opened from plot view
+            window.createLLMOpenedFrom = 'plot';
             
             // Import and setup LLM creation interface
             import('./llmCreationInterface.js').then(module => {

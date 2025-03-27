@@ -126,6 +126,11 @@ export function setupLLMCreationInterface(llmToEdit) {
     newCreateBtn.addEventListener('click', saveLLMData);
     newCreateBtn.textContent = llmToEdit ? 'Save LLM' : 'Create LLM';
 
+    // Add event listener for close button
+    const closeButton = document.querySelector('.create-llm-close');
+    const newCloseBtn = closeButton.cloneNode(true);
+    closeButton.parentNode.replaceChild(newCloseBtn, closeButton);
+    newCloseBtn.addEventListener('click', handleCreateLLMClose);
 
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');
@@ -140,7 +145,6 @@ export function setupLLMCreationInterface(llmToEdit) {
         ttsStylesheet.href = 'llmTtsStyles.css';
         document.head.appendChild(ttsStylesheet);
     }
-
 
     // Initialize all UI components (TTS, Profile Image, Badges, Tooltips, Manipulator)
     initializeAllComponents(llmToEdit);
@@ -202,4 +206,19 @@ function resetForm() {
      if (manipulationControls) manipulationControls.style.display = 'none';
      if (noSelectionMessage) noSelectionMessage.style.display = 'block';
 
+}
+
+function handleCreateLLMClose() {
+    const createLLMUI = document.getElementById('create-llm-ui');
+    createLLMUI.classList.remove('active');
+    
+    // Determine where to go back to
+    if (window.createLLMOpenedFrom === 'collection') {
+        // Go back to collection view
+        import('./llmCollectionView.js').then(module => {
+            module.setupLLMCollectionView();
+            document.getElementById('llm-collection-ui').classList.add('active');
+        });
+    } 
+    // Otherwise just close the UI to return to plot view (default behavior)
 }

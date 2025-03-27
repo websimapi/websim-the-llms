@@ -129,12 +129,16 @@ export function setupLLMCollectionView(selectLLMId = null) {
         collectionUI.classList.remove('active');
         // Clean up carousel
         cleanupCarousel();
+        // Set global variable to track that collection view is open
+        window.createLLMOpenedFrom = 'plot';
     });
     
     // Add create new button event listener
     document.getElementById('create-new-llm-btn').addEventListener('click', () => {
         collectionUI.classList.remove('active');
         document.getElementById('create-llm-ui').classList.add('active');
+        // Set global variable to track that create LLM was opened from collection
+        window.createLLMOpenedFrom = 'collection';
         // Initialize the creation interface
         setupLLMCreationInterface();
         
