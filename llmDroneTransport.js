@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { renderLLMCharacter } from './llmCharacterRenderer.js';
 import { llmDataManager } from './llmDataManager.js';
+import { getModelTypeIcon } from './llmCollectionView.js'; // Import icon function
 
 let droneActive = false;
 let droneModel, llmModel;
@@ -57,43 +58,71 @@ function createDroneUI(llm) {
     droneContainer = document.createElement('div');
     droneContainer.id = 'drone-transport-ui';
     droneContainer.className = 'drone-transport-ui';
-    
+
+    // Get profile image or placeholder SVG
+    let profileImageHTML;
+    if (llm.profileImageUrl) {
+        profileImageHTML = `<img src="${llm.profileImageUrl}" alt="${llm.name}">`;
+    } else {
+        profileImageHTML = `
+            <div class="placeholder-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                     <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z" fill="currentColor"/>
+                 </svg>
+            </div>
+        `;
+    }
+
+    // Get model type icon SVG
+    const modelIconSVG = getModelTypeIcon(llm.model); // Use the imported function
+
     // Add controls info and LLM details
     droneContainer.innerHTML = `
         <div class="drone-controls-info">
             <div class="drone-controls-title">Drone Transport</div>
-            
+
             <!-- LLM Info Section -->
             <div class="drone-llm-info">
-                <div class="llm-info-header">Transporting:</div>
-                <div class="llm-info-name">${llm.name}</div>
-                <div class="llm-info-model">${llm.model}</div>
+                <div class="drone-llm-profile-image">
+                    ${profileImageHTML}
+                </div>
+                <div class="drone-llm-text-info">
+                    <div class="llm-info-name">${llm.name}</div>
+                    <div class="llm-info-model-container">
+                        <div class="drone-llm-model-icon ${llm.model}">
+                           ${modelIconSVG}
+                        </div>
+                        <span class="llm-info-model">${llm.model}</span>
+                        <div class="drone-llm-color-dot" style="background-color: ${llm.color || '#3cb371'};"></div>
+                    </div>
+                </div>
             </div>
-            
+
             <div class="drone-instructions">
                 <p>Use WASD to move horizontally</p>
                 <p>Use E/Q to go up/down</p>
                 <p>Use arrow keys to rotate</p>
-                <p>Press 'P' to place LLM</p> 
+                <p>Press 'P' to place LLM</p>
+                <p>Press 'Esc' to cancel</p>
             </div>
             <div class="drone-touch-controls">
                 <div class="touch-control-row">
-                    <button class="drone-touch-btn" data-control="up">▲</button> 
+                    <button class="drone-touch-btn" data-control="up">▲</button>
                 </div>
                 <div class="touch-control-row">
-                    <button class="drone-touch-btn" data-control="left">◀</button> 
-                    <button class="drone-touch-btn" data-control="down">▼</button> 
-                    <button class="drone-touch-btn" data-control="right">▶</button> 
+                    <button class="drone-touch-btn" data-control="left">◀</button>
+                    <button class="drone-touch-btn" data-control="down">▼</button>
+                    <button class="drone-touch-btn" data-control="right">▶</button>
                 </div>
                 <div class="touch-control-row">
-                     <button class="drone-touch-btn" data-control="rotate-left">↺</button> 
-                     <button class="drone-touch-btn" data-control="rotate-right">↻</button> 
+                     <button class="drone-touch-btn" data-control="rotate-left">↺</button>
+                     <button class="drone-touch-btn" data-control="rotate-right">↻</button>
                 </div>
             </div>
-            <button class="drone-land-btn">Place LLM</button> 
+            <button class="drone-land-btn">Place LLM</button>
         </div>
     `;
-    
+
     document.body.appendChild(droneContainer);
     
     // Add event listener for landing button (renamed to place)
@@ -144,7 +173,6 @@ function handleRotationControl(control) {
         rotateY(-rotationAmount);
     }
 }
-
 
 function initDroneScene(llm) {
     // Create the drone model

@@ -35,26 +35,104 @@
     border-radius: 6px;
     padding: 10px;
     margin-bottom: 15px;
-    text-align: center;
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+}
+
+.drone-llm-profile-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #222; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0; 
+    border: 1px solid #444;
+}
+
+.drone-llm-profile-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.drone-llm-profile-image .placeholder-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: #777;
+}
+
+.drone-llm-text-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; 
+    gap: 2px; 
 }
 
 .llm-info-header {
     font-size: 0.8rem;
     color: #aaa;
     margin-bottom: 4px;
+    display: none; 
 }
 
 .llm-info-name {
     font-size: 1.1rem;
     font-weight: bold;
     color: #fff;
+    margin: 0; 
 }
+
+.llm-info-model-container {
+    display: flex;
+    align-items: center;
+    gap: 6px; 
+}
+
+.drone-llm-model-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3px;
+    flex-shrink: 0; 
+}
+
+.drone-llm-model-icon svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor; 
+}
+
+/* Style icons based on model type */
+.drone-llm-model-icon.assistant { background-color: rgba(60, 179, 113, 0.2); color: #3cb371; }
+.drone-llm-model-icon.creator { background-color: rgba(230, 126, 34, 0.2); color: #e67e22; }
+.drone-llm-model-icon.researcher { background-color: rgba(52, 152, 219, 0.2); color: #3498db; }
+.drone-llm-model-icon.companion { background-color: rgba(155, 89, 182, 0.2); color: #9b59b6; }
+.drone-llm-model-icon.humanoid { background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; }
+
 
 .llm-info-model {
     font-size: 0.9rem;
     color: #ddd;
     text-transform: capitalize;
+    margin: 0; 
 }
+
+.drone-llm-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid #555;
+    margin-left: 5px; 
+    flex-shrink: 0;
+}
+
 /* End New LLM Info Section Styles */
 
 

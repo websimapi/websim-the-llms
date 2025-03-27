@@ -9,6 +9,37 @@ import { activateDroneTransport } from './llmDroneTransport.js';
 
 let collectionAnimationId;
 
+// Export this function so it can be used by other modules (like drone transport)
+export function getModelTypeIcon(modelType) {
+    switch(modelType) {
+        case 'assistant':
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M19 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h4l3 3 3-3h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 16h-4.83l-1.17 1.17-1.17-1.17H5V4h14v14z"/>
+                <path d="M11 15h2v2h-2zm0-8h2v6h-2z"/>
+            </svg>`;
+        case 'creator':
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z"/>
+            </svg>`;
+        case 'researcher':
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M9.5 16c-1.93 0-3.5-1.57-3.5-3.5S7.57 9 9.5 9s3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zm5.5-1l5 5-1.5 1.5-5-5V15l-0.03-0.03c-1.45 1.28-3.36 2.03-5.47 2.03-4.56 0-8.25-3.69-8.25-8.25s3.69-8.25 8.25-8.25S17 4.19 17 8.75c0 2.11-0.76 4.02-2.05 5.47L15 14.24z"/>
+            </svg>`;
+        case 'companion':
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21.71.33 1.47.33 2.26 0 4.41-3.59 8-8 8z"/>
+            </svg>`;
+        case 'humanoid':
+             // Updated Humanoid Icon SVG
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
+            </svg>`;
+        default:
+            // Fallback icon (simple circle)
+            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>`;
+    }
+}
+
 export function setupLLMCollectionView(selectLLMId = null) {
     // Initialize the LLM data manager
     llmDataManager.init();
@@ -147,10 +178,7 @@ export function setupLLMCollectionView(selectLLMId = null) {
             document.querySelectorAll('.llm-delete-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const id = e.target.getAttribute('data-id');
-                    const confirmed = confirm('Are you sure you want to delete this LLM?');
-                    if (confirmed) {
-                        deleteLLM(id);
-                    }
+                    deleteLLM(id);
                 });
             });
             
@@ -303,38 +331,20 @@ function handleViewportClick(event) {
 }
 
 function deleteLLM(id) {
-    // Remove from data manager
-    if (llmDataManager.deleteLLM(id)) {
-        // Refresh the UI
-        setupLLMCollectionView();
-    }
-}
-
-function getModelTypeIcon(modelType) {
-    switch(modelType) {
-        case 'assistant':
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M19 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h4l3 3 3-3h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 16h-4.83l-1.17 1.17-1.17-1.17H5V4h14v14z"/>
-                <path d="M11 15h2v2h-2zm0-8h2v6h-2z"/>
-            </svg>`;
-        case 'creator':
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34a.996.996 0 0 0-1.41 0L9 12.25 11.75 15l8.96-8.96a.996.996 0 0 0 0-1.41z"/>
-            </svg>`;
-        case 'researcher':
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M9.5 16c-1.93 0-3.5-1.57-3.5-3.5S7.57 9 9.5 9s3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5zm5.5-1l5 5-1.5 1.5-5-5V15l-0.03-0.03c-1.45 1.28-3.36 2.03-5.47 2.03-4.56 0-8.25-3.69-8.25-8.25s3.69-8.25 8.25-8.25S17 4.19 17 8.75c0 2.11-0.76 4.02-2.05 5.47L15 14.24z"/>
-            </svg>`;
-        case 'companion':
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21.71.33 1.47.33 2.26 0 4.41-3.59 8-8 8z"/>
-                <path d="M11 15h2v2h-2zm0-8h2v6h-2z"/>
-            </svg>`;
-        case 'humanoid':
-            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
-            </svg>`;
-        default:
-            return '';
-    }
+    // Use custom confirmation modal
+    import('./confirmationModal.js').then(module => {
+        module.showConfirmationModal(
+            'Are you sure you want to delete this LLM? This action cannot be undone.',
+            () => { // onConfirm
+                // Remove from data manager
+                if (llmDataManager.deleteLLM(id)) {
+                    // Refresh the UI
+                    setupLLMCollectionView();
+                }
+            },
+            () => { // onCancel
+                console.log("Deletion cancelled.");
+            }
+        );
+    });
 }
