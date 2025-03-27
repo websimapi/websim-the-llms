@@ -6,7 +6,7 @@ import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { setupMusicPlayer } from './musicPlayer.js';
-import { marked } from 'marked'; 
+import { marked } from 'marked';
 
 let bgAudio;
 let musicVolume;
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const creditsPanel = document.getElementById('credits-panel'); 
     const closeCreditsButton = creditsPanel.querySelector('.credits-close'); 
     const creditsContent = creditsPanel.querySelector('.credits-content'); 
+    const creditsTitle = creditsPanel.querySelector('.credits-title'); 
     const loadingBar = document.querySelector('.loading-bar');
     const loadingPercentage = document.querySelector('.loading-percentage');
     const tipText = document.querySelector('.tip-text');
@@ -107,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Credits button click handler
     creditsButton.addEventListener('click', async () => {
+        creditsTitle.textContent = 'Loading...'; 
         creditsContent.innerHTML = '<div class="loading-credits">Loading...</div>'; 
         creditsPanel.classList.remove('hidden');
         try {
@@ -115,29 +117,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const markdown = await response.text();
-            
+            // Use marked to parse the markdown into tokens
+            const tokens = marked.lexer(markdown);
+
+            // Find the first heading token (should be h1)
+            const firstHeadingIndex = tokens.findIndex(token => token.type === 'heading' && token.depth === 1);
+            let titleText = "Credits"; // Default title
+            let contentMarkdown = markdown;
+
+            if (firstHeadingIndex !== -1) {
+                // Extract title text from the first h1 token
+                titleText = tokens[firstHeadingIndex].text;
+                // Remove the first h1 token from the list to render the rest
+                tokens.splice(firstHeadingIndex, 1);
+                // Reconstruct markdown content without the first h1
+                contentMarkdown = marked.parser(tokens);
+            }
+
+            // Update the panel title
+            creditsTitle.textContent = titleText;
+
+            // Parse the remaining contentMarkdown to HTML
             // Use DOMPurify if available, otherwise use marked directly (less secure)
             const html = (typeof DOMPurify !== 'undefined')
-                ? DOMPurify.sanitize(await marked.parse(markdown))
-                : await marked.parse(markdown);
-                
-            // Set content
+                ? DOMPurify.sanitize(await marked.parse(contentMarkdown))
+                : await marked.parse(contentMarkdown);
             creditsContent.innerHTML = html;
-            
-            // Update the title in the header - default to "Credits"
-            const creditsTitleElement = creditsPanel.querySelector('.credits-title');
-            if (creditsTitleElement) {
-                 creditsTitleElement.textContent = "Credits"; 
-            }
 
         } catch (error) {
             console.error('Error loading or parsing credits:', error);
+            creditsTitle.textContent = 'Error'; // Update title on error
             creditsContent.innerHTML = '<p style="color: red;">Error loading credits.</p>';
-            // Ensure title is still set even on error
-            const creditsTitleElement = creditsPanel.querySelector('.credits-title');
-            if (creditsTitleElement) {
-                 creditsTitleElement.textContent = "Credits";
-            }
         }
     });
 
@@ -145,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     closeCreditsButton.addEventListener('click', () => {
         creditsPanel.classList.add('hidden');
     });
+
 
     // Skip button click handler
     skipButton.addEventListener('click', () => {
