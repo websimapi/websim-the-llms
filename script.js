@@ -6,13 +6,11 @@ import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { setupMusicPlayer } from './musicPlayer.js';
-import { marked } from 'marked';
-// Import DOMPurify if available globally, otherwise handle potential absence
-const DOMPurify = window.DOMPurify;
+import { marked } from 'marked'; 
 
 let bgAudio;
 let musicVolume;
-let useLLMTips = localStorage.getItem('useLLMTips') !== null ?
+let useLLMTips = localStorage.getItem('useLLMTips') !== null ? 
     localStorage.getItem('useLLMTips') === 'true' : true;
 let tipFetchInterval;
 
@@ -28,11 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const startOverlay = document.getElementById('start-overlay');
     const startButton = document.getElementById('start-button');
     const playButton = document.getElementById('play-button');
-    const creditsButton = document.getElementById('credits-button');
-    const creditsPanel = document.getElementById('credits-panel');
-    const closeCreditsButton = creditsPanel.querySelector('.credits-close');
-    const creditsContent = creditsPanel.querySelector('.credits-content');
-    const creditsTitleElement = creditsPanel.querySelector('.credits-title'); // Get title element
+    const creditsButton = document.getElementById('credits-button'); 
+    const creditsPanel = document.getElementById('credits-panel'); 
+    const closeCreditsButton = creditsPanel.querySelector('.credits-close'); 
+    const creditsContent = creditsPanel.querySelector('.credits-content'); 
     const loadingBar = document.querySelector('.loading-bar');
     const loadingPercentage = document.querySelector('.loading-percentage');
     const tipText = document.querySelector('.tip-text');
@@ -41,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameContainer = document.getElementById('game-container');
     const loadingLLMToggle = document.getElementById('loading-llm-toggle');
     const startLLMToggle = document.getElementById('start-llm-toggle');
-
+    
     // Hide loading screen initially
     loadingScreen.style.display = 'none';
 
@@ -110,8 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Credits button click handler
     creditsButton.addEventListener('click', async () => {
-        creditsContent.innerHTML = '<div class="loading-credits">Loading...</div>';
-        creditsTitleElement.textContent = "Loading..."; // Set loading title
+        creditsContent.innerHTML = '<div class="loading-credits">Loading...</div>'; 
         creditsPanel.classList.remove('hidden');
         try {
             const response = await fetch('credits.md');
@@ -119,38 +115,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const markdown = await response.text();
-
-            // Parse the Markdown to HTML
-            const rawHtml = DOMPurify
+            
+            // Use DOMPurify if available, otherwise use marked directly (less secure)
+            const html = (typeof DOMPurify !== 'undefined')
                 ? DOMPurify.sanitize(await marked.parse(markdown))
                 : await marked.parse(markdown);
-
-            // Create a temporary div to parse the HTML and extract H1
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = rawHtml;
-
-            // Find the first H1 element
-            const firstH1 = tempDiv.querySelector('h1');
-            let panelTitle = "Credits"; // Default title
-
-            if (firstH1) {
-                // Use H1 content as the panel title
-                panelTitle = firstH1.textContent.trim();
-                // Remove the H1 from the content to be displayed
-                firstH1.remove();
+                
+            // Set content
+            creditsContent.innerHTML = html;
+            
+            // Update the title in the header - default to "Credits"
+            const creditsTitleElement = creditsPanel.querySelector('.credits-title');
+            if (creditsTitleElement) {
+                 creditsTitleElement.textContent = "Credits"; 
             }
-
-            // Update the panel title element
-            creditsTitleElement.textContent = panelTitle;
-
-            // Set the remaining HTML content
-            creditsContent.innerHTML = tempDiv.innerHTML;
 
         } catch (error) {
             console.error('Error loading or parsing credits:', error);
             creditsContent.innerHTML = '<p style="color: red;">Error loading credits.</p>';
-            // Reset title on error
-            creditsTitleElement.textContent = "Credits";
+            // Ensure title is still set even on error
+            const creditsTitleElement = creditsPanel.querySelector('.credits-title');
+            if (creditsTitleElement) {
+                 creditsTitleElement.textContent = "Credits";
+            }
         }
     });
 
@@ -158,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
     closeCreditsButton.addEventListener('click', () => {
         creditsPanel.classList.add('hidden');
     });
-
 
     // Skip button click handler
     skipButton.addEventListener('click', () => {
@@ -209,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Get 2-3 random topics to include in the prompt
             const randomTopics = [];
-            const numTopics = Math.floor(Math.random() * 2) + 2;
+            const numTopics = Math.floor(Math.random() * 2) + 2; 
 
             while (randomTopics.length < numTopics) {
                 const randomIndex = Math.floor(Math.random() * topics.length);
@@ -269,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function startLoading() {
         // Simulate loading progress
         let progress = 0;
-        const interval = 50;
+        const interval = 50; 
         const increment = (interval / config.loadingTime) * 100;
 
         loadingInterval = setInterval(() => {
