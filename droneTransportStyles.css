@@ -1,0 +1,98 @@
+/* Drone transportation UI styles */
+.drone-transport-ui {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 300;
+    display: none;
+}
+
+.drone-transport-ui.active {
+    display: block;
+}
+
+.drone-controls-info {
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 2px solid #3cb371;
+    border-radius: 10px;
+    padding: 15px;
+    color: white;
+    width: 250px;
+}
+
+.drone-controls-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #3cb371;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.drone-instructions {
+    margin-bottom: 15px;
+}
+
+.drone-instructions p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+}
+
+.drone-touch-controls {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.touch-control-row {
+    display: flex;
+    gap: 5px;
+}
+
+.drone-touch-btn {
+    width: 50px;
+    height: 50px;
+    background-color: rgba(60, 179, 113, 0.4);
+    border: 1px solid #3cb371;
+    border-radius: 10px;
+    color: white;
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.drone-touch-btn:active {
+    background-color: rgba(60, 179, 113, 0.8);
+}
+
+.drone-land-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #3cb371;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.drone-land-btn:hover {
+    background-color: #2a8c5a;
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 768px) {
+    .drone-instructions {
+        display: none;
+    }
+    
+    .drone-touch-controls {
+        display: flex;
+    }
+}

@@ -5,6 +5,7 @@ import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
 import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId } from './llmCollectionCarousel.js';
+import { activateDroneTransport } from './llmDroneTransport.js';
 
 let collectionAnimationId;
 
@@ -172,7 +173,6 @@ export function setupLLMCollectionView(selectLLMId = null) {
     });
 }
 
-// New function to add transport button
 function addTransportButton(collectionUI) {
     // Remove existing button if present
     const existingButton = document.querySelector('.transport-button-container');
@@ -224,10 +224,14 @@ function addTransportButton(collectionUI) {
         </button>
     `;
     
-    // Add click event listener (placeholder for now)
+    // Add click event listener for drone transport
     transportButtonContainer.querySelector('.transport-button').addEventListener('click', () => {
-        console.log('Transport LLM to plot clicked - functionality will be implemented later');
-        // Future implementation will go here
+        const selectedModelId = getSelectedModelId();
+        if (selectedModelId) {
+            activateDroneTransport(selectedModelId);
+        } else {
+            alert('Please select an LLM to transport');
+        }
     });
     
     // Add button to the collection UI
