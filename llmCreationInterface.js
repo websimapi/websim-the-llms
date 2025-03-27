@@ -83,9 +83,15 @@ export function setupLLMCreationInterface(llmToEdit) {
 
     // Setup restore robot button
     const restoreBtn = document.getElementById('restore-robot-design-btn');
-    const newRestoreBtn = restoreBtn.cloneNode(true);
+    const newRestoreBtn = restoreBtn.cloneNode(true); // Clone to remove listeners
     restoreBtn.parentNode.replaceChild(newRestoreBtn, restoreBtn);
-    newRestoreBtn.addEventListener('click', handleRestoreRobotDesign);
+    newRestoreBtn.addEventListener('click', () => {
+        // Add confirmation dialog
+        const confirmed = confirm("Are you sure you want to restore the default robot design? This will replace the current custom character, but attempt to keep colors.");
+        if (confirmed) {
+            handleRestoreRobotDesign();
+        }
+    });
 
     // Set form values from existing LLM if editing
     if (llmToEdit) {
