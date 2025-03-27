@@ -11,15 +11,15 @@ export const config = {
         "Different models have different personalities.",
         "Overtraining can lead to model burnout."
     ],
-    
+
     // Game settings
     startingResources: {
         money: 1000,
         energy: 500
     },
-    
+
     // City scene settings
-    citySize: 2000, // Increased from 500 for larger world
+    primaryGroundSize: 500, // The size of the main, detailed ground plane
     groundColor: 0x7cfc00,
 
     // Music player settings
