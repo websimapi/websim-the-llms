@@ -15,6 +15,13 @@ Vibe Jam 2025 - Hosted by [Pieter Levels](https://twitter.com/levelsio) on [jam.
 - Pastel W Logo: Provided by Websim Team
 - Music: "LLMs Morning Oasis" by Sonauto.ai (Provided Asset)
 
-## Inspired By
-- Character Creation: [@maxbittker's Become Anything](https://become-anything.on.websim.ai/)
+## Special Thanks
+- The WebSim Team
+- The Three.js Community
+- All the jammers!
+
 ---
+
+*This is a basic template. Please update with your specific details.*
+
+
