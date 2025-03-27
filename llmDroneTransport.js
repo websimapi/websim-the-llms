@@ -57,8 +57,8 @@ export function activateDroneTransport(llmId) {
     const mapSize = config.primaryGroundSize || 500; // Use primaryGroundSize from terrain or config
     dronePosition.set(
         0,                      // Center X
-        30,                     // Start lower (closer to city height)
-        mapSize / 4             // Start closer to the center (e.g., 1/4 map size from edge)
+        50,                     // Start high up
+        mapSize / 2 - 10        // Start at the 'back' edge (positive Z) with a small buffer
     );
     droneRotation.set(0, Math.PI, 0); // Face towards the center of the map (negative Z)
 
@@ -209,14 +209,6 @@ function initDroneScene(llm) {
     // Create the drone model
     createDroneWithLLM(llm);
 
-    // Position the drone at the calculated starting point
-    if (droneModel) { // Ensure droneModel exists before positioning
-        droneModel.position.copy(dronePosition);
-        droneModel.rotation.copy(droneRotation);
-    } else {
-        console.error("Drone model not created, cannot set initial position.");
-    }
-
     // Start animation loop (will control drone and camera)
     animateDrone();
 }
@@ -262,6 +254,10 @@ function createDroneWithLLM(llm) {
          console.error("Main city scene not available when creating drone.");
          return; // Exit if scene isn't ready
     }
+
+    // Position the drone at the calculated starting point
+    droneModel.position.copy(dronePosition);
+    droneModel.rotation.copy(droneRotation);
 }
 
 function createPropeller() {
