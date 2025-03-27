@@ -224,13 +224,8 @@ function addTransportButton(collectionUI) {
         // Future implementation will go here
     });
     
-    // Add button to the collection UI - CHANGED: Now add to list container instead of collectionUI
-    const listContainer = collectionUI.querySelector('.llm-list');
-    if (listContainer) {
-        listContainer.appendChild(transportButtonContainer);
-    } else {
-        collectionUI.appendChild(transportButtonContainer);
-    }
+    // Add button to the collection UI
+    collectionUI.appendChild(transportButtonContainer);
 }
 
 function viewLLMDetails(id) {
