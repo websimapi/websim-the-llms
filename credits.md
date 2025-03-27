@@ -4,7 +4,7 @@
 Vibe Jam 2025 - Hosted by [Pieter Levels](https://twitter.com/levelsio) on [jam.pieter.com](https://jam.pieter.com)
 
 ## Concept & Development
-- [Your Name/Handle Here]
+- @api
 
 ## Technologies Used
 - WebSim API
@@ -12,8 +12,8 @@ Vibe Jam 2025 - Hosted by [Pieter Levels](https://twitter.com/levelsio) on [jam.
 - Marked.js (for Markdown rendering)
 
 ## Assets
-- Pastel W Logo: Provided by Vibe Jam / Pieter Levels
-- Music: "LLMs Morning Oasis" by Sonauto (Provided Asset)
+- Pastel W Logo: Provided by Websim Team
+- Music: "LLMs Morning Oasis" by Sonauto.ai (Provided Asset)
 
 ## Special Thanks
 - The WebSim Team
@@ -23,4 +23,5 @@ Vibe Jam 2025 - Hosted by [Pieter Levels](https://twitter.com/levelsio) on [jam.
 ---
 
 *This is a basic template. Please update with your specific details.*
+
 
