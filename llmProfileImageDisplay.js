@@ -121,7 +121,14 @@ export function addProfileImagesToLLMList() {
 
         imageContainer.appendChild(image);
 
-        // Insert at the beginning of the item
-        item.insertBefore(imageContainer, item.firstChild);
+        // Get the llm-info element to insert before
+        const llmInfo = item.querySelector('.llm-info');
+        if (llmInfo) {
+            // Insert at the beginning of the item (before llm-info)
+            item.insertBefore(imageContainer, llmInfo);
+        } else {
+            // Fallback - insert at the beginning of the item
+            item.insertBefore(imageContainer, item.firstChild);
+        }
     });
 }
