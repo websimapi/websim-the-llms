@@ -1,5 +1,5 @@
 // New file for credits overlay functionality
-import marked from 'marked';
+import * as marked from 'marked'; // Use namespace import
 
 export function setupCredits() {
     const creditsButton = document.getElementById('credits-button');
@@ -22,8 +22,8 @@ export function setupCredits() {
             }
             const markdownText = await response.text();
 
-            // Render Markdown to HTML using marked
-            creditsContent.innerHTML = marked.parse(markdownText);
+            // Render Markdown to HTML using marked.parse()
+            creditsContent.innerHTML = marked.parse(markdownText); // Use marked.parse()
 
             // Show the overlay
             creditsOverlay.classList.remove('hidden');
