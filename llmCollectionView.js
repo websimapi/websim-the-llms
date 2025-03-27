@@ -85,6 +85,36 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 });
             });
             
+            // Add "Create New LLM" entry at the bottom of the list
+            const createNewItem = document.createElement('div');
+            createNewItem.className = 'llm-list-item create-new-item';
+            createNewItem.innerHTML = `
+                <div class="llm-info">
+                    <div style="display: flex; align-items: center;">
+                        <div class="llm-model-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                        </div>
+                        <h3>Create New LLM</h3>
+                    </div>
+                </div>
+            `;
+            llmList.appendChild(createNewItem);
+            
+            // Add click event for create new item
+            createNewItem.addEventListener('click', () => {
+                document.getElementById('llm-collection-ui').classList.remove('active');
+                document.getElementById('create-llm-ui').classList.add('active');
+                // Set global variable to track that create LLM was opened from collection
+                window.createLLMOpenedFrom = 'collection';
+                // Initialize the creation interface
+                setupLLMCreationInterface();
+                
+                // Clean up carousel
+                cleanupCarousel();
+            });
+            
             // Setup carousel
             setupLLMCarousel(collectionViewport, llms);
             
@@ -136,19 +166,6 @@ export function setupLLMCollectionView(selectLLMId = null) {
         cleanupCarousel();
         // Set global variable to track that collection view is open
         window.createLLMOpenedFrom = 'plot';
-    });
-    
-    // Add create new button event listener
-    document.getElementById('create-new-llm-btn').addEventListener('click', () => {
-        collectionUI.classList.remove('active');
-        document.getElementById('create-llm-ui').classList.add('active');
-        // Set global variable to track that create LLM was opened from collection
-        window.createLLMOpenedFrom = 'collection';
-        // Initialize the creation interface
-        setupLLMCreationInterface();
-        
-        // Clean up carousel
-        cleanupCarousel();
     });
 }
 

@@ -157,6 +157,28 @@
     color: #f1c40f;
 }
 
+/* Add new style for the create new LLM list item */
+.llm-list-item.create-new-item {
+    background-color: rgba(60, 179, 113, 0.15);
+    border-left: 4px solid #3cb371;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.llm-list-item.create-new-item:hover {
+    background-color: rgba(60, 179, 113, 0.3);
+    transform: translateX(3px);
+}
+
+.llm-list-item.create-new-item .llm-model-icon {
+    background-color: rgba(60, 179, 113, 0.2);
+    color: #3cb371;
+}
+
+.llm-list-item.create-new-item h3 {
+    color: #3cb371;
+}
+
 /* Styling for edit selected button */
 .collection-button.secondary {
     background-color: #555;
@@ -193,10 +215,5 @@
 
 /* Collection footer changes */
 .collection-footer {
-    padding: 15px;
-    background-color: #1a1a1a;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: center;
-    gap: 10px;
+    display: none;
 }
