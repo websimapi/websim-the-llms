@@ -102,6 +102,56 @@ export function setupLLMCollectionView(selectLLMId = null) {
             `;
             llmList.appendChild(createNewItem);
             
+            // Add "Transport to Plot" button at the top of the list
+            const transportItem = document.createElement('div');
+            transportItem.className = 'llm-list-item transport-item';
+            transportItem.innerHTML = `
+                <div class="llm-info">
+                    <div style="display: flex; align-items: center;">
+                        <div class="llm-model-icon">
+                            <svg class="drone-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M12,12c-1.7,0-3,1.3-3,3s1.3,3,3,3s3-1.3,3-3S13.7,12,12,12z" fill="currentColor"/>
+                                <circle cx="12" cy="13.5" r="0.5" fill="#333"/>
+                                <rect x="6.5" y="11.5" width="11" height="1" rx="0.5" fill="currentColor"/>
+                                <rect x="11.5" y="7" width="1" height="11" rx="0.5" fill="currentColor"/>
+                                <g class="propeller">
+                                    <circle cx="6.5" cy="11.5" r="1" fill="#333"/>
+                                    <ellipse cx="6.5" cy="11.5" rx="3" ry="0.5" fill="currentColor"/>
+                                    <ellipse cx="6.5" cy="11.5" rx="0.5" ry="3" fill="currentColor"/>
+                                </g>
+                                <g class="propeller">
+                                    <circle cx="17.5" cy="11.5" r="1" fill="#333"/>
+                                    <ellipse cx="17.5" cy="11.5" rx="3" ry="0.5" fill="currentColor"/>
+                                    <ellipse cx="17.5" cy="11.5" rx="0.5" ry="3" fill="currentColor"/>
+                                </g>
+                                <g class="propeller">
+                                    <circle cx="12" cy="7.5" r="1" fill="#333"/>
+                                    <ellipse cx="12" cy="7.5" rx="3" ry="0.5" fill="currentColor"/>
+                                    <ellipse cx="12" cy="7.5" rx="0.5" ry="3" fill="currentColor"/>
+                                </g>
+                                <g class="propeller">
+                                    <circle cx="12" cy="17.5" r="1" fill="#333"/>
+                                    <ellipse cx="12" cy="17.5" rx="3" ry="0.5" fill="currentColor"/>
+                                    <ellipse cx="12" cy="17.5" rx="0.5" ry="3" fill="currentColor"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <h3>Transport to Plot</h3>
+                    </div>
+                </div>
+                <div class="transport-status"></div>
+            `;
+            llmList.insertBefore(transportItem, llmList.firstChild);
+            
+            // Add click event for transport item
+            transportItem.addEventListener('click', () => {
+                if (getSelectedModelId()) {
+                    transportLLMToPlot(getSelectedModelId());
+                } else {
+                    alert("Please select an LLM to transport");
+                }
+            });
+            
             // Add click event for create new item
             createNewItem.addEventListener('click', () => {
                 document.getElementById('llm-collection-ui').classList.remove('active');
@@ -149,6 +199,9 @@ export function setupLLMCollectionView(selectLLMId = null) {
                     }
                 });
             });
+            
+            // Update LLM list to show plot assignments
+            updatePlotAssignments();
             
             // Select specific LLM if ID provided, otherwise select first one
             if (selectLLMId) {
@@ -259,6 +312,7 @@ function getModelTypeIcon(modelType) {
         case 'companion':
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21.71.33 1.47.33 2.26 0 4.41-3.59 8-8 8z"/>
+                <path d="M11 15h2v2h-2zm0-8h2v6h-2z"/>
             </svg>`;
         case 'humanoid':
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -267,4 +321,243 @@ function getModelTypeIcon(modelType) {
         default:
             return '';
     }
+}
+
+// New function to update the display of plot assignments
+function updatePlotAssignments() {
+    const allLLMs = llmDataManager.getAllLLMs();
+    
+    // Update each LLM item to show its plot assignment
+    document.querySelectorAll('.llm-list-item').forEach(item => {
+        const id = item.getAttribute('data-id');
+        if (!id) return; // Skip items without IDs (like buttons)
+        
+        const llm = allLLMs.find(l => l.id === id);
+        if (!llm) return;
+        
+        // Check if this LLM has a plot assignment
+        if (llm.plotId) {
+            // Get the plot data
+            const plot = cityData.lots.find(lot => lot.id === llm.plotId);
+            
+            // Create or update plot assignment indicator
+            let statusEl = item.querySelector('.plot-assignment');
+            if (!statusEl) {
+                statusEl = document.createElement('div');
+                statusEl.className = 'plot-assignment';
+                // Add it after llm-info but before actions
+                const infoEl = item.querySelector('.llm-info');
+                if (infoEl && infoEl.nextSibling) {
+                    item.insertBefore(statusEl, infoEl.nextSibling);
+                } else {
+                    item.appendChild(statusEl);
+                }
+            }
+            
+            statusEl.innerHTML = `
+                <div class="plot-icon">📍</div>
+                <div class="plot-name">${plot ? plot.name : 'Unknown Plot'}</div>
+            `;
+        }
+    });
+}
+
+// New function to transport an LLM to a plot
+function transportLLMToPlot(llmId) {
+    // Close the collection UI
+    document.getElementById('llm-collection-ui').classList.remove('active');
+    
+    // Initialize the drone transport mode
+    initDroneTransport(llmId);
+}
+
+// New function to initialize drone transportation mode
+function initDroneTransport(llmId) {
+    // Store current LLM ID for later use
+    window.currentTransportLLMId = llmId;
+    
+    // Create drone UI overlay
+    const droneOverlay = document.createElement('div');
+    droneOverlay.className = 'drone-transport-overlay';
+    droneOverlay.innerHTML = `
+        <div class="drone-controls">
+            <div class="drone-info">
+                <h3>Drone Transport Mode</h3>
+                <p>Select a plot for your LLM</p>
+            </div>
+            <button class="drone-cancel-btn">Cancel</button>
+        </div>
+        <div class="drone-model-container"></div>
+    `;
+    document.body.appendChild(droneOverlay);
+    
+    // Load the LLM's 3D model in the drone view
+    const llm = llmDataManager.getLLMById(llmId);
+    if (llm) {
+        // Start gyroscope control on mobile devices
+        if (window.innerWidth <= 768 && window.DeviceOrientationEvent) {
+            initGyroscopeControl();
+        }
+        
+        // Start drone transportation animation
+        startDroneAnimation(llm);
+    }
+    
+    // Add cancel button functionality
+    droneOverlay.querySelector('.drone-cancel-btn').addEventListener('click', () => {
+        cancelDroneTransport();
+    });
+    
+    // Make plot hover info trigger plot selection
+    if (window.plotHoverHandlers) {
+        window.plotHoverHandlers.onPlotClick = handlePlotSelection;
+    }
+}
+
+// Function to initialize gyroscope control for mobile
+function initGyroscopeControl() {
+    // Request permission if needed (iOS requires this)
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+            .then(permissionState => {
+                if (permissionState === 'granted') {
+                    window.addEventListener('deviceorientation', handleGyroscope);
+                }
+            })
+            .catch(console.error);
+    } else {
+        // Listen for device orientation events
+        window.addEventListener('deviceorientation', handleGyroscope);
+    }
+}
+
+// Handle gyroscope data for drone control
+function handleGyroscope(event) {
+    const drone = document.querySelector('.drone-model-container');
+    if (!drone) return;
+    
+    // Calculate rotation based on device orientation
+    const beta = event.beta;  // X-axis (-180 to 180)
+    const gamma = event.gamma; // Y-axis (-90 to 90)
+    
+    // Apply rotation to drone model (with limits)
+    const maxTilt = 15;
+    const xTilt = Math.max(-maxTilt, Math.min(maxTilt, gamma));
+    const zTilt = Math.max(-maxTilt, Math.min(maxTilt, beta));
+    
+    drone.style.transform = `rotateY(${xTilt}deg) rotateX(${-zTilt}deg)`;
+}
+
+// Function to handle plot selection
+function handlePlotSelection(plotId) {
+    const llmId = window.currentTransportLLMId;
+    if (!llmId) return;
+    
+    // Update the LLM with the plot assignment
+    const llm = llmDataManager.getLLMById(llmId);
+    if (llm) {
+        llm.plotId = plotId;
+        llmDataManager.updateLLM(llm);
+        
+        // Update city data to mark plot as occupied
+        const plot = cityData.lots.find(lot => lot.id === plotId);
+        if (plot) {
+            plot.available = false;
+            plot.llmId = llmId;
+        }
+        
+        // Show success message
+        showTransportSuccess(llm, plot);
+        
+        // Set timeout to return to city view
+        setTimeout(() => {
+            cleanupDroneTransport();
+            // Move the LLM to the plot in the 3D scene
+            placeLLMInPlot(llm, plot);
+        }, 2000);
+    }
+}
+
+// Show success message after transport
+function showTransportSuccess(llm, plot) {
+    const successMsg = document.createElement('div');
+    successMsg.className = 'transport-success';
+    successMsg.innerHTML = `
+        <div class="success-content">
+            <h3>Transport Complete!</h3>
+            <p>${llm.name} has been assigned to ${plot.name}</p>
+        </div>
+    `;
+    document.body.appendChild(successMsg);
+    
+    // Remove after animation
+    setTimeout(() => {
+        successMsg.classList.add('fade-out');
+        setTimeout(() => {
+            successMsg.remove();
+        }, 500);
+    }, 1500);
+}
+
+// Place the LLM model in the selected plot
+function placeLLMInPlot(llm, plot) {
+    // This function will be implemented when we have the city scene ready
+    // For now, we'll just update the data model
+    
+    // In a real implementation, we would:
+    // 1. Find the plot object in the 3D scene
+    // 2. Create the LLM model
+    // 3. Position it within the plot boundaries
+    console.log(`Placing ${llm.name} in plot ${plot.name}`);
+}
+
+// Start drone animation sequence
+function startDroneAnimation(llm) {
+    const droneContainer = document.querySelector('.drone-model-container');
+    if (!droneContainer) return;
+    
+    droneContainer.innerHTML = `
+        <div class="drone-body">
+            <div class="drone-propeller prop-1"></div>
+            <div class="drone-propeller prop-2"></div>
+            <div class="drone-propeller prop-3"></div>
+            <div class="drone-propeller prop-4"></div>
+            <div class="drone-cargo">
+                <div class="llm-model-preview">${llm.name}</div>
+            </div>
+        </div>
+    `;
+    
+    // Start propeller animation
+    document.querySelectorAll('.drone-propeller').forEach(prop => {
+        prop.classList.add('spinning');
+    });
+}
+
+// Cancel drone transport mode
+function cancelDroneTransport() {
+    cleanupDroneTransport();
+    
+    // Return to collection view
+    setupLLMCollectionView(window.currentTransportLLMId);
+}
+
+// Clean up drone transport mode
+function cleanupDroneTransport() {
+    // Remove event listeners
+    window.removeEventListener('deviceorientation', handleGyroscope);
+    
+    // Remove plot click handler
+    if (window.plotHoverHandlers) {
+        window.plotHoverHandlers.onPlotClick = null;
+    }
+    
+    // Remove drone overlay
+    const overlay = document.querySelector('.drone-transport-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+    
+    // Clear transport LLM ID
+    window.currentTransportLLMId = null;
 }

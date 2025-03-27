@@ -956,7 +956,7 @@ input:checked + .llm-toggle-slider:before {
 .empty-collection {
     color: #aaa;
     text-align: center;
-    padding: 50px 0;
+    padding: 50px;
 }
 
 .collection-footer {
@@ -1236,4 +1236,162 @@ input:checked + .llm-toggle-slider:before {
         padding: 15px;
         font-size: 0.95rem;
     }
+}
+
+/* Drone transport styles */
+.drone-transport-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 150;
+    pointer-events: none;
+}
+
+.drone-controls {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 15px 20px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    max-width: 600px;
+    color: white;
+    pointer-events: auto;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.drone-cancel-btn {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.drone-model-container {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    perspective: 1000px;
+    transition: transform 0.3s ease;
+}
+
+.drone-body {
+    width: 120px;
+    height: 120px;
+    position: relative;
+}
+
+.drone-propeller {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(60, 179, 113, 0.8);
+    border-radius: 50%;
+}
+
+.drone-propeller::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 10px;
+    height: 30px;
+    background-color: #ffffff;
+    transform: translateX(-50%);
+}
+
+.drone-propeller.spinning {
+    animation: spin 0.3s linear infinite;
+}
+
+.prop-1 { top: 0; left: 0; }
+.prop-2 { top: 0; right: 0; }
+.prop-3 { bottom: 0; left: 0; }
+.prop-4 { bottom: 0; right: 0; }
+
+.drone-cargo {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    width: 40px;
+    height: 40px;
+    background-color: #333;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.llm-model-preview {
+    font-size: 0.7rem;
+    color: white;
+    text-align: center;
+    word-break: break-word;
+    padding: 2px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.transport-success {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(60, 179, 113, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 200;
+    color: white;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    animation: pop-in 0.5s ease;
+}
+
+.transport-success.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+@keyframes pop-in {
+    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* Plot hover info panel additions */
+.select-plot-btn {
+    margin-top: 10px;
+    background-color: #3cb371;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 12px;
+    width: 100%;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.select-plot-btn:hover {
+    background-color: #2a8c5a;
+}
+
+/* Add a horizontal rule style */
+.plot-info-content hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 10px 0;
 }

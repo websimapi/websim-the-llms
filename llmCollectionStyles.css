@@ -179,6 +179,57 @@
     color: #3cb371;
 }
 
+/* Transport item styling */
+.llm-list-item.transport-item {
+    background-color: rgba(60, 179, 113, 0.15);
+    border-left: 4px solid #3cb371;
+    margin-bottom: 20px;
+}
+
+.llm-list-item.transport-item:hover {
+    background-color: rgba(60, 179, 113, 0.3);
+}
+
+.llm-list-item.transport-item .llm-model-icon {
+    background-color: rgba(60, 179, 113, 0.3);
+}
+
+.llm-list-item.transport-item .drone-icon {
+    animation: hover-drone 2s ease-in-out infinite;
+}
+
+@keyframes hover-drone {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+    100% { transform: translateY(0); }
+}
+
+/* Plot assignment indicator */
+.plot-assignment {
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin: 5px 0;
+}
+
+.plot-icon {
+    margin-right: 8px;
+    font-size: 1.2em;
+}
+
+.plot-name {
+    font-size: 0.9em;
+    color: #eee;
+}
+
+/* List items with plot assignments */
+.llm-list-item.with-plot {
+    border-left-width: 4px;
+    border-left-style: dashed;
+}
+
 /* Styling for edit selected button */
 .collection-button.secondary {
     background-color: #555;

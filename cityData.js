@@ -3,6 +3,20 @@ export const cityData = {
     description: "A peaceful city where LLMs live and thrive",
     founded: new Date().toISOString(),
     size: "small",
+    assignLLMToPlot(llmId, plotId) {
+        const plot = this.lots.find(lot => lot.id === plotId);
+        if (plot) {
+            plot.available = false;
+            plot.llmId = llmId;
+            return true;
+        }
+        return false;
+    },
+    getLLMAssignments() {
+        return this.lots
+            .filter(lot => lot.llmId)
+            .map(lot => ({ plotId: lot.id, llmId: lot.llmId }));
+    },
     lots: [
         {
             id: 1,
