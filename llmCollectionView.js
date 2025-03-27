@@ -214,6 +214,12 @@ function addTransportButton(collectionUI) {
                     <ellipse cx="12" cy="17.5" rx="3" ry="0.5" />
                     <ellipse cx="12" cy="17.5" rx="0.5" ry="3" />
                 </g>
+                <!-- Package with robot parts -->
+                <rect x="9" y="20" width="6" height="3" rx="1" />
+                <path d="M10,20.5h4v0.5H10V20.5z" />
+                <path d="M10,21.5h4v0.5H10V21.5z" />
+                <path d="M10.5,20.75h1v1.5h-1V20.75z" />
+                <path d="M12.5,20.75h1v1.5h-1V20.75z" />
             </svg>
         </button>
     `;
