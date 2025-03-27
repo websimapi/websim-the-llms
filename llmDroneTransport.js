@@ -5,15 +5,16 @@ import { getModelTypeIcon } from './llmCollectionView.js'; // Import icon functi
 
 let droneActive = false;
 let droneModel, llmModel;
-let droneScene, droneCamera, droneRenderer;
+let droneScene, droneCamera, droneRenderer; // These might not be needed if we overlay on main scene
 let droneControls = { forward: false, backward: false, left: false, right: false, up: false, down: false };
-let dronePosition = new THREE.Vector3(0, 15, 0);
+let dronePosition = new THREE.Vector3(0, 20, -80); // Start further back and higher up
 let droneRotation = new THREE.Euler(0, 0, 0);
 let droneSpeed = 0.25;
 let droneAnimationId = null;
 let originalCameraPosition, originalCameraTarget;
 let droneContainer;
 let currentLLMTransporting = null; // Keep track of the LLM being transported
+let mainCitySceneRef, mainCityCameraRef, mainCityControlsRef; // References to main scene objects
 
 export function activateDroneTransport(llmId) {
     if (droneActive) return;
@@ -25,6 +26,16 @@ export function activateDroneTransport(llmId) {
     
     console.log(`Activating drone transport for LLM: ${llm.name}`);
     
+    // Get references to main city scene objects
+    mainCitySceneRef = window.currentHumanoidScene || window.cityScene || window.scene; // Find the main scene
+    mainCityCameraRef = window.camera || window.humanoidCamera; // Find the main camera
+    mainCityControlsRef = window.controls; // Find the main controls
+
+    if (!mainCitySceneRef || !mainCityCameraRef || !mainCityControlsRef) {
+        console.error("Main city scene, camera, or controls not found!");
+        return; // Cannot proceed without main scene references
+    }
+
     // Close collection UI
     document.getElementById('llm-collection-ui').classList.remove('active');
     
@@ -35,18 +46,23 @@ export function activateDroneTransport(llmId) {
     droneContainer.classList.add('active');
     
     // Save original camera position from city scene
-    if (window.camera) {
-        originalCameraPosition = window.camera.position.clone();
-        originalCameraTarget = window.controls ? window.controls.target.clone() : new THREE.Vector3(0, 0, 0);
-    }
+    originalCameraPosition = mainCityCameraRef.position.clone();
+    originalCameraTarget = mainCityControlsRef.target.clone();
     
-    // Initialize drone scene, which will be overlaid on city scene
-    initDroneScene(llm);
+    // Disable main controls immediately
+    mainCityControlsRef.enabled = false;
+
+    // Initialize drone model and position
+    initDroneScene(llm); // This adds the drone to the main scene
     
     // Set up keyboard and touch controls
     setupDroneControls();
     
+    // Immediately set camera to drone 3rd person view
+    setInitialCameraView();
+
     droneActive = true;
+    // Start animation loop (already called within initDroneScene via animateDrone)
 }
 
 function createDroneUI(llm) {
@@ -175,7 +191,10 @@ function handleRotationControl(control) {
 }
 
 function initDroneScene(llm) {
-    // Create the drone model
+    // Reset drone position to the defined starting point
+    dronePosition = new THREE.Vector3(0, 20, -80); // Ensure consistent starting position
+
+    // Create the drone model and add it to the main scene
     createDroneWithLLM(llm);
     
     // Start animation loop
@@ -214,18 +233,17 @@ function createDroneWithLLM(llm) {
     llmModel.position.set(0, -1.5, 0); // Position below the drone
     droneModel.add(llmModel);
     
-    // Add to the main city scene (assuming city scene's scene is globally accessible or passed in)
-    const cityScene = window.currentHumanoidScene || window.cityScene; // Attempt to find the main scene
-     if (cityScene) {
-         cityScene.add(droneModel);
+    // Add to the main city scene using the reference
+     if (mainCitySceneRef) {
+         // Ensure drone model starts at the correct position
+         droneModel.position.copy(dronePosition);
+         mainCitySceneRef.add(droneModel);
      } else {
           console.error("Could not find main city scene to add drone to.");
      }
-    
-    // Position the drone
-    droneModel.position.copy(dronePosition);
 }
 
+// Function to create propeller remains the same
 function createPropeller() {
     const propellerGroup = new THREE.Group();
     
@@ -256,6 +274,9 @@ function createPropeller() {
 
 function setupDroneControls() {
     // Keyboard controls
+    // Remove previous listeners if they exist to avoid duplicates
+    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('keyup', handleKeyUp);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
 }
@@ -306,8 +327,31 @@ function rotateX(amount) {
     }
 }
 
+function setInitialCameraView() {
+    if (!mainCityCameraRef || !droneModel) return;
+
+    // Calculate initial camera position behind and above the drone
+    const offset = new THREE.Vector3(0, 5, 8); // Adjusted offset for 3rd person view
+    // Apply drone's *initial* rotation (likely none, but good practice)
+    offset.applyEuler(droneModel.rotation);
+
+    const cameraPos = droneModel.position.clone().add(offset);
+
+    // Set camera position directly
+    mainCityCameraRef.position.copy(cameraPos);
+
+    // Set camera target to the drone's position
+    mainCityCameraRef.lookAt(droneModel.position);
+
+    // Update controls target to match camera's focus (optional but helps consistency)
+    if(mainCityControlsRef) {
+        mainCityControlsRef.target.copy(droneModel.position);
+        mainCityControlsRef.update(); // Important after manual camera/target changes
+    }
+}
+
 function updateDronePosition() {
-    if (!droneModel) return;
+    if (!droneModel || !mainCityCameraRef || !mainCityControlsRef) return;
     
     // Define movement vectors
     const moveSpeed = droneSpeed;
@@ -335,39 +379,38 @@ function updateDronePosition() {
     // Apply movement
     droneModel.position.add(direction.multiplyScalar(moveSpeed));
     
-    // Keep drone above ground
+    // Keep drone above ground (adjust based on terrain if needed)
     if (droneModel.position.y < 1.0) {
          droneModel.position.y = 1.0;
      }
 
-    // Update camera position to follow drone
-    const mainCamera = window.camera; // Use the main city camera
-     const mainControls = window.controls; // Use the main city controls
-     if (mainCamera && mainControls) {
-        // Disable main orbit controls while drone is active
-        mainControls.enabled = false;
+    // --- Update Camera Position ---
+    // Calculate desired camera position behind and above the drone
+    const offset = new THREE.Vector3(0, 5, 8); // Adjusted offset
+    offset.applyEuler(droneModel.rotation); // Apply drone's rotation to the offset
 
-        // Calculate camera position behind and above the drone
-        const offset = new THREE.Vector3(0, 3, 5);
-        offset.applyEuler(droneModel.rotation);
+    const targetCameraPos = droneModel.position.clone().add(offset);
 
-        const targetPos = droneModel.position.clone().add(offset);
+    // Smoothly move camera to target position using lerp for smoother follow
+    mainCityCameraRef.position.lerp(targetCameraPos, 0.08); // Adjust lerp factor (0.05 - 0.1) for desired smoothness
 
-        // Smoothly move camera to target position
-        mainCamera.position.lerp(targetPos, 0.05);
+    // Smoothly update the controls target to the drone's position
+    mainCityControlsRef.target.lerp(droneModel.position, 0.1);
 
-        // Look at the drone
-        mainCamera.lookAt(droneModel.position);
-    }
-    
+    // Make the camera look towards the drone's position
+    // We don't call lookAt directly inside the loop with lerp,
+    // as the controls.update() handles the camera orientation based on target.
+    // If not using OrbitControls, you would call: mainCityCameraRef.lookAt(droneModel.position);
+
+    // Update the controls to reflect the new target
+    mainCityControlsRef.update(); // Essential for OrbitControls to work with changing target
+
     // Animate propellers
-    if (droneModel) {
-        droneModel.traverse(child => {
-            if (child.userData && child.userData.isPropeller) {
-                child.rotation.y += 0.3; // Rotate propellers
-            }
-        });
-    }
+    droneModel.traverse(child => {
+        if (child.userData && child.userData.isPropeller) {
+            child.rotation.y += 0.3; // Rotate propellers
+        }
+    });
 }
 
 function animateDrone() {
@@ -376,9 +419,11 @@ function animateDrone() {
     droneAnimationId = requestAnimationFrame(animateDrone);
     
     updateDronePosition();
+    // Note: Rendering is handled by the main city scene's animation loop
 }
 
 function landDrone(cancel = false) {
+    if (!droneActive) return; // Prevent running multiple times
     droneActive = false;
     
     // Remove event listeners
@@ -403,6 +448,9 @@ function landDrone(cancel = false) {
         }, 500);
     }
     
+    // Store the final position before removing the drone
+    const finalDronePosition = droneModel ? droneModel.position.clone() : new THREE.Vector3();
+
     // Remove drone model from the scene
     if (droneModel && droneModel.parent) {
         droneModel.parent.remove(droneModel);
@@ -410,25 +458,41 @@ function landDrone(cancel = false) {
     droneModel = null;
     llmModel = null; // Clear reference to LLM model attached to drone
 
-    // Restore main camera controls
-    const mainControls = window.controls;
-    if (mainControls) {
-        mainControls.enabled = true;
+    // Restore main camera controls and position
+    if (mainCityControlsRef) {
+        mainCityControlsRef.enabled = true; // Re-enable controls first
         if (originalCameraPosition && originalCameraTarget) {
-             mainControls.object.position.copy(originalCameraPosition);
-             mainControls.target.copy(originalCameraTarget);
-             mainControls.update();
+             // Smoothly transition back to original view instead of snapping
+             // This requires adding a temporary transition state in the main loop or using a library like GSAP/Tween.js
+             // For simplicity, we'll snap back for now.
+             mainCityControlsRef.object.position.copy(originalCameraPosition);
+             mainCityControlsRef.target.copy(originalCameraTarget);
+             mainCityControlsRef.update();
+        } else {
+            // Fallback if original positions weren't saved
+             mainCityControlsRef.target.set(0, 0, 0);
+             mainCityControlsRef.object.position.set(15, 25, 30); // Default position
+             mainCityControlsRef.update();
         }
     }
 
     if (cancel) {
         console.log('Drone transport cancelled');
     } else {
-        console.log('LLM Placed (logic to be implemented)');
+        console.log(`LLM Placed (Attempted) at: ${finalDronePosition.x.toFixed(2)}, ${finalDronePosition.y.toFixed(2)}, ${finalDronePosition.z.toFixed(2)}`);
         // TODO: Implement logic to check if over a valid plot and place the LLM
-        // For now, just log the position
-         if (droneModel) console.log(`Attempting to place LLM at: ${droneModel.position.x}, ${droneModel.position.y}, ${droneModel.position.z}`);
     }
     
     currentLLMTransporting = null; // Clear the currently transported LLM
+    // Clear main scene references
+    mainCitySceneRef = null;
+    mainCityCameraRef = null;
+    mainCityControlsRef = null;
 }
+
+// Ensure cleanup on window unload or similar event if needed
+window.addEventListener('beforeunload', () => {
+    if (droneActive) {
+        landDrone(true); // Cancel transport if user leaves page
+    }
+});
