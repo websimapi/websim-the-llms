@@ -74,8 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
     startButton.addEventListener('click', () => {
         startOverlay.style.display = 'none';
         loadingScreen.style.display = 'flex';
-        // Start playing city music on load
-        fadeInMusic(config.music.fadeInDuration || 5000);
+        // Ensure city music is set as the target and playing/fading in
+        playTrack('city');
         startLoading();
 
         // Start the tip fetching based on toggle state
@@ -91,8 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
     playButton.addEventListener('click', () => {
         startOverlay.style.display = 'none';
         loadingScreen.style.display = 'flex';
-        // Start playing city music on load
-        fadeInMusic(config.music.fadeInDuration || 5000);
+        // Ensure city music is set as the target and playing/fading in
+        playTrack('city');
         startLoading();
 
         // Start the tip fetching based on toggle state
@@ -157,7 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tipFetchInterval) {
             clearInterval(tipFetchInterval);
         }
-        // Keep music playing when skipping
+        // Ensure city music continues playing when skipping
+        playTrack('city'); // Use playTrack to handle volume correctly
         completeLoading();
     });
 
@@ -170,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingScreen.style.display = 'none';
         gameContainer.classList.remove('hidden');
         // Ensure city music continues playing (or starts if skipped very fast)
-        playTrack('city');
+        playTrack('city'); // Use playTrack to handle volume correctly
     }
 
     // Randomly select a tip from config

@@ -416,8 +416,31 @@ export function fadeInMusic(duration = 5000) {
 
     const targetVolume = [0, 0.25, 0.5, 0.75, 1.0][musicVolume];
     // Always start fade from near zero for a more noticeable effect
-    let startVolume = 0.01; 
-    bgAudio.volume = startVolume; // Set initial volume low
+    let startVolume = 0.01;
+
+    // *** Check if already at or above target volume ***
+    if (!bgAudio.paused && bgAudio.volume >= targetVolume) {
+        console.log(`Fade-in skipped: Audio already playing at volume ${bgAudio.volume} (Target: ${targetVolume})`);
+        // Ensure volume is exactly the target if it somehow went over
+        bgAudio.volume = targetVolume;
+        updateVolumeUI();
+        return;
+    }
+
+    // If currently paused but volume is already close to target, just start playing
+    if (bgAudio.paused && bgAudio.volume >= targetVolume * 0.9) {
+         console.log(`Fade-in skipped: Audio paused but volume already near target (${bgAudio.volume}). Playing directly.`);
+         bgAudio.volume = targetVolume; // Ensure exact target volume
+         bgAudio.play().catch(err => {
+             console.error("Error playing audio directly during fade-in check:", err);
+             return;
+         });
+         updateVolumeUI();
+         return;
+    }
+
+    // If volume is significantly lower, start fade from low volume
+    bgAudio.volume = startVolume; // Set initial volume low for fade effect
 
     // Check if we actually need to fade in (target volume > start)
     if (targetVolume <= startVolume) {
@@ -450,7 +473,7 @@ export function fadeInMusic(duration = 5000) {
     fadeInterval = setInterval(() => {
         // Check if the track *type* has changed, not just the target
         // Allow custom tracks to override always
-        if (currentTrackType !== targetTrackType && currentTrackType !== 'custom') { 
+        if (currentTrackType !== targetTrackType && currentTrackType !== 'custom') {
             console.log("Track type changed during fade-in. Stopping fade.");
             clearInterval(fadeInterval);
             fadeInterval = null;
