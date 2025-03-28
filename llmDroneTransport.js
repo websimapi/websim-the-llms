@@ -63,6 +63,11 @@ let droneControls = {
 };
 let touchActiveControls = {};
 
+let isHoveringValidPlot = false; // New flag for placement readiness
+let isPlacing = false; // New flag for placement sequence
+let placementStartTime = 0; // Track placement animation time
+const PLACEMENT_DURATION = 1500; // 1.5 seconds to lower and place
+
 // Expose auto-navigating state globally
 window.isAutoNavigating = isAutoNavigating;
 
@@ -120,13 +125,15 @@ export function activateDroneTransport(llmId) {
     isAutoNavigating = false; // Ensure auto-nav is off initially
     window.isAutoNavigating = false;
     autoNavReachedTarget = false;
+    isHoveringValidPlot = false; // Reset flag
+    isPlacing = false; // Reset flag
 
     animateDrone();
 }
 
 // Function to start auto-navigation
 export function startAutoNavigation(targetPosition, targetPlotId) {
-    if (!droneActive || isAutoNavigating) return;
+    if (!droneActive || isAutoNavigating || isPlacing) return; // Prevent starting if already placing
 
     console.log("Starting auto-navigation to:", targetPosition, "Plot ID:", targetPlotId);
     isAutoNavigating = true;
@@ -136,6 +143,8 @@ export function startAutoNavigation(targetPosition, targetPlotId) {
     autoNavTargetPosition.y = AUTO_NAV_HOVER_ALTITUDE;
     autoNavTargetPlotId = targetPlotId;
     autoNavReachedTarget = false; // Reset reached flag
+    isHoveringValidPlot = false; // Reset hovering flag
+    updatePlacementButtonState(); // Update button state
 
     // Disable manual controls visually and functionally
     disableManualControls();
@@ -157,13 +166,15 @@ export function cancelAutoNavigation() {
     window.isAutoNavigating = false;
     autoNavTargetPlotId = null;
     autoNavReachedTarget = false;
+    isHoveringValidPlot = false; // Reset hovering flag
     droneVelocity.multiplyScalar(0.5); // Reduce speed gently
 
     // Re-enable manual controls
     enableManualControls();
 
     // Reset UI
-    updateDroneUIButtonText("Place LLM");
+    updateDroneUIButtonText("Place LLM"); // Set back to Place
+    updatePlacementButtonState(); // Update enabled/disabled state based on current hover
     const landButton = droneContainer.querySelector('.drone-land-btn');
     if (landButton) {
         landButton.onclick = handlePlaceAttempt; // Restore original action
@@ -659,7 +670,7 @@ function handleJoystickEnd(event) {
 
 // Renamed and modified to handle both manual and auto navigation
 function updateDroneState() {
-    if (!droneModel) return;
+    if (!droneModel || isPlacing) return; // Pause updates during placement sequence
 
     if (isAutoNavigating) {
         updateAutoNavigationPhysics();
@@ -688,6 +699,10 @@ function updateDroneState() {
             child.rotation.y += propellerSpeed * direction * 0.25;
         }
     });
+
+    // Check if hovering over a valid plot *after* updating position
+    checkHoveringPlot();
+    updatePlacementButtonState(); // Update button based on hover check
 }
 
 function updateManualPhysics() {
@@ -759,6 +774,7 @@ function updateAutoNavigationPhysics() {
         isAutoNavigating = false; // Stop auto-nav logic
         window.isAutoNavigating = false;
         autoNavReachedTarget = true; // Mark as reached
+        // Don't reset isHoveringValidPlot here, let checkHoveringPlot handle it
 
         // Re-enable controls and reset UI
         enableManualControls();
@@ -766,8 +782,9 @@ function updateAutoNavigationPhysics() {
         const landButton = droneContainer.querySelector('.drone-land-btn');
         if (landButton) landButton.onclick = handlePlaceAttempt;
 
-        // Optional: Automatically attempt placement
-        // handlePlaceAttempt();
+        // Force a hover check immediately after stopping
+        checkHoveringPlot();
+        updatePlacementButtonState();
 
     } else if (distanceToTarget < AUTO_NAV_ARRIVAL_THRESHOLD) {
         // Decelerate smoothly as we approach
@@ -815,53 +832,167 @@ function updateAutoNavigationPhysics() {
     }
 }
 
-function animateDrone() {
-    if (!droneActive) return;
-    droneAnimationId = requestAnimationFrame(animateDrone);
-
-    updateDroneState(); // Use the combined state update function
-    positionCameraForDroneView();
-
-    // Rendering is handled by the main cityScene loop
-}
-
-function handlePlaceAttempt() {
-    if (!droneActive || !droneModel || isAutoNavigating) return; // Prevent placing during auto-nav
+function checkHoveringPlot() {
+    if (!droneActive || !droneModel || isPlacing) {
+        isHoveringValidPlot = false;
+        return;
+    }
 
     const raycaster = new THREE.Raycaster(droneModel.position, new THREE.Vector3(0, -1, 0));
     const intersects = raycaster.intersectObjects(mainCityScene.children, true);
 
-    let targetPlot = null;
-    let intersectPoint = null;
-
+    let foundValidPlot = false;
     for (const intersect of intersects) {
         let obj = intersect.object;
-        while (obj && (!obj.userData || obj.userData.type !== 'lot') && obj.name !== 'primaryGround' && obj.name !== 'construction_site') {
+        while (obj && (!obj.userData || (obj.userData.type !== 'lot' && obj.userData.type !== 'lot_target')) && obj.name !== 'primaryGround') {
             obj = obj.parent;
         }
 
-        if (obj && obj.userData && obj.userData.type === 'lot') {
-            targetPlot = cityData.lots.find(lot => lot.id === obj.userData.id);
-            if (targetPlot) {
-                intersectPoint = intersect.point;
-                break;
+        if (obj && obj.userData && (obj.userData.type === 'lot' || obj.userData.type === 'lot_target')) {
+            const plotData = cityData.lots.find(lot => lot.id === obj.userData.id);
+            if (plotData && plotData.available) {
+                // Check if drone is reasonably centered (within half plot dimensions)
+                const distFromCenterX = Math.abs(droneModel.position.x - plotData.x);
+                const distFromCenterZ = Math.abs(droneModel.position.z - plotData.z);
+                if (distFromCenterX < plotData.width / 2 && distFromCenterZ < plotData.height / 2) {
+                    foundValidPlot = true;
+                    break; // Found a valid, available plot directly below
+                }
             }
-        } else if (obj && obj.name === 'primaryGround') {
+        }
+        // Stop checking if we hit the ground or an invalid object first
+        if (obj && obj.name === 'primaryGround') {
             break;
         }
     }
 
-    if (targetPlot) {
-        if (targetPlot.available) {
-            console.log(`Placing LLM ${currentLLMTransporting.name} on plot ${targetPlot.name}`);
-            placeLLMOnPlot(targetPlot, intersectPoint);
-            deactivateDroneTransport(false);
+    isHoveringValidPlot = foundValidPlot;
+}
+
+function updatePlacementButtonState() {
+    const landButton = droneContainer?.querySelector('.drone-land-btn');
+    if (landButton) {
+        if (isHoveringValidPlot && !isAutoNavigating && !isPlacing) {
+            landButton.disabled = false;
+            landButton.style.opacity = '1';
+            landButton.style.cursor = 'pointer';
+            // Optional: Change text or style to indicate readiness
+            // landButton.textContent = "Ready to Place";
         } else {
-            console.log(`Plot ${targetPlot.name} is already occupied.`);
+            landButton.disabled = true;
+            landButton.style.opacity = '0.5';
+            landButton.style.cursor = 'not-allowed';
+            // Restore text if it was changed
+            if (!isAutoNavigating && !isPlacing) {
+                landButton.textContent = "Place LLM";
+            } else if (isAutoNavigating) {
+                landButton.textContent = "Cancel Auto-Pilot"; // Keep this text during auto-nav
+                landButton.disabled = false; // Keep cancel button enabled during auto-nav
+                landButton.style.opacity = '1';
+                landButton.style.cursor = 'pointer';
+            } else if (isPlacing) {
+                landButton.textContent = "Placing...";
+            }
         }
-    } else {
-        console.log("Not hovering over a valid plot.");
     }
+}
+
+function handlePlaceAttempt() {
+    // Only allow placing if hovering, not auto-navigating, and not already placing
+    if (!isHoveringValidPlot || isAutoNavigating || isPlacing) return;
+
+    console.log("Starting placement sequence...");
+    isPlacing = true;
+    placementStartTime = performance.now();
+    updatePlacementButtonState(); // Disable button during placement
+
+    // Disable manual controls during placement
+    disableManualControls();
+
+    startPlacementSequence();
+}
+
+function startPlacementSequence() {
+    if (!droneModel) {
+        console.error("Cannot start placement: Drone model not found.");
+        isPlacing = false;
+        updatePlacementButtonState();
+        enableManualControls();
+        return;
+    }
+
+    const startY = droneModel.position.y;
+    const targetY = 0.5; // Target height just above the ground for placement
+    const duration = PLACEMENT_DURATION;
+    let placementFrameId = null;
+
+    function animatePlacement() {
+        if (!isPlacing || !droneModel) { // Check if placement was cancelled or drone removed
+            if (placementFrameId) cancelAnimationFrame(placementFrameId);
+            console.log("Placement animation cancelled or drone missing.");
+            return;
+        }
+
+        const elapsed = performance.now() - placementStartTime;
+        let progress = Math.min(elapsed / duration, 1);
+        // Use an ease-in-out curve for smoother lowering
+        progress = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+        // Interpolate Y position
+        droneModel.position.y = THREE.MathUtils.lerp(startY, targetY, progress);
+
+        // Slow down propellers as it lowers
+        const propellerSpeed = (1.0 - progress) * 2.0 + 0.5; // Gradually decrease speed
+        droneModel.traverse(child => {
+            if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
+                const parentPosition = child.parent.position;
+                const direction = (parentPosition.x > 0) ? 1 : -1;
+                child.rotation.y += propellerSpeed * direction * 0.25;
+            }
+        });
+
+        if (progress < 1) {
+            placementFrameId = requestAnimationFrame(animatePlacement);
+        } else {
+            // --- Placement complete ---
+            console.log("Lowering complete. Placing LLM.");
+
+            // Final placement logic (raycast down from final position)
+            const finalRaycaster = new THREE.Raycaster(droneModel.position, new THREE.Vector3(0, -1, 0));
+            const finalIntersects = finalRaycaster.intersectObjects(mainCityScene.children, true);
+
+            let targetPlot = null;
+            let intersectPoint = null;
+
+            for (const intersect of finalIntersects) {
+                let obj = intersect.object;
+                while (obj && (!obj.userData || (obj.userData.type !== 'lot' && obj.userData.type !== 'lot_target')) && obj.name !== 'primaryGround') {
+                    obj = obj.parent;
+                }
+                if (obj && obj.userData && (obj.userData.type === 'lot' || obj.userData.type === 'lot_target')) {
+                    const plotData = cityData.lots.find(lot => lot.id === obj.userData.id);
+                    if (plotData && plotData.available) {
+                        targetPlot = plotData;
+                        intersectPoint = intersect.point; // Use the actual intersection point on the plot
+                        break;
+                    }
+                }
+                if (obj && obj.name === 'primaryGround') break; // Stop if we hit ground first
+            }
+
+            if (targetPlot && intersectPoint) {
+                placeLLMOnPlot(targetPlot, intersectPoint); // Place at the precise intersect point
+            } else {
+                console.error("Placement failed: Could not find valid plot beneath final position.");
+                // Handle failure? Maybe just cancel transport?
+            }
+
+            isPlacing = false; // Mark placement as done
+            deactivateDroneTransport(false); // Deactivate drone after placement
+        }
+    }
+
+    animatePlacement();
 }
 
 function placeLLMOnPlot(plotData, placementPoint) {
@@ -869,31 +1000,54 @@ function placeLLMOnPlot(plotData, placementPoint) {
 
     const placedLLMModel = renderLLMCharacter(THREE, currentLLMTransporting);
 
-    placedLLMModel.position.set(placementPoint.x, 0, placementPoint.z);
+    // Position exactly at the raycast intersection point
+    placedLLMModel.position.copy(placementPoint);
+    // Ensure it's slightly above ground to prevent z-fighting
+    placedLLMModel.position.y = 0.01;
 
-    const directionToCenter = new THREE.Vector3(0 - placementPoint.x, 0, 0 - placementPoint.z).normalize();
-    placedLLMModel.rotation.y = Math.atan2(directionToCenter.x, directionToCenter.z);
+    // Optionally, orient the model - e.g., face towards plot center or away from drone position
+    const directionToCenter = new THREE.Vector3(plotData.x - placementPoint.x, 0, plotData.z - placementPoint.z).normalize();
+    if (directionToCenter.lengthSq() > 0.001) { // Avoid issues if placed exactly at center
+        placedLLMModel.rotation.y = Math.atan2(directionToCenter.x, directionToCenter.z) + Math.PI; // Face away from center
+    } else {
+        placedLLMModel.rotation.y = droneModel ? droneModel.rotation.y : 0; // Default to drone orientation if at center
+    }
 
     placedLLMModel.castShadow = true;
     placedLLMModel.receiveShadow = true;
+    // Make sure hierarchy has shadows enabled too
+    placedLLMModel.traverse(child => {
+        if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+        }
+    });
+
     mainCityScene.add(placedLLMModel);
 
+    // Update plot data
     plotData.available = false;
     plotData.occupiedBy = currentLLMTransporting.id;
 
+    // Remove plot outline
     let plotOutlineToRemove = null;
     mainCityScene.traverse(obj => {
-        if (obj.userData && obj.userData.type === 'lot' && obj.userData.id === plotData.id) {
-            while (obj.children.length > 0) {
-                // Recursively dispose of geometry and materials
-                disposeHierarchy(obj.children[0]);
-                obj.remove(obj.children[0]);
+        // Find both the outline and the click target for the same plot ID
+        if (obj.userData && obj.userData.id === plotData.id && (obj.name === 'plot_outline' || obj.name === 'plot_click_target')) {
+            // Remove the object itself
+            if (obj.parent) {
+                // Dispose geometry and materials before removing
+                disposeHierarchy(obj);
+                obj.parent.remove(obj);
             }
-            plotOutlineToRemove = obj;
+            // Keep track of the outline to hide hover info if needed
+            if (obj.name === 'plot_outline') {
+                plotOutlineToRemove = obj;
+            }
         }
     });
-    if (plotOutlineToRemove && plotOutlineToRemove.parent) {
-        plotOutlineToRemove.parent.remove(plotOutlineToRemove);
+
+    if (plotOutlineToRemove) {
         import('./plotHoverInfo.js').then(module => {
             if (typeof module.hidePlotInfoPanel === 'function') {
                 module.hidePlotInfoPanel();
@@ -903,12 +1057,12 @@ function placeLLMOnPlot(plotData, placementPoint) {
 
     console.log(`LLM ${currentLLMTransporting.name} placed on plot ${plotData.name}.`);
 
-    if (typeof cityData.saveGame === 'function') {
-        console.log("City data state updated (but not persisted automatically).");
-    }
+    // Note: cityData.saveGame() is not called here automatically. Needs explicit save action elsewhere.
+    // if (typeof cityData.saveGame === 'function') {
+    //     console.log("City data state updated (but not persisted automatically).");
+    // }
 }
 
-// Helper function to dispose of materials and geometry
 function disposeHierarchy(object) {
     object.traverse(child => {
         if (child.isMesh) {
@@ -933,6 +1087,13 @@ function disposeHierarchy(object) {
 export function deactivateDroneTransport(cancel = false) {
     if (!droneActive) return;
 
+    // Handle cancellation during placement
+    if (isPlacing) {
+        console.log("Cancelling placement sequence.");
+        isPlacing = false; // This will stop the animation loop in startPlacementSequence
+        // Optional: Add a quick "fly away" animation here?
+    }
+
     // Cancel auto-navigation if active
     if (isAutoNavigating) {
         cancelAutoNavigation();
@@ -940,6 +1101,7 @@ export function deactivateDroneTransport(cancel = false) {
 
     droneActive = false;
     window.droneActive = false;
+    isHoveringValidPlot = false; // Reset hover state on deactivate
 
     removeInputListeners();
 
@@ -1043,6 +1205,16 @@ export function deactivateDroneTransport(cancel = false) {
     currentLLMTransporting = null;
 }
 
+function animateDrone() {
+    if (!droneActive) return;
+    droneAnimationId = requestAnimationFrame(animateDrone);
+
+    updateDroneState(); // Use the combined state update function
+    positionCameraForDroneView();
+
+    // Rendering is handled by the main cityScene loop
+}
+
 function positionCameraForDroneView(instant = false) {
     if (!droneModel || !mainCityCamera || !mainCityControls) return;
 
@@ -1069,5 +1241,3 @@ function positionCameraForDroneView(instant = false) {
     // Don't call controls.update() here when controls are disabled for drone
     // mainCityControls.update();
 }
-
-// Removed landDrone function as handlePlaceAttempt covers it

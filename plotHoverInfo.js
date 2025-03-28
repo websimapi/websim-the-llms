@@ -346,6 +346,15 @@ let hoverCheckFrameId = null;
 
 // Continuous check for plot hovers
 function checkPlotHovers(clientX, clientY) {
+    // Don't check hovers if drone is active, as it interferes with drone controls/UI
+    if (window.droneActive) {
+        // Ensure the panel is hidden if the drone becomes active while it's shown
+        if (infoPanel && infoPanel.style.display !== 'none') {
+             hideInfoPanel();
+        }
+        return false; // Skip hover checks during drone transport
+    }
+
     // Cancel previous frame request if any
     if(hoverCheckFrameId) cancelAnimationFrame(hoverCheckFrameId);
 
@@ -359,7 +368,8 @@ function checkPlotHovers(clientX, clientY) {
 
 // Renamed the internal checking logic
 function _performHoverCheck(clientX, clientY) {
-    if (!scene || !camera) return false; // Return false if no scene/camera
+    // Double check drone status within the actual check logic too
+    if (window.droneActive || !scene || !camera) return false; // Return false if no scene/camera or drone is active
 
     // Update the picking ray
     raycaster.setFromCamera(mouse, camera);
