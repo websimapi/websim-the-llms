@@ -181,30 +181,29 @@ function createDroneWithLLM(llm) {
     const propDistance = 1.0; // Distance from center to propeller center
     const armWidth = 0.08; // Thinner arm width
     const armHeight = 0.08; // Thinner arm height
+    const armLength = propDistance; // Length of the arm from center
 
-    // Propeller Positions (arranged in a square)
+    // Propeller Positions (rotated by 45 degrees)
+    const angleRad = Math.PI / 4; // 45 degrees
     const propellerPositions = [
-         { x: 0, z: -propDistance }, // Front
-         { x: 0, z: propDistance },  // Back
-         { x: -propDistance, z: 0 }, // Left
-         { x: propDistance, z: 0 }  // Right
+         { x: propDistance * Math.sin(angleRad), z: -propDistance * Math.cos(angleRad) }, // Front-Right
+         { x: -propDistance * Math.sin(angleRad), z: -propDistance * Math.cos(angleRad) }, // Front-Left
+         { x: -propDistance * Math.sin(angleRad), z: propDistance * Math.cos(angleRad) }, // Back-Left
+         { x: propDistance * Math.sin(angleRad), z: propDistance * Math.cos(angleRad) }  // Back-Right
     ];
 
     // Create Arms connecting center to propeller positions
     propellerPositions.forEach((propPos, index) => {
-        let armLength, armGeometry;
-        const armPosition = new THREE.Vector3(propPos.x / 2, 0, propPos.z / 2); // Midpoint of the arm
+        const armRotationY = Math.atan2(propPos.x, propPos.z); // Calculate rotation based on position
 
-        if (propPos.x === 0) { // Front or Back Arm
-            armLength = propDistance;
-            armGeometry = new THREE.BoxGeometry(armWidth, armHeight, armLength); // Length along Z
-        } else { // Left or Right Arm
-            armLength = propDistance;
-            armGeometry = new THREE.BoxGeometry(armLength, armHeight, armWidth); // Length along X
-        }
+        // Arm Geometry - Create it along the Z axis initially
+        const armGeometry = new THREE.BoxGeometry(armWidth, armHeight, armLength);
 
         const arm = new THREE.Mesh(armGeometry, armMaterial);
-        arm.position.copy(armPosition);
+        // Position the arm's center halfway between the origin and the propeller position
+        arm.position.set(propPos.x / 2, 0, propPos.z / 2);
+        // Rotate the arm to point towards the propeller position
+        arm.rotation.y = armRotationY;
         arm.castShadow = true;
         droneModel.add(arm);
 
