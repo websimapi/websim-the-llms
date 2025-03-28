@@ -1147,12 +1147,13 @@ function placeLLMOnPlot(plotData, placementGroundPoint) {
 
     console.log(`Final Placed LLM Pos - GroundY: ${placementGroundPoint.y.toFixed(3)}, MinYLocal: ${llmMinYLocal.toFixed(3)}, Final Y: ${placedLLMModel.position.y.toFixed(3)}`);
 
-    // Orient the model (same as before)
-    const directionToCenter = new THREE.Vector3(plotData.x - placedLLMModel.position.x, 0, plotData.z - placedLLMModel.position.z).normalize();
-    if (directionToCenter.lengthSq() > 0.001) {
-        placedLLMModel.rotation.y = Math.atan2(directionToCenter.x, directionToCenter.z) + Math.PI;
+    // *** NEW: Set the placed model's rotation to match the drone's rotation ***
+    if (droneModel) {
+        placedLLMModel.rotation.y = droneModel.rotation.y;
+        console.log(`Applied drone rotation Y (${droneModel.rotation.y.toFixed(3)}) to placed LLM.`);
     } else {
-        placedLLMModel.rotation.y = droneModel ? droneModel.rotation.y : 0;
+        placedLLMModel.rotation.y = 0; // Fallback if drone model is somehow gone
+        console.warn("Drone model not found during placement, defaulting rotation to 0.");
     }
 
     placedLLMModel.castShadow = true;
