@@ -3,7 +3,6 @@ import { renderLLMCharacter } from './llmCharacterRenderer.js';
 import { llmDataManager } from './llmDataManager.js';
 import { getModelTypeIcon } from './llmCollectionView.js'; // Import icon function
 import { config } from './config.js'; // Import config for potential map size
-import { cityData } from './cityData.js'; // Import cityData for plot info
 
 // --- State Variables ---
 let droneActive = false;
@@ -17,9 +16,8 @@ let droneContainer;
 let currentLLMTransporting = null;
 let mainCityScene, mainCityCamera, mainCityControls;
 let originalCameraPosition, originalCameraTarget;
-let placementPossible = false; // Track if placement is currently possible
-let targetPlotForPlacement = null; // Track the plot below the drone
-let placementPoint = null; // Track the exact point on the plot
+let gyroControlActive = false; // Gyroscope control state
+let initialGyroAlpha = null; // Store initial alpha for relative yaw
 
 // --- Constants ---
 const MAX_SPEED = 0.25;
@@ -28,9 +26,10 @@ const DECELERATION = 0.95; // Multiplier for damping
 const ROTATION_SPEED = 0.01;
 const MAX_ROTATION_SPEED = 0.05;
 const ROTATION_DAMPING = 0.90;
+const GYRO_ROTATION_SPEED = 0.0005; // Sensitivity multiplier for gyro yaw
+const GYRO_PITCH_ROLL_SPEED = 0.008; // Sensitivity for pitch/roll
 const VERTICAL_SPEED = 0.15;
 const MIN_ALTITUDE = 1.0;
-const PLACEMENT_MAX_ALTITUDE = 5.0; // Maximum height above ground to allow placement
 const CAMERA_FOLLOW_DISTANCE = 8;
 const CAMERA_FOLLOW_HEIGHT = 4;
 const CAMERA_LERP_FACTOR = 0.05;
@@ -85,14 +84,13 @@ export function activateDroneTransport(llmId) {
     droneVelocity.set(0, 0, 0);
     droneAngularVelocity.set(0, 0, 0);
     resetControlState();
-    placementPossible = false; // Reset placement state
-    targetPlotForPlacement = null;
-    placementPoint = null;
+    gyroControlActive = false; // Ensure gyro is off initially
+    initialGyroAlpha = null; // Reset initial gyro heading
 
     initDroneScene(llm);
     positionCameraForDroneView(true); // Instant positioning
 
-    setupInputListeners(); // Setup keyboard/touch
+    setupInputListeners(); // Setup keyboard/touch/gyro
 
     droneActive = true;
     window.droneActive = true; // Set global flag
@@ -139,6 +137,7 @@ function createDroneUI(llm) {
                 <p>Press <strong>Esc</strong> to cancel</p>
             </div>
             <div class="drone-touch-controls">
+                 <!-- Touch control buttons... -->
                 <div class="touch-control-row">
                     <button class="drone-touch-btn" data-control="up">▲</button> <!-- E -->
                      <button class="drone-touch-btn" data-control="forward">↑</button> <!-- W -->
@@ -154,13 +153,11 @@ function createDroneUI(llm) {
                      <button class="drone-touch-btn" data-control="rotateRight">↻</button>
                 </div>
             </div>
-            <button class="drone-land-btn">Find Available Plot</button>
+            <button id="gyro-toggle-btn" class="gyro-toggle-btn">Enable Gyroscope Control</button>
+            <button class="drone-land-btn">Place LLM</button>
         </div>
     `;
     document.body.appendChild(droneContainer);
-
-    // Update the button state initially
-    updatePlacementButton();
 }
 
 function initDroneScene(llm) {
@@ -300,12 +297,18 @@ function setupInputListeners() {
     setupTouchButtonListeners();
     // Place button
     droneContainer.querySelector('.drone-land-btn').addEventListener('click', handlePlaceAttempt);
+    // Gyroscope button
+    setupGyroscopeControls();
 }
 
 function removeInputListeners() {
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('keyup', handleKeyUp);
     // Touch listeners are implicitly removed when the UI is destroyed
+    // Remove gyroscope listener if active
+    window.removeEventListener('deviceorientation', handleDeviceOrientation);
+    gyroControlActive = false;
+    initialGyroAlpha = null;
 }
 
 function resetControlState() {
@@ -332,9 +335,10 @@ function handleKeyDown(event) {
         case 'd': droneControls.right = true; break;
         case 'q': droneControls.down = true; break;
         case 'e': droneControls.up = true; break;
-        case 'arrowleft': droneControls.rotateLeft = true; break;
-        case 'arrowright': droneControls.rotateRight = true; break;
-        case 'p': handlePlaceAttempt(); break; // Keep 'P' key for placement
+        // Disable keyboard rotation if gyro is active
+        case 'arrowleft': if (!gyroControlActive) droneControls.rotateLeft = true; break;
+        case 'arrowright': if (!gyroControlActive) droneControls.rotateRight = true; break;
+        case 'p': handlePlaceAttempt(); break;
         case 'escape': deactivateDroneTransport(true); break; // Cancel
         default: handled = false;
     }
@@ -371,6 +375,10 @@ function setupTouchButtonListeners() {
 
 function handleTouchStart(event, control) {
     event.preventDefault();
+    // Disable touch rotation if gyro is active
+    if (gyroControlActive && (control === 'rotateLeft' || control === 'rotateRight')) {
+        return;
+    }
     droneControls[control] = true;
     touchActiveControls[control] = true; // Mark as active by touch
     // Visual feedback
@@ -379,17 +387,115 @@ function handleTouchStart(event, control) {
 
 function handleTouchEnd(event, control) {
     event.preventDefault();
-    // Only deactivate if it was activated by touch (prevents interference with keyboard)
-    // Check if the control exists in touchActiveControls before deleting
+    // Only deactivate if it was activated by touch
     if (touchActiveControls.hasOwnProperty(control)) {
         droneControls[control] = false;
         delete touchActiveControls[control];
     }
-    // Reset visual feedback - Need to find the button again if event.target isn't reliable
+    // Reset visual feedback
     const btn = droneContainer.querySelector(`.drone-touch-btn[data-control="${control}"]`);
     if (btn) {
         btn.style.backgroundColor = 'rgba(60, 179, 113, 0.4)';
     }
+}
+
+// --- Gyroscope Control ---
+function setupGyroscopeControls() {
+    const gyroBtn = document.getElementById('gyro-toggle-btn');
+    if (!gyroBtn) return;
+
+    // Check for DeviceOrientationEvent support
+    if (!window.DeviceOrientationEvent) {
+        gyroBtn.textContent = 'Gyroscope Not Supported';
+        gyroBtn.disabled = true;
+        return;
+    }
+
+    gyroBtn.addEventListener('click', async () => {
+        if (!gyroControlActive) {
+            // Request permission if necessary (iOS 13+)
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const permissionState = await DeviceOrientationEvent.requestPermission();
+                    if (permissionState !== 'granted') {
+                        gyroBtn.textContent = 'Gyro Permission Denied';
+                        return;
+                    }
+                } catch (error) {
+                    console.error("Error requesting device orientation permission:", error);
+                    gyroBtn.textContent = 'Permission Error';
+                    return;
+                }
+            }
+            // Enable Gyro
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+            gyroControlActive = true;
+            gyroBtn.classList.add('active');
+            gyroBtn.textContent = 'Disable Gyroscope Control';
+            initialGyroAlpha = null; // Reset initial alpha on activation
+            // Disable touch rotation buttons visually
+            droneContainer.querySelectorAll('[data-control="rotateLeft"], [data-control="rotateRight"]').forEach(b => b.style.opacity = '0.5');
+
+        } else {
+            // Disable Gyro
+            window.removeEventListener('deviceorientation', handleDeviceOrientation);
+            gyroControlActive = false;
+            gyroBtn.classList.remove('active');
+            gyroBtn.textContent = 'Enable Gyroscope Control';
+            // Reset angular velocity from gyro
+            droneAngularVelocity.set(0, 0, 0);
+            initialGyroAlpha = null;
+             // Re-enable touch rotation buttons visually
+            droneContainer.querySelectorAll('[data-control="rotateLeft"], [data-control="rotateRight"]').forEach(b => b.style.opacity = '1');
+        }
+    });
+}
+
+function handleDeviceOrientation(event) {
+    if (!gyroControlActive || !droneModel || !event.alpha || !event.beta || !event.gamma) {
+        return;
+    }
+
+    // Alpha: Rotation around Z axis (0-360) - Yaw (compass heading)
+    // Beta: Rotation around X axis (-180-180) - Pitch (front/back tilt)
+    // Gamma: Rotation around Y axis (-90-90) - Roll (left/right tilt)
+
+    // --- Yaw Control (Alpha) ---
+    if (initialGyroAlpha === null) {
+        // Store the initial compass heading when gyro activates
+        initialGyroAlpha = event.alpha;
+    }
+    // Calculate the change in alpha from the initial heading
+    let deltaAlpha = event.alpha - initialGyroAlpha;
+    // Handle wrap-around (0/360 degrees)
+    if (deltaAlpha > 180) {
+        deltaAlpha -= 360;
+    } else if (deltaAlpha < -180) {
+        deltaAlpha += 360;
+    }
+    // Convert degrees to radians and apply sensitivity. Invert for intuitive control.
+    // We directly set angular velocity here, physics step will apply damping
+    droneAngularVelocity.y = -THREE.MathUtils.degToRad(deltaAlpha) * GYRO_ROTATION_SPEED;
+
+
+    // --- Pitch Control (Beta) ---
+    // Map beta (-180 to 180) to drone's X rotation (pitch).
+    // Limit the range to avoid excessive tilting (e.g., +/- 45 degrees)
+    const pitchAngleRad = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(event.beta, -45, 45));
+    // Smoothly apply pitch using angular velocity
+    droneAngularVelocity.x += (pitchAngleRad - droneModel.rotation.x) * GYRO_PITCH_ROLL_SPEED;
+
+    // --- Roll Control (Gamma) ---
+    // Map gamma (-90 to 90) to drone's Z rotation (roll).
+    // Limit the range (e.g., +/- 45 degrees)
+    const rollAngleRad = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(event.gamma, -45, 45));
+     // Smoothly apply roll using angular velocity
+    droneAngularVelocity.z += (-rollAngleRad - droneModel.rotation.z) * GYRO_PITCH_ROLL_SPEED; // Invert gamma for intuitive roll
+
+
+    // Clamp angular velocities for pitch and roll to prevent instability
+     droneAngularVelocity.x = THREE.MathUtils.clamp(droneAngularVelocity.x, -MAX_ROTATION_SPEED * 0.5, MAX_ROTATION_SPEED * 0.5);
+     droneAngularVelocity.z = THREE.MathUtils.clamp(droneAngularVelocity.z, -MAX_ROTATION_SPEED * 0.5, MAX_ROTATION_SPEED * 0.5);
 }
 
 // --- Movement & Update Logic ---
@@ -398,15 +504,25 @@ function updateDronePhysics() {
 
     // --- Rotation ---
     let targetRotationY = 0;
-    if (droneControls.rotateLeft) targetRotationY += ROTATION_SPEED;
-    if (droneControls.rotateRight) targetRotationY -= ROTATION_SPEED;
+    // Only apply manual rotation if gyro is NOT active
+    if (!gyroControlActive) {
+        if (droneControls.rotateLeft) targetRotationY += ROTATION_SPEED;
+        if (droneControls.rotateRight) targetRotationY -= ROTATION_SPEED;
+    }
 
-    // Apply angular velocity and damping
-    droneAngularVelocity.y += targetRotationY;
+    // Apply angular velocity and damping (handles both manual and gyro inputs)
+    droneAngularVelocity.y += targetRotationY; // Add manual input if any
+    droneAngularVelocity.x *= ROTATION_DAMPING;
     droneAngularVelocity.y *= ROTATION_DAMPING;
+    droneAngularVelocity.z *= ROTATION_DAMPING;
+
+    // Clamp YAW angular velocity (manual or gyro)
     droneAngularVelocity.y = THREE.MathUtils.clamp(droneAngularVelocity.y, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED);
+
     // Apply rotation to the drone model itself
+    droneModel.rotation.x += droneAngularVelocity.x;
     droneModel.rotation.y += droneAngularVelocity.y;
+    droneModel.rotation.z += droneAngularVelocity.z;
 
     // --- Translation ---
     // Get drone's current forward and right vectors based on its rotation
@@ -414,18 +530,25 @@ function updateDronePhysics() {
     droneModel.getWorldDirection(forwardVector); // Gets the Z- direction
     forwardVector.negate(); // We want the positive Z direction for forward
 
-    const rightVector = new THREE.Vector3().crossVectors(mainCityCamera.up, forwardVector).normalize(); // Cross up with forward for right
+    // Use camera's up vector for consistency, but project onto drone's horizontal plane
+     const droneUp = new THREE.Vector3(0, 1, 0).applyQuaternion(droneModel.quaternion);
+     const cameraUp = mainCityCamera.up.clone();
+     // Project camera up onto drone's horizontal plane (optional, maybe simpler without)
+     // const projectedUp = cameraUp.projectOnPlane(forwardVector).normalize();
+
+    // Calculate right vector based on drone's forward and a stable up (e.g., world up)
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const rightVector = new THREE.Vector3().crossVectors(worldUp, forwardVector).normalize(); // Use world up for stable horizontal movement
 
     let targetVelocity = new THREE.Vector3();
-    // SWAPPED LOGIC: W moves backward, S moves forward
     if (droneControls.forward) targetVelocity.sub(forwardVector); // W key = move backward relative to drone
     if (droneControls.backward) targetVelocity.add(forwardVector); // S key = move forward relative to drone
     if (droneControls.left) targetVelocity.sub(rightVector);
     if (droneControls.right) targetVelocity.add(rightVector);
 
-    // Normalize horizontal movement if needed (prevent faster diagonal movement)
+    // Normalize horizontal movement if needed
     const horizontalMagnitudeSq = targetVelocity.x * targetVelocity.x + targetVelocity.z * targetVelocity.z;
-    if (horizontalMagnitudeSq > 1e-6) { // Use a small epsilon to avoid normalizing zero vectors
+    if (horizontalMagnitudeSq > 1e-6) {
         const scale = 1.0 / Math.sqrt(horizontalMagnitudeSq);
         targetVelocity.x *= scale;
         targetVelocity.z *= scale;
@@ -439,13 +562,12 @@ function updateDronePhysics() {
     // Accelerate towards target velocity
     droneVelocity.x += (targetVelocity.x * MAX_SPEED - droneVelocity.x) * ACCELERATION;
     droneVelocity.z += (targetVelocity.z * MAX_SPEED - droneVelocity.z) * ACCELERATION;
-    // Apply vertical velocity directly, but apply damping later
     droneVelocity.y += (verticalVelocityInput - droneVelocity.y) * ACCELERATION;
 
     // Apply damping (friction)
     droneVelocity.x *= DECELERATION;
     droneVelocity.z *= DECELERATION;
-    droneVelocity.y *= DECELERATION; // Damp vertical velocity too
+    droneVelocity.y *= DECELERATION;
 
     // Clamp horizontal speed
     const currentSpeedSq = droneVelocity.x * droneVelocity.x + droneVelocity.z * droneVelocity.z;
@@ -454,8 +576,6 @@ function updateDronePhysics() {
         droneVelocity.x *= scale;
         droneVelocity.z *= scale;
     }
-    // Clamp vertical speed separately if needed (optional)
-    // droneVelocity.y = THREE.MathUtils.clamp(droneVelocity.y, -VERTICAL_SPEED, VERTICAL_SPEED);
 
     // Apply final velocity to position
     droneModel.position.add(droneVelocity);
@@ -466,25 +586,23 @@ function updateDronePhysics() {
         droneVelocity.y = Math.max(0, droneVelocity.y); // Stop downward velocity if hitting floor
     }
 
-    // Boundary constraints (simple rectangular for now)
+    // Boundary constraints
     const mapBoundary = (config.citySize || 500) / 2;
     if (droneModel.position.x < -mapBoundary) droneModel.position.x = -mapBoundary;
     if (droneModel.position.x > mapBoundary) droneModel.position.x = mapBoundary;
     if (droneModel.position.z < -mapBoundary) droneModel.position.z = -mapBoundary;
     if (droneModel.position.z > mapBoundary) droneModel.position.z = mapBoundary;
 
-    // Animate propellers based on overall movement and vertical thrust
+    // Animate propellers
     const verticalThrust = droneControls.up ? 1 : (droneControls.down ? -0.5 : 0);
     const horizontalSpeed = Math.sqrt(currentSpeedSq);
-    // Increase base speed, make vertical thrust effect stronger
     const propellerSpeed = 1.0 + Math.abs(droneVelocity.y) * 8 + verticalThrust * 2 + horizontalSpeed * 5;
     droneModel.traverse(child => {
         if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
-            // Alternate rotation direction for stability effect
             const parentPosition = child.parent.position;
-            // Simple check based on x position relative to center (approximate)
-            const direction = (parentPosition.x > 0) ? 1 : -1;
-            child.rotation.y += propellerSpeed * direction * 0.25; // Increased speed multiplier
+             // Determine rotation direction based on corner quadrant (approximate)
+            const direction = (parentPosition.x * parentPosition.z >= 0) ? 1 : -1; // Clockwise/Counter-clockwise pairing
+            child.rotation.y += propellerSpeed * direction * 0.25;
         }
     });
 }
@@ -495,100 +613,54 @@ function animateDrone() {
     droneAnimationId = requestAnimationFrame(animateDrone);
 
     updateDronePhysics();
-    checkPlacementPossibility(); // Check if placement is possible
     positionCameraForDroneView(); // Update camera smoothly
 
     // Rendering is handled by the main cityScene loop
 }
 
 // --- Placement & Deactivation ---
-
-// New function to check if placement is possible
-function checkPlacementPossibility() {
-    if (!droneActive || !droneModel || !mainCityScene) {
-        placementPossible = false;
-        targetPlotForPlacement = null;
-        placementPoint = null;
-        updatePlacementButton();
-        return;
-    }
-
-    // Check altitude
-    if (droneModel.position.y > PLACEMENT_MAX_ALTITUDE) {
-        placementPossible = false;
-        targetPlotForPlacement = null;
-        placementPoint = null;
-        updatePlacementButton();
-        return;
-    }
-
-    // Raycast downwards from drone position
-    const raycaster = new THREE.Raycaster(droneModel.position, new THREE.Vector3(0, -1, 0));
-    // Only intersect with objects that are potential landing spots (plots or ground)
-    const objectsToCheck = mainCityScene.children.filter(obj =>
-        (obj.userData && obj.userData.type === 'lot') || obj.name === 'primaryGround'
-    );
-    const intersects = raycaster.intersectObjects(objectsToCheck, true); // Check recursively
-
-    let foundPlot = null;
-    let point = null;
-
-    if (intersects.length > 0) {
-        let hitObject = intersects[0].object;
-        // Traverse up to find the parent plot object if hit part of it
-        while (hitObject && (!hitObject.userData || hitObject.userData.type !== 'lot')) {
-            hitObject = hitObject.parent;
-        }
-
-        if (hitObject && hitObject.userData && hitObject.userData.type === 'lot') {
-            // We hit a plot outline
-            const plotData = cityData.lots.find(lot => lot.id === hitObject.userData.id);
-            if (plotData && plotData.available) {
-                foundPlot = plotData; // Store plot data
-                point = intersects[0].point; // Store intersection point
-            }
-        }
-    }
-
-    // Update state based on findings
-    if (foundPlot) {
-        placementPossible = true;
-        targetPlotForPlacement = foundPlot;
-        placementPoint = point;
-        // TODO: Add visual highlight for the target plot
-    } else {
-        placementPossible = false;
-        targetPlotForPlacement = null;
-        placementPoint = null;
-        // TODO: Remove visual highlight if any
-    }
-
-    updatePlacementButton();
-}
-
-// Update the UI button based on placement possibility
-function updatePlacementButton() {
-    const landButton = droneContainer?.querySelector('.drone-land-btn');
-    if (landButton) {
-        landButton.disabled = !placementPossible;
-        landButton.textContent = placementPossible ? `Place LLM on ${targetPlotForPlacement?.name || 'Plot'}` : 'Find Available Plot';
-        landButton.style.backgroundColor = placementPossible ? '#3cb371' : '#555'; // Green if possible, grey otherwise
-        landButton.style.cursor = placementPossible ? 'pointer' : 'not-allowed';
-    }
-}
-
 function handlePlaceAttempt() {
     if (!droneActive || !droneModel) return;
 
-    // Re-check placement possibility just in case state changed between frames
-    checkPlacementPossibility();
+    // Raycast downwards from drone position
+    const raycaster = new THREE.Raycaster(droneModel.position, new THREE.Vector3(0, -1, 0));
+    const intersects = raycaster.intersectObjects(mainCityScene.children, true); // Check all scene children recursively
 
-    if (placementPossible && targetPlotForPlacement && placementPoint) {
-        console.log(`Placing LLM ${currentLLMTransporting.name} on plot ${targetPlotForPlacement.name}`);
-        placeLLMOnPlot(targetPlotForPlacement, placementPoint); // Pass intersection point
-        deactivateDroneTransport(false); // Deactivate after successful placement
+    let targetPlot = null;
+    let intersectPoint = null; // Store intersection point
+
+    for (const intersect of intersects) {
+        let obj = intersect.object;
+        // Traverse up to find the actual plot object or the ground
+        while (obj && (!obj.userData || obj.userData.type !== 'lot') && obj.name !== 'primaryGround' && obj.name !== 'construction_site') { // Also check for construction site parent
+            obj = obj.parent;
+        }
+
+        if (obj && obj.userData && obj.userData.type === 'lot') {
+            targetPlot = cityData.lots.find(lot => lot.id === obj.userData.id);
+            if (targetPlot) {
+                intersectPoint = intersect.point; // Store intersection point on the plot
+                break;
+            }
+        } else if (obj && obj.name === 'primaryGround') {
+            // If we hit the ground first, it means we are not over a plot outline
+            break; // Stop searching
+        }
+    }
+
+
+    if (targetPlot) {
+        if (targetPlot.available) {
+            // Check if LLM meets requirements (implement later if needed)
+            console.log(`Placing LLM ${currentLLMTransporting.name} on plot ${targetPlot.name}`);
+            placeLLMOnPlot(targetPlot, intersectPoint); // Pass intersection point
+            deactivateDroneTransport(false); // Deactivate after successful placement
+        } else {
+            console.log(`Plot ${targetPlot.name} is already occupied.`);
+            // Optionally provide user feedback (e.g., flash UI red)
+        }
     } else {
-        console.log("Cannot place here. Find an available plot and fly lower.");
+        console.log("Not hovering over a valid plot.");
         // Optionally provide user feedback
     }
 }
@@ -599,63 +671,39 @@ function placeLLMOnPlot(plotData, placementPoint) {
     // Create a new instance of the LLM model for the plot
     const placedLLMModel = renderLLMCharacter(THREE, currentLLMTransporting);
 
-    // Ensure placement is exactly on the ground plane (Y=0) at the intersected X, Z
+    // Use the precise intersection point for placement, adjusting Y to be on the ground (0)
     placedLLMModel.position.set(placementPoint.x, 0, placementPoint.z);
 
-    // Rotate the LLM to face towards the center of the map (0,0)
+    // Optionally rotate the LLM to face a certain direction (e.g., towards center)
     const directionToCenter = new THREE.Vector3(0 - placementPoint.x, 0, 0 - placementPoint.z).normalize();
-    // atan2 takes (y, x) which corresponds to (z, x) in our 3D space for Y-axis rotation
     placedLLMModel.rotation.y = Math.atan2(directionToCenter.x, directionToCenter.z);
 
-    placedLLMModel.castShadow = true;
-    placedLLMModel.receiveShadow = true;
-
-    // Add a name label above the placed LLM
-    const nameLabel = createNameLabel(currentLLMTransporting.name, llmDataManager.getLLMById(currentLLMTransporting.id).color);
-    nameLabel.position.set(0, 1.8, 0); // Position above the model's center
-    placedLLMModel.add(nameLabel); // Add label as child of the model
-
-
+    placedLLMModel.castShadow = true; // Ensure it casts shadows
+    placedLLMModel.receiveShadow = true; // Ensure it receives shadows
     mainCityScene.add(placedLLMModel);
 
     // Update plot data
     plotData.available = false;
     plotData.occupiedBy = currentLLMTransporting.id;
-    // Add the model reference to the plot data (optional, for future interactions)
-    plotData.placedModel = placedLLMModel;
-
 
     // Remove the construction outline for this plot
     let plotOutlineToRemove = null;
     mainCityScene.traverse(obj => {
         if (obj.userData && obj.userData.type === 'lot' && obj.userData.id === plotData.id) {
+            // Remove all children (cones, tape) and then the group itself
+            while (obj.children.length > 0) {
+                obj.remove(obj.children[0]);
+            }
             plotOutlineToRemove = obj;
         }
     });
     if (plotOutlineToRemove && plotOutlineToRemove.parent) {
-         // Traverse and dispose geometry/material of children before removing
-        plotOutlineToRemove.traverse(child => {
-            if (child.isMesh) {
-                child.geometry.dispose();
-                if (child.material.isMaterial) {
-                     if (Array.isArray(child.material)) {
-                         child.material.forEach(material => material.dispose());
-                     } else {
-                         child.material.dispose();
-                     }
-                }
-            }
-        });
         plotOutlineToRemove.parent.remove(plotOutlineToRemove);
-        console.log(`Removed construction outline for plot ${plotData.name}`);
-
-        // Refresh plot hover info (if it was showing this plot)
+        // TODO: Visually update the plot hover info if it's currently showing this plot
+        // Might need to call a function in plotHoverInfo.js to refresh/hide
         import('./plotHoverInfo.js').then(module => {
             if (typeof module.hideInfoPanel === 'function') {
-                // Check if the currently hovered plot is the one we just occupied
-                // This requires plotHoverInfo to expose its active plot ID or similar state
-                // For now, just hide the panel to be safe
-                module.hideInfoPanel();
+                // module.hideInfoPanel(); // Or a more specific update function if available
             }
         });
     }
@@ -663,56 +711,11 @@ function placeLLMOnPlot(plotData, placementPoint) {
     console.log(`LLM ${currentLLMTransporting.name} placed on plot ${plotData.name}.`);
 
     // TODO: Update cityData persistence if necessary
-}
-
-// Helper to create a text label sprite
-export function createNameLabel(text, color = '#ffffff') {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    const fontSize = 48; // Larger font size for better resolution
-    context.font = `Bold ${fontSize}px Arial`;
-    const textWidth = context.measureText(text).width;
-
-    // Adjust canvas size based on text width
-    canvas.width = textWidth + 20; // Add padding
-    canvas.height = fontSize + 10; // Add padding
-
-    // Re-apply font settings after resize
-    context.font = `Bold ${fontSize}px Arial`;
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-
-    // Background (optional, for better visibility)
-    // context.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    // context.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Text styling
-    context.fillStyle = color; // Use LLM color
-    context.strokeStyle = 'rgba(0, 0, 0, 0.8)'; // Black outline
-    context.lineWidth = 4;
-
-    // Draw text
-    context.strokeText(text, canvas.width / 2, canvas.height / 2);
-    context.fillText(text, canvas.width / 2, canvas.height / 2);
-
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
-
-    const spriteMaterial = new THREE.SpriteMaterial({
-        map: texture,
-        transparent: true,
-        depthTest: false, // Render on top
-        depthWrite: false
-    });
-
-    const sprite = new THREE.Sprite(spriteMaterial);
-    // Scale the sprite based on canvas aspect ratio and desired size
-    const aspectRatio = canvas.width / canvas.height;
-    sprite.scale.set(aspectRatio * 1.5, 1.5, 1); // Adjust scale as needed
-
-    sprite.name = "LLMNameLabel";
-    return sprite;
+    // Assuming cityData has a save function or similar mechanism
+    if (typeof cityData.saveGame === 'function') {
+        // cityData.saveGame(); // Or trigger save through another mechanism
+        console.log("City data state updated (but not persisted automatically).");
+    }
 }
 
 function deactivateDroneTransport(cancel = false) {
@@ -720,7 +723,7 @@ function deactivateDroneTransport(cancel = false) {
     droneActive = false;
     window.droneActive = false; // Clear global flag
 
-    removeInputListeners();
+    removeInputListeners(); // This now also removes gyro listener
 
     if (droneAnimationId) {
         cancelAnimationFrame(droneAnimationId);
@@ -816,9 +819,6 @@ function deactivateDroneTransport(cancel = false) {
     // Reset original camera/target refs
     originalCameraPosition = null;
     originalCameraTarget = null;
-    placementPossible = false; // Reset placement state
-    targetPlotForPlacement = null;
-    placementPoint = null;
 }
 
 function positionCameraForDroneView(instant = false) {
@@ -827,12 +827,10 @@ function positionCameraForDroneView(instant = false) {
     // Ensure orbit controls are disabled while drone is active
     mainCityControls.enabled = false;
 
-    // Calculate the desired camera offset BEHIND the drone's local -Z axis (assuming -Z is forward for getWorldDirection)
-    // If +Z is forward based on our movement logic, offset should be negative Z.
-    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, -CAMERA_FOLLOW_DISTANCE); // Corrected: Start with negative Z for 'behind'
+    // Calculate the desired camera offset BEHIND the drone's local -Z axis
+    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, -CAMERA_FOLLOW_DISTANCE);
 
     // Apply the drone's WORLD rotation (quaternion is safer) to the offset vector
-    // This rotates the offset relative to the drone's current facing direction
     offset.applyQuaternion(droneModel.quaternion);
 
     // Calculate the target camera position by adding the rotated offset to the drone's position
