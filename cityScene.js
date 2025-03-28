@@ -11,12 +11,13 @@ import { setupUIInteractions, setupConsolePanel } from './citySceneUI.js';
 import { initPlotHoverInfo } from './plotHoverInfo.js';
 
 // Expose main scene components globally or via getters for drone transport
-let scene, camera, controls, renderer;
-window.cityScene = scene; // Quick global access (consider a getter pattern later)
+let scene, camera, controls, renderer, primaryGround; 
+window.cityScene = scene; 
 window.camera = camera;
 window.controls = controls;
-window.renderer = renderer; // Also expose renderer if needed by other modules
-window.droneActive = false; // Global flag for drone state
+window.renderer = renderer; 
+window.primaryGround = primaryGround; 
+window.droneActive = false; 
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -69,56 +70,57 @@ function initCityScene() {
     const cityViewElement = document.getElementById('city-view');
 
     // Initialize Three.js scene
-    scene = new THREE.Scene(); // Assign to global variable
+    scene = new THREE.Scene(); 
     scene.background = new THREE.Color(0xe0f5e0);
-    window.cityScene = scene; // Update global reference
+    window.cityScene = scene; 
 
     // Create camera
-    camera = new THREE.PerspectiveCamera( // Assign to global variable
+    camera = new THREE.PerspectiveCamera( 
         60,
         window.innerWidth / window.innerHeight,
         0.1,
-        5000 // Increased far plane for larger terrain/fog distance
+        5000 
     );
-    window.camera = camera; // Update global reference
+    window.camera = camera; 
 
     // Set initial camera position further out for cinematic intro
     camera.position.set(50, 30, 50);
     camera.lookAt(0, 0, 0);
 
     // Create renderer
-    renderer = new THREE.WebGLRenderer({ // Assign to global variable
+    renderer = new THREE.WebGLRenderer({ 
         antialias: true,
         powerPreference: "high-performance",
-        // Logarithmic depth buffer might cause issues with fog/transparency, disable if needed
         // logarithmicDepthBuffer: true
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimized pixel ratio
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadow mapping
-    renderer.outputColorSpace = THREE.SRGBColorSpace; // Correct property name for r152+
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; // Improved tone mapping
-    renderer.toneMappingExposure = 1.2; // Adjust exposure for better lighting
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+    renderer.outputColorSpace = THREE.SRGBColorSpace; 
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; 
+    renderer.toneMappingExposure = 1.2; 
     cityViewElement.appendChild(renderer.domElement);
-    window.renderer = renderer; // Update global reference
+    window.renderer = renderer; 
 
     // Add orbit controls
-    controls = new OrbitControls(camera, renderer.domElement); // Assign to global variable
-    window.controls = controls; // Update global reference
+    controls = new OrbitControls(camera, renderer.domElement); 
+    window.controls = controls; 
 
     // Create infinite terrain instead of just a ground plane
-    const terrain = createInfiniteTerrain(scene, config.citySize || 500); // Use config size
+    const terrain = createInfiniteTerrain(scene, config.primaryGroundSize || 500); 
+    primaryGround = terrain.primaryGround; 
+    window.primaryGround = primaryGround; 
 
     // Add distance mist for better horizon
-    const mistLayers = createDistanceMist(scene, (config.citySize || 500) * 5, 60); // Adjust mist distance based on terrain
+    const mistLayers = createDistanceMist(scene, (config.primaryGroundSize || 500) * 5, 60); 
 
     // Create camera boundary controller using terrain bounds
     const boundaryController = new CameraBoundaryController(camera, controls, terrain.bounds);
 
     // Add grid for reference - 1m x 1m grid squares
-    const gridHelper = new THREE.GridHelper(config.citySize || 500, (config.citySize || 500) / 10, 0x000000, 0x555555); // Adjust grid size
-    gridHelper.position.y = 0.01; // Place slightly above ground
+    const gridHelper = new THREE.GridHelper(config.primaryGroundSize || 500, (config.primaryGroundSize || 500) / 10, 0x000000, 0x555555); 
+    gridHelper.position.y = 0.01; 
     scene.add(gridHelper);
 
     // Hide grid by default
@@ -134,10 +136,10 @@ function initCityScene() {
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
-    controls.minDistance = 5; // Adjusted min distance
-    controls.maxDistance = (config.citySize || 500) * 0.7; // Limit max distance based on terrain size
-    controls.maxPolarAngle = Math.PI / 2.1; // Allow slightly lower angle
-    controls.enabled = false; // Disable controls during intro animation
+    controls.minDistance = 5; 
+    controls.maxDistance = (config.primaryGroundSize || 500) * 0.7; 
+    controls.maxPolarAngle = Math.PI / 2.1; 
+    controls.enabled = false; 
 
     // Setup advanced lighting - use new function from dedicated file
     setupSceneLighting(scene, renderer);
@@ -147,7 +149,7 @@ function initCityScene() {
     setupConsolePanel();
 
     // Setup camera intro animation
-    let introDuration = 4000; // 4 seconds for intro
+    let introDuration = 4000; 
     let introStartTime = Date.now();
     let introComplete = false;
     let audioFadeStarted = false;
@@ -155,8 +157,8 @@ function initCityScene() {
     // Initialize plot hover info after the scene is ready
     initPlotHoverInfo(camera, scene, renderer);
 
-    // Add touch support for mobile devices
-    renderer.domElement.addEventListener('touchstart', handleTouchStart);
+    // Add touch support for mobile devices (event added dynamically now)
+    renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: false }); 
 
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -169,8 +171,8 @@ function initCityScene() {
     function animate() {
         requestAnimationFrame(animate);
 
-        // Only update controls and boundaries if drone is NOT active
-        const isDroneActive = window.droneActive === true; // Check global drone state
+        // Check global drone state ONCE per frame
+        const isDroneActive = window.droneActive === true;
 
         // Handle intro camera animation
         if (!introComplete) {
@@ -191,19 +193,25 @@ function initCityScene() {
             } else {
                 introComplete = true;
                 // Enable controls only AFTER intro completes and ONLY if drone is NOT active
-                 if (!isDroneActive) controls.enabled = true;
-                 console.log("Intro complete. Controls enabled:", controls.enabled); // Debug log
+                 if (!isDroneActive) {
+                     controls.enabled = true;
+                     console.log("Intro complete. Controls enabled:", controls.enabled); 
+                 } else {
+                      console.log("Intro complete, but drone is active. Controls remain disabled.");
+                 }
             }
-        } else if (!isDroneActive) { // Only update controls/boundaries if intro done AND drone inactive
-             if (controls.enabled) { // Check if controls are enabled before updating
+        }
+
+        // Update controls and boundaries ONLY if intro is complete AND drone is NOT active
+        if (introComplete && !isDroneActive) {
+             if (controls.enabled) { 
                  controls.update();
                  // Apply camera boundary restrictions
                  boundaryController.update();
              }
-        } else {
-             // If drone is active, ensure orbit controls remain disabled
+        } else if (isDroneActive) {
+             // If drone IS active, ensure orbit controls remain disabled
              if (controls.enabled) {
-                 console.log("Drone active, disabling controls."); // Debug log
                  controls.enabled = false;
              }
         }
@@ -218,11 +226,14 @@ function initCityScene() {
         renderer.render(scene, camera);
     }
 
-    animate(); // Start the main animation loop
+    animate(); 
 }
 
 function handleTouchStart(event) {
-    event.preventDefault();
+    // Only handle touch for plot info if drone is NOT active
+    if (window.droneActive) return;
+
+    event.preventDefault(); 
 
     if (event.touches.length === 1) {
         const touch = event.touches[0];
@@ -230,10 +241,16 @@ function handleTouchStart(event) {
         // Forward the touch as a mock mouse event to the plot hover system
         const mockEvent = {
             clientX: touch.clientX,
-            clientY: touch.clientY
+            clientY: touch.clientY,
+             // Pass touch event details if needed by plot hover handler
+             touches: event.touches,
+             targetTouches: event.targetTouches,
+             changedTouches: event.changedTouches,
+             preventDefault: () => event.preventDefault(), 
+             stopPropagation: () => event.stopPropagation() 
         };
 
-        // Trigger the same events as mouse hover
+        // Trigger the touch start handler in plotHoverInfo
         if (window.plotHoverHandlers && window.plotHoverHandlers.onTouchStart) {
             window.plotHoverHandlers.onTouchStart(mockEvent);
         }
@@ -244,11 +261,15 @@ function createBuildingLots(scene) {
     const lots = cityData.lots;
 
     lots.forEach(lot => {
-        // Create plot outline with construction elements instead of box geometry
-        const plotOutline = createPlotOutline(lot, scene);
-        plotOutline.userData = { type: 'lot', id: lot.id };
-
-        // No need to add to scene as createPlotOutline already does this
+        // Check if plot is available before creating construction elements
+        if (lot.available) {
+            // Create plot outline with construction elements instead of box geometry
+            const plotOutline = createPlotOutline(lot, scene);
+            plotOutline.userData = { type: 'lot', id: lot.id };
+            // No need to add to scene as createPlotOutline already does this
+        } else {
+            console.log(`Plot ${lot.id} (${lot.name}) is occupied. Skipping outline.`);
+        }
     });
 
     // Add city name text
@@ -326,14 +347,14 @@ function addCityNameText(scene) {
     const textureBlank = new THREE.CanvasTexture(canvasBlank);
 
     // Create materials for different sides
-    const frontBackMaterial = new THREE.MeshStandardMaterial({ // Use Standard for lighting
+    const frontBackMaterial = new THREE.MeshStandardMaterial({ 
         map: textureWithText,
         side: THREE.FrontSide,
         roughness: 0.7,
         metalness: 0.1
     });
 
-    const sideMaterial = new THREE.MeshStandardMaterial({ // Use Standard for lighting
+    const sideMaterial = new THREE.MeshStandardMaterial({ 
         map: textureBlank,
         side: THREE.FrontSide,
         roughness: 0.7,
@@ -342,12 +363,12 @@ function addCityNameText(scene) {
 
     // Create materials array for BoxGeometry
     const materials = [
-        sideMaterial,       // right side
-        sideMaterial,       // left side
-        sideMaterial,       // top side
-        sideMaterial,       // bottom side
-        frontBackMaterial,  // front side
-        frontBackMaterial   // back side (same as front)
+        sideMaterial,       
+        sideMaterial,       
+        sideMaterial,       
+        sideMaterial,       
+        frontBackMaterial,  
+        frontBackMaterial   
     ];
 
     // Create box with different materials per face
