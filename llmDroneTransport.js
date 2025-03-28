@@ -29,6 +29,9 @@ const MIN_ALTITUDE = 1.0;
 const CAMERA_FOLLOW_DISTANCE = 8;
 const CAMERA_FOLLOW_HEIGHT = 4;
 const CAMERA_LERP_FACTOR = 0.05;
+const DRONE_BASE_COLOR = 0xffffff; // White
+const DRONE_ACCENT_COLOR = 0xcccccc; // Light Grey
+const DRONE_DARK_ACCENT_COLOR = 0x888888; // Darker Grey
 
 // --- Control State ---
 let droneControls = {
@@ -44,7 +47,6 @@ let droneControls = {
 let touchActiveControls = {}; // Track active touch controls
 
 // --- Public Functions ---
-
 export function activateDroneTransport(llmId) {
     if (droneActive) return;
 
@@ -91,7 +93,6 @@ export function activateDroneTransport(llmId) {
 }
 
 // --- Initialization Functions ---
-
 function createDroneUI(llm) {
     const existingContainer = document.getElementById('drone-transport-ui');
     if (existingContainer) existingContainer.remove();
@@ -159,58 +160,81 @@ function createDroneWithLLM(llm) {
     droneModel = new THREE.Group();
     droneModel.name = "DroneWithLLM";
 
-    // Central Body (resembles icon base)
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
+    // --- Drone Appearance Setup ---
+    const bodyMaterial = new THREE.MeshStandardMaterial({ color: DRONE_BASE_COLOR, metalness: 0.6, roughness: 0.4 });
+    const armMaterial = new THREE.MeshStandardMaterial({ color: DRONE_ACCENT_COLOR, metalness: 0.5, roughness: 0.5 });
+    const propellerHubMaterial = new THREE.MeshStandardMaterial({ color: DRONE_DARK_ACCENT_COLOR, metalness: 0.8, roughness: 0.2 });
+    const propellerBladeMaterial = new THREE.MeshStandardMaterial({ color: DRONE_ACCENT_COLOR, metalness: 0.4, roughness: 0.6, side: THREE.DoubleSide });
+
+
+    // Central Body (Smaller Cylinder)
+    const centralBodyRadius = 0.5; // Smaller radius
+    const centralBodyHeight = 0.25; // Shorter height
     const centralBody = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.8, 1.0, 0.4, 16), // Tapered cylinder
+        new THREE.CylinderGeometry(centralBodyRadius * 0.8, centralBodyRadius, centralBodyHeight, 12), // Slightly tapered
         bodyMaterial
     );
     centralBody.castShadow = true;
     droneModel.add(centralBody);
 
-    // Arms
-    const armLength = 1.5;
-    const armGeometry = new THREE.BoxGeometry(armLength, 0.15, 0.15);
-    const armMaterial = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.6, roughness: 0.5 });
+    // Arms (Thinner, extending from central body edge)
+    const armLength = 1.8; // Slightly longer to match proportions
+    const armWidth = 0.1; // Thinner
+    const armHeight = 0.1; // Thinner
+    const armGeometry = new THREE.BoxGeometry(armLength, armHeight, armWidth); // Use armLength for X dim
 
-    // Define arm positions relative to the center
-    // Arm center position = body radius + half arm length offset
-    const armCenterOffset = 0.4 + (armLength / 2); // Approx radius + half arm length
-    const propellerPositionOffset = 0.4 + armLength; // Approx radius + full arm length
+    // Arm positions originate from the edge of the body radius
+    const armOriginOffset = centralBodyRadius * 0.7; // Start arms slightly inside the body edge
+    const propellerPositionOffset = armOriginOffset + armLength / 2 + 0.1; // Position propeller beyond arm end
 
     const armPositions = [
-        { x: 0, z: -armCenterOffset, rotationY: 0, propZ: -propellerPositionOffset }, // Front
-        { x: 0, z: armCenterOffset, rotationY: 0, propZ: propellerPositionOffset },   // Back
-        { x: -armCenterOffset, z: 0, rotationY: Math.PI / 2, propX: -propellerPositionOffset }, // Left
-        { x: armCenterOffset, z: 0, rotationY: Math.PI / 2, propX: propellerPositionOffset }   // Right
+        { x: 0, z: -armOriginOffset, rotationY: 0 },                 // Front arm base
+        { x: 0, z: armOriginOffset, rotationY: 0 },                  // Back arm base
+        { x: -armOriginOffset, z: 0, rotationY: Math.PI / 2 },        // Left arm base
+        { x: armOriginOffset, z: 0, rotationY: Math.PI / 2 }         // Right arm base
     ];
 
-    armPositions.forEach(pos => {
+    const propellerPositions = [
+         { x: 0, z: -propellerPositionOffset }, // Front propeller
+         { x: 0, z: propellerPositionOffset },  // Back propeller
+         { x: -propellerPositionOffset, z: 0 }, // Left propeller
+         { x: propellerPositionOffset, z: 0 }  // Right propeller
+    ];
+
+
+    armPositions.forEach((pos, index) => {
         const arm = new THREE.Mesh(armGeometry, armMaterial);
-        arm.position.set(pos.x, 0, pos.z);
+        // Position the *center* of the arm at the origin offset
+        if (pos.rotationY === 0) { // Front/Back arms
+             arm.position.set(0, 0, pos.z > 0 ? armOriginOffset + armWidth/2 : -armOriginOffset - armWidth/2);
+        } else { // Left/Right arms
+             arm.position.set(pos.x > 0 ? armOriginOffset + armWidth/2 : -armOriginOffset - armWidth/2, 0, 0);
+        }
         arm.rotation.y = pos.rotationY;
         arm.castShadow = true;
         droneModel.add(arm);
 
-        // Propeller at the end of the arm
-        const propeller = createPropeller();
-        propeller.position.set(pos.propX ?? pos.x, 0.15, pos.propZ ?? pos.z); // Position propeller at the calculated offset, slightly above arm plane
+        // Propeller at the calculated propeller position
+        const propPos = propellerPositions[index];
+        const propeller = createPropeller(propellerHubMaterial, propellerBladeMaterial);
+        propeller.position.set(propPos.x, armHeight / 2 + 0.05, propPos.z); // Position slightly above arm plane
         droneModel.add(propeller);
     });
 
-    // LLM Model
+
+    // LLM Model (Scaled slightly smaller, positioned lower)
     llmModel = renderLLMCharacter(THREE, llm);
-    llmModel.scale.set(0.5, 0.5, 0.5);
-    llmModel.position.set(0, -1.0, 0); // Hang below the central body
+    llmModel.scale.set(0.4, 0.4, 0.4); // Make LLM smaller relative to drone
+    llmModel.position.set(0, -0.8, 0); // Hang further below the central body
     llmModel.castShadow = true;
-    llmModel.receiveShadow = true; // Allow LLM to receive shadows
+    llmModel.receiveShadow = true;
     droneModel.add(llmModel);
 
     // Ensure all parts cast shadows
     droneModel.traverse(child => {
         if (child.isMesh) {
             child.castShadow = true;
-            child.receiveShadow = true; // Also allow receiving shadows
+            child.receiveShadow = true;
         }
     });
 
@@ -224,14 +248,16 @@ function createDroneWithLLM(llm) {
     }
 }
 
-function createPropeller() {
+function createPropeller(hubMaterial, bladeMaterial) { // Pass materials
     const propellerGroup = new THREE.Group();
     propellerGroup.name = "Propeller";
 
-    // Simplified Hub
+    // Hub
+    const hubRadius = 0.1;
+    const hubHeight = 0.08;
     const hub = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.12, 0.12, 0.1, 8),
-        new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.2 })
+        new THREE.CylinderGeometry(hubRadius, hubRadius, hubHeight, 8),
+        hubMaterial // Use passed material
     );
     hub.castShadow = true;
     propellerGroup.add(hub);
@@ -240,32 +266,28 @@ function createPropeller() {
     blades.name = "Blades";
     propellerGroup.add(blades);
 
-    // Wider, thinner blades
-    const bladeMaterial = new THREE.MeshStandardMaterial({
-        color: 0x666666,
-        metalness: 0.4,
-        roughness: 0.6,
-        side: THREE.DoubleSide // Render both sides
-    });
-    const bladeGeometry = new THREE.BoxGeometry(0.8, 0.015, 0.15); // Length 0.8, Thickness 0.015, Width 0.15
+    // Blades (adjusted size)
+    const bladeLength = 0.6; // Shorter blade length
+    const bladeWidth = 0.1; // Narrower blade
+    const bladeThickness = 0.01;
+    const bladeGeometry = new THREE.BoxGeometry(bladeLength, bladeThickness, bladeWidth);
 
-    const blade1 = new THREE.Mesh(bladeGeometry, bladeMaterial);
+    const blade1 = new THREE.Mesh(bladeGeometry, bladeMaterial); // Use passed material
     blade1.castShadow = true;
     blades.add(blade1);
 
-    const blade2 = new THREE.Mesh(bladeGeometry, bladeMaterial);
+    const blade2 = new THREE.Mesh(bladeGeometry, bladeMaterial); // Use passed material
     blade2.rotation.y = Math.PI / 2;
     blade2.castShadow = true;
     blades.add(blade2);
 
     // Position blades slightly above the hub
-    blades.position.y = 0.06;
+    blades.position.y = hubHeight / 2 + bladeThickness / 2;
 
     return propellerGroup;
 }
 
 // --- Control Input Handling ---
-
 function setupInputListeners() {
     resetControlState();
     // Keyboard
@@ -368,7 +390,6 @@ function handleTouchEnd(event, control) {
 }
 
 // --- Movement & Update Logic ---
-
 function updateDronePhysics() {
     if (!droneModel) return;
 
@@ -457,48 +478,14 @@ function updateDronePhysics() {
         if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
             // Alternate rotation direction for stability effect
             const parentPosition = child.parent.position;
-            const direction = (parentPosition.x * parentPosition.z < 0) ? 1 : -1; // Simple check for alternating
-            child.rotation.y += propellerSpeed * direction * 0.15; // Adjusted speed multiplier
+            // Simple check based on x position relative to center (approximate)
+            const direction = (parentPosition.x > 0) ? 1 : -1;
+            child.rotation.y += propellerSpeed * direction * 0.25; // Increased speed multiplier
         }
     });
 }
 
-function positionCameraForDroneView(instant = false) {
-    if (!droneModel || !mainCityCamera || !mainCityControls) return;
-
-    // Ensure orbit controls are disabled while drone is active
-    mainCityControls.enabled = false;
-
-    // Calculate the desired camera offset based on drone's rotation
-    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, CAMERA_FOLLOW_DISTANCE);
-    // Apply the drone's rotation to the offset vector
-    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), droneModel.rotation.y);
-
-    // Calculate the target camera position by adding the offset to the drone's position
-    const targetCamPos = droneModel.position.clone().add(offset);
-
-    // Calculate the target look-at point (slightly above the drone's center)
-    const targetLookAt = droneModel.position.clone().add(new THREE.Vector3(0, 0.5, 0));
-
-    if (instant) {
-        // Instantly set camera position and target
-        mainCityCamera.position.copy(targetCamPos);
-        mainCityControls.target.copy(targetLookAt);
-    } else {
-        // Smoothly interpolate camera position and target
-        mainCityCamera.position.lerp(targetCamPos, CAMERA_LERP_FACTOR);
-        mainCityControls.target.lerp(targetLookAt, CAMERA_LERP_FACTOR);
-    }
-
-    // Always make the camera look at the (potentially interpolated) target
-    mainCityCamera.lookAt(mainCityControls.target);
-
-    // Update the OrbitControls state (even though disabled, target needs update)
-    mainCityControls.update();
-}
-
 // --- Animation Loop ---
-
 function animateDrone() {
     if (!droneActive) return;
     droneAnimationId = requestAnimationFrame(animateDrone);
@@ -510,7 +497,6 @@ function animateDrone() {
 }
 
 // --- Placement & Deactivation ---
-
 function handlePlaceAttempt() {
     if (!droneActive || !droneModel) return;
 
@@ -708,6 +694,40 @@ function deactivateDroneTransport(cancel = false) {
     // Reset original camera/target refs
     originalCameraPosition = null;
     originalCameraTarget = null;
+}
+
+function positionCameraForDroneView(instant = false) {
+    if (!droneModel || !mainCityCamera || !mainCityControls) return;
+
+    // Ensure orbit controls are disabled while drone is active
+    mainCityControls.enabled = false;
+
+    // Calculate the desired camera offset based on drone's rotation
+    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, CAMERA_FOLLOW_DISTANCE);
+    // Apply the drone's rotation to the offset vector
+    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), droneModel.rotation.y);
+
+    // Calculate the target camera position by adding the offset to the drone's position
+    const targetCamPos = droneModel.position.clone().add(offset);
+
+    // Calculate the target look-at point (slightly above the drone's center)
+    const targetLookAt = droneModel.position.clone().add(new THREE.Vector3(0, 0.5, 0));
+
+    if (instant) {
+        // Instantly set camera position and target
+        mainCityCamera.position.copy(targetCamPos);
+        mainCityControls.target.copy(targetLookAt);
+    } else {
+        // Smoothly interpolate camera position and target
+        mainCityCamera.position.lerp(targetCamPos, CAMERA_LERP_FACTOR);
+        mainCityControls.target.lerp(targetLookAt, CAMERA_LERP_FACTOR);
+    }
+
+    // Always make the camera look at the (potentially interpolated) target
+    mainCityCamera.lookAt(mainCityControls.target);
+
+    // Update the OrbitControls state (even though disabled, target needs update)
+    mainCityControls.update();
 }
 
 // Add alias for Place LLM button
