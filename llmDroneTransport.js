@@ -168,8 +168,8 @@ function createDroneWithLLM(llm) {
 
 
     // Central Body (Smaller Cylinder)
-    const centralBodyRadius = 0.5; // Smaller radius
-    const centralBodyHeight = 0.25; // Shorter height
+    const centralBodyRadius = 0.3; // Smaller radius
+    const centralBodyHeight = 0.2; // Shorter height
     const centralBody = new THREE.Mesh(
         new THREE.CylinderGeometry(centralBodyRadius * 0.8, centralBodyRadius, centralBodyHeight, 12), // Slightly tapered
         bodyMaterial
@@ -178,44 +178,37 @@ function createDroneWithLLM(llm) {
     droneModel.add(centralBody);
 
     // Arms (Thinner, extending from central body edge)
-    const armLength = 1.8; // Slightly longer to match proportions
-    const armWidth = 0.1; // Thinner
-    const armHeight = 0.1; // Thinner
-    const armGeometry = new THREE.BoxGeometry(armLength, armHeight, armWidth); // Use armLength for X dim
+    const propDistance = 1.0; // Distance from center to propeller center
+    const armWidth = 0.08; // Thinner arm width
+    const armHeight = 0.08; // Thinner arm height
 
-    // Arm positions originate from the edge of the body radius
-    const armOriginOffset = centralBodyRadius * 0.7; // Start arms slightly inside the body edge
-    const propellerPositionOffset = armOriginOffset + armLength / 2 + 0.1; // Position propeller beyond arm end
-
-    const armPositions = [
-        { x: 0, z: -armOriginOffset, rotationY: 0 },                 // Front arm base
-        { x: 0, z: armOriginOffset, rotationY: 0 },                  // Back arm base
-        { x: -armOriginOffset, z: 0, rotationY: Math.PI / 2 },        // Left arm base
-        { x: armOriginOffset, z: 0, rotationY: Math.PI / 2 }         // Right arm base
-    ];
-
+    // Propeller Positions (arranged in a square)
     const propellerPositions = [
-         { x: 0, z: -propellerPositionOffset }, // Front propeller
-         { x: 0, z: propellerPositionOffset },  // Back propeller
-         { x: -propellerPositionOffset, z: 0 }, // Left propeller
-         { x: propellerPositionOffset, z: 0 }  // Right propeller
+         { x: 0, z: -propDistance }, // Front
+         { x: 0, z: propDistance },  // Back
+         { x: -propDistance, z: 0 }, // Left
+         { x: propDistance, z: 0 }  // Right
     ];
 
+    // Create Arms connecting center to propeller positions
+    propellerPositions.forEach((propPos, index) => {
+        let armLength, armGeometry;
+        const armPosition = new THREE.Vector3(propPos.x / 2, 0, propPos.z / 2); // Midpoint of the arm
 
-    armPositions.forEach((pos, index) => {
-        const arm = new THREE.Mesh(armGeometry, armMaterial);
-        // Position the *center* of the arm at the origin offset
-        if (pos.rotationY === 0) { // Front/Back arms
-             arm.position.set(0, 0, pos.z > 0 ? armOriginOffset + armWidth/2 : -armOriginOffset - armWidth/2);
-        } else { // Left/Right arms
-             arm.position.set(pos.x > 0 ? armOriginOffset + armWidth/2 : -armOriginOffset - armWidth/2, 0, 0);
+        if (propPos.x === 0) { // Front or Back Arm
+            armLength = propDistance;
+            armGeometry = new THREE.BoxGeometry(armWidth, armHeight, armLength); // Length along Z
+        } else { // Left or Right Arm
+            armLength = propDistance;
+            armGeometry = new THREE.BoxGeometry(armLength, armHeight, armWidth); // Length along X
         }
-        arm.rotation.y = pos.rotationY;
+
+        const arm = new THREE.Mesh(armGeometry, armMaterial);
+        arm.position.copy(armPosition);
         arm.castShadow = true;
         droneModel.add(arm);
 
         // Propeller at the calculated propeller position
-        const propPos = propellerPositions[index];
         const propeller = createPropeller(propellerHubMaterial, propellerBladeMaterial);
         propeller.position.set(propPos.x, armHeight / 2 + 0.05, propPos.z); // Position slightly above arm plane
         droneModel.add(propeller);
@@ -510,7 +503,7 @@ function handlePlaceAttempt() {
     for (const intersect of intersects) {
         let obj = intersect.object;
         // Traverse up to find the actual plot object or the ground
-        while (obj && (!obj.userData || obj.userData.type !== 'lot') && obj.name !== 'primaryGround') { // Check for ground as well
+        while (obj && (!obj.userData || obj.userData.type !== 'lot') && obj.name !== 'primaryGround' && obj.name !== 'construction_site') { // Also check for construction site parent
             obj = obj.parent;
         }
 
@@ -525,6 +518,7 @@ function handlePlaceAttempt() {
             break; // Stop searching
         }
     }
+
 
     if (targetPlot) {
         if (targetPlot.available) {
