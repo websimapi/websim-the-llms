@@ -229,67 +229,55 @@ function handleCityClick(event) {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
 
-    // Find all plot objects and the primary ground in the scene
-    const plotObjects = [];
-    let primaryGround = null;
+    // Find all plot objects (outlines and click targets) in the scene
+    const plotClickTargets = [];
+    const plotOutlines = [];
     scene.traverse(obj => {
-        if (obj.userData && obj.userData.type === 'lot' && obj.name === 'plot_outline') {
-            plotObjects.push(obj);
-        } else if (obj.name === 'primaryGround') { // Find the primary ground mesh
-            primaryGround = obj;
+        if (obj.userData && obj.userData.type === 'lot_target' && obj.name === 'plot_click_target') {
+            plotClickTargets.push(obj);
+        } else if (obj.userData && obj.userData.type === 'lot' && obj.name === 'plot_outline') {
+            plotOutlines.push(obj);
         }
     });
 
+    // 1. Check intersections with invisible click targets first
+    let intersects = raycaster.intersectObjects(plotClickTargets, false); // Don't check children
+
     let clickedPlotData = null;
-    let clickedPoint = null;
+    let clickedPlotId = null;
 
-    // 1. Raycast against plot construction elements first (for edge clicks)
-    let intersectsPlotElements = raycaster.intersectObjects(plotObjects, true); // recursive check
-    if (intersectsPlotElements.length > 0) {
-        let plotGroup = intersectsPlotElements[0].object;
-        while (plotGroup && (!plotGroup.userData || plotGroup.userData.type !== 'lot')) {
-            plotGroup = plotGroup.parent;
-            if (!plotGroup) break;
-        }
-        if (plotGroup && plotGroup.userData && plotGroup.userData.id) {
-            clickedPlotData = cityData.lots.find(lot => lot.id === plotGroup.userData.id);
-            clickedPoint = intersectsPlotElements[0].point;
-        }
-    }
+    if (intersects.length > 0) {
+        // Found a hit on an invisible target plane
+        clickedPlotId = intersects[0].object.userData.id;
+        clickedPlotData = cityData.lots.find(lot => lot.id === clickedPlotId);
+        console.log("Raycast hit invisible plot target:", clickedPlotData?.name);
+    } else {
+        // 2. Fallback: Check intersections with visible plot outlines (construction elements)
+        intersects = raycaster.intersectObjects(plotOutlines, true); // recursive check
+        if (intersects.length > 0) {
+            let plotGroup = intersects[0].object;
+            while (plotGroup && (!plotGroup.userData || plotGroup.userData.type !== 'lot')) {
+                plotGroup = plotGroup.parent;
+                if (!plotGroup) break;
+            }
 
-    // 2. If no construction elements hit, raycast against the ground plane
-    if (!clickedPlotData && primaryGround) {
-        const intersectsGround = raycaster.intersectObject(primaryGround);
-        if (intersectsGround.length > 0) {
-            const groundIntersectPoint = intersectsGround[0].point;
-            clickedPoint = groundIntersectPoint; // Store the ground intersection point
-
-            // Find which plot contains the ground intersection point
-            for (const lot of cityData.lots) {
-                const halfWidth = lot.width / 2;
-                const halfHeight = lot.height / 2;
-
-                if (groundIntersectPoint.x >= lot.x - halfWidth &&
-                    groundIntersectPoint.x <= lot.x + halfWidth &&
-                    groundIntersectPoint.z >= lot.z - halfHeight &&
-                    groundIntersectPoint.z <= lot.z + halfHeight)
-                {
-                    clickedPlotData = lot;
-                    break; // Found the plot
-                }
+            if (plotGroup && plotGroup.userData && plotGroup.userData.id) {
+                clickedPlotId = plotGroup.userData.id;
+                clickedPlotData = cityData.lots.find(lot => lot.id === clickedPlotId);
+                console.log("Raycast hit plot outline element:", clickedPlotData?.name);
             }
         }
     }
 
-    // If a plot was clicked (either elements or ground inside) and it's available
+
+    // If a plot was clicked and it's available
     if (clickedPlotData && clickedPlotData.available) {
         console.log(`Plot clicked: ${clickedPlotData.name} (ID: ${clickedPlotData.id})`);
 
         // Calculate target position (center of the plot, slightly above ground)
         const targetX = clickedPlotData.x;
         const targetZ = clickedPlotData.z;
-        // Use the AUTO_NAV_HOVER_ALTITUDE defined in droneTransport.js
-        const targetY = 5.0; // Or import/get this value
+        const targetY = 5; // Target altitude above the plot
 
         const targetPosition = new THREE.Vector3(targetX, targetY, targetZ);
 
@@ -305,11 +293,25 @@ function createBuildingLots(scene) {
     const lots = cityData.lots;
 
     lots.forEach(lot => {
-        // Create plot outline with construction elements instead of box geometry
+        // Create plot outline with construction elements
         const plotOutline = createPlotOutline(lot, scene);
         plotOutline.userData = { type: 'lot', id: lot.id }; // Ensure userData is set here
 
-        // No need to add to scene as createPlotOutline already does this
+        // Create an invisible plane for click detection covering the plot area
+        const clickTargetGeometry = new THREE.PlaneGeometry(lot.width, lot.height);
+        const clickTargetMaterial = new THREE.MeshBasicMaterial({
+            color: 0xff0000, // Color doesn't matter as it's invisible
+            side: THREE.DoubleSide,
+            visible: false // Make it invisible
+        });
+        const clickTargetMesh = new THREE.Mesh(clickTargetGeometry, clickTargetMaterial);
+        clickTargetMesh.rotation.x = -Math.PI / 2; // Lay flat on the ground
+        clickTargetMesh.position.set(lot.x, 0.02, lot.z); // Position slightly above ground
+        clickTargetMesh.name = 'plot_click_target';
+        clickTargetMesh.userData = { type: 'lot_target', id: lot.id }; // Store plot ID
+
+        scene.add(clickTargetMesh);
+
     });
 
     // Add city name text
