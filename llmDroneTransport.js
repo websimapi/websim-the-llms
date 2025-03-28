@@ -666,7 +666,7 @@ function placeLLMOnPlot(plotData, placementPoint) {
 }
 
 // Helper to create a text label sprite
-function createNameLabel(text, color = '#ffffff') {
+export function createNameLabel(text, color = '#ffffff') {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     const fontSize = 48; // Larger font size for better resolution
