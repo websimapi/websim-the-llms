@@ -6,6 +6,7 @@ import { setupLLMViewInterface } from './llmViewInterface.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
 import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId } from './llmCollectionCarousel.js';
 import { activateDroneTransport } from './llmDroneTransport.js';
+import { hidePlotInfoPanel } from './plotHoverInfo.js';
 
 let collectionAnimationId;
 
@@ -43,7 +44,10 @@ export function getModelTypeIcon(modelType) {
 export function setupLLMCollectionView(selectLLMId = null) {
     // Initialize the LLM data manager
     llmDataManager.init();
-    
+
+    // Hide plot info panel if open
+    hidePlotInfoPanel();
+
     // Setup the collection UI
     const collectionUI = document.getElementById('llm-collection-ui');
     collectionUI.classList.add('active');
@@ -192,36 +196,35 @@ export function setupLLMCollectionView(selectLLMId = null) {
     }, 100);
     
     // Add close button event listener
-    document.querySelector('.collection-close').addEventListener('click', () => {
-        collectionUI.classList.remove('active');
-        // Clean up carousel
-        cleanupCarousel();
-        // Set global variable to track that collection view is open
-        window.createLLMOpenedFrom = 'plot';
-    });
+    const closeButton = document.querySelector('.collection-close'); 
+    if (closeButton.closest('#llm-collection-ui')) { 
+        const newCloseButton = closeButton.cloneNode(true);
+        closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+
+        newCloseButton.addEventListener('click', () => {
+            collectionUI.classList.remove('active');
+            cleanupCarousel();
+            window.createLLMOpenedFrom = 'plot';
+            hidePlotInfoPanel(); 
+        });
+    }
 }
 
 function addTransportButton(collectionUI) {
-    // Remove existing button if present
     const existingButton = document.querySelector('.transport-button-container');
     if (existingButton) {
         existingButton.remove();
     }
     
-    // Create transport button container
     const transportButtonContainer = document.createElement('div');
     transportButtonContainer.className = 'transport-button-container';
     
-    // Create transport button with drone icon
     transportButtonContainer.innerHTML = `
         <button class="transport-button" title="Transport LLMs to Plots">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <!-- Drone body -->
                 <circle cx="12" cy="12" r="2" />
-                <!-- Drone arms -->
                 <rect x="6.5" y="11.5" width="11" height="1" rx="0.5" />
                 <rect x="11.5" y="7" width="1" height="11" rx="0.5" />
-                <!-- Drone propellers with motor hubs -->
                 <g class="propeller" style="transform-origin: 6.5px 11.5px;">
                     <circle cx="6.5" cy="11.5" r="1" />
                     <ellipse cx="6.5" cy="11.5" rx="3" ry="0.5" />
@@ -242,7 +245,6 @@ function addTransportButton(collectionUI) {
                     <ellipse cx="12" cy="17.5" rx="3" ry="0.5" />
                     <ellipse cx="12" cy="17.5" rx="0.5" ry="3" />
                 </g>
-                <!-- Package with robot parts -->
                 <rect x="9" y="20" width="6" height="3" rx="1" />
                 <path d="M10,20.5h4v0.5H10V20.5z" />
                 <path d="M10,21.5h4v0.5H10V21.5z" />
@@ -252,7 +254,6 @@ function addTransportButton(collectionUI) {
         </button>
     `;
     
-    // Add click event listener for drone transport
     transportButtonContainer.querySelector('.transport-button').addEventListener('click', () => {
         const selectedModelId = getSelectedModelId();
         if (selectedModelId) {
@@ -262,7 +263,6 @@ function addTransportButton(collectionUI) {
         }
     });
     
-    // Add button to the collection UI
     collectionUI.appendChild(transportButtonContainer);
 }
 
@@ -274,75 +274,62 @@ function handleEditLLM(id) {
     const llm = llmDataManager.getLLMById(id);
     if (!llm) return;
     
-    // Close the collection UI
+    hidePlotInfoPanel(); 
+
     document.getElementById('llm-collection-ui').classList.remove('active');
     
-    // Open the creation UI in edit mode
     const createUI = document.getElementById('create-llm-ui');
     createUI.classList.add('active');
     createUI.setAttribute('data-edit-mode', 'true');
     createUI.setAttribute('data-edit-id', id);
     
-    // Set up the creation interface with the LLM data
     setupLLMCreationInterface(llm);
     
-    // Cancel animation if active
     if (collectionAnimationId) {
         cancelAnimationFrame(collectionAnimationId);
     }
 }
 
-// Handle clicks in the viewport area
 function handleViewportClick(event) {
     const renderer = document.querySelector('.collection-viewport canvas');
     if (!renderer) return;
     
-    // Get normalized mouse coordinates
     const rect = renderer.getBoundingClientRect();
     const mouse = {
         x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
         y: -((event.clientY - rect.top) / rect.height) * 2 + 1
     };
     
-    // Create raycaster
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, window.carouselCamera);
     
-    // Find intersections with models
     const intersects = raycaster.intersectObjects(window.carouselScene.children, true);
     
     if (intersects.length > 0) {
-        // Find the model that was clicked
         let model = intersects[0].object;
         
-        // Traverse up to find the parent model with userData
         while (model && (!model.userData || !model.userData.id)) {
             model = model.parent;
             
-            // If we've reached the top without finding a valid model, break
             if (!model) break;
         }
         
         if (model && model.userData && model.userData.id) {
-            // Select the exact model that was clicked
             selectModel(model.userData.id);
         }
     }
 }
 
 function deleteLLM(id) {
-    // Use custom confirmation modal
     import('./confirmationModal.js').then(module => {
         module.showConfirmationModal(
             'Are you sure you want to delete this LLM? This action cannot be undone.',
-            () => { // onConfirm
-                // Remove from data manager
+            () => { 
                 if (llmDataManager.deleteLLM(id)) {
-                    // Refresh the UI
                     setupLLMCollectionView();
                 }
             },
-            () => { // onCancel
+            () => { 
                 console.log("Deletion cancelled.");
             }
         );

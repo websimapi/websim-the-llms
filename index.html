@@ -20,7 +20,6 @@
     <link rel="stylesheet" href="confirmationModalStyles.css">
     <link rel="stylesheet" href="droneTransportStyles.css">
     <link rel="stylesheet" href="plotCoinStyles.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <script type="importmap">
     {
       "imports": {
@@ -82,7 +81,7 @@
                     </svg>
                 </button>
             </div>
-
+            
             <div id="console-panel" class="hidden">
                 <div class="console-header">
                     <div class="console-title">Developer Console</div>
@@ -97,29 +96,25 @@
                     <p>Use the buttons above to import or export city data</p>
                 </div>
             </div>
-
+            
             <div class="console-indicator">
                 Press ~ to open console
             </div>
         </div>
-
+        
         <div id="create-llm-ui">
             <div class="create-llm-sidebar">
                 <div class="create-llm-header">
                     <div class="create-llm-title">Create New LLM</div>
                     <button class="create-llm-close">&times;</button>
                 </div>
-
+                
                 <div class="settings-group">
                     <div class="settings-group-title">Basic Information</div>
-                    <!-- Layout wrapper for image and name -->
-                    <div class="basic-info-layout">
-                        <!-- Profile Image Display will be added here by JS -->
-                        <div class="setting-item"> 
-                            <div class="name-input-container"> 
-                                <label class="setting-label" for="llm-name">Name</label>
-                                <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
-                            </div>
+                    <div class="setting-item">
+                        <div class="name-input-container"> 
+                            <label class="setting-label" for="llm-name">Name</label>
+                            <input type="text" id="llm-name" class="setting-input" placeholder="Enter name">
                         </div>
                     </div>
                     <div class="setting-item">
@@ -174,7 +169,7 @@
                                 <input type="radio" name="model-type" value="humanoid" class="model-badge-input">
                                 <div class="model-badge-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-                                        <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
+                                        <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/>
                                     </svg>
                                 </div>
                                 <span class="model-badge-label">Humanoid</span>
@@ -187,14 +182,14 @@
                             <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
                             <span id="selected-mesh-name" class="selected-mesh-name hidden">No part selected</span>
                         </div>
-
+                        
                         <div class="no-selection-message">Select a body part to manipulate it</div>
-
+                        
                         <div class="manipulation-controls">
                             <!-- Rotation Controls -->
                             <div class="control-group">
                                 <span class="control-group-label">Rotation:</span>
-
+                                
                                 <!-- X Axis -->
                                 <button id="rotate-x-minus" class="control-button axis-x">
                                     <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
@@ -203,7 +198,7 @@
                                 <button id="rotate-x-plus" class="control-button axis-x">
                                     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
                                 </button>
-
+                                
                                 <!-- Y Axis -->
                                 <button id="rotate-y-minus" class="control-button axis-y">
                                     <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
@@ -212,7 +207,7 @@
                                 <button id="rotate-y-plus" class="control-button axis-y">
                                     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
                                 </button>
-
+                                
                                 <!-- Z Axis -->
                                 <button id="rotate-z-minus" class="control-button axis-z">
                                     <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
@@ -222,11 +217,11 @@
                                     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z
                                 </button>
                             </div>
-
+                            
                             <!-- Position Controls -->
                             <div class="control-group">
                                 <span class="control-group-label">Position:</span>
-
+                                
                                 <!-- X Axis -->
                                 <button id="position-x-minus" class="control-button axis-x">
                                     <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
@@ -235,7 +230,7 @@
                                 <button id="position-x-plus" class="control-button axis-x">
                                     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
                                 </button>
-
+                                
                                 <!-- Y Axis -->
                                 <button id="position-y-minus" class="control-button axis-y">
                                     <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
@@ -244,7 +239,7 @@
                                 <button id="position-y-plus" class="control-button axis-y">
                                     <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
                                 </button>
-
+                                
                                 <!-- Z Axis -->
                                 <button id="position-z-minus" class="control-button axis-z">
                                     <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
@@ -281,57 +276,52 @@
                         <!-- Attribute slots will be generated here by JavaScript -->
                     </div>
                 </div>
-
-                <div class="settings-group"> 
-                    <div class="settings-group-title">Appearance</div>
-                    <!-- TTS Voice Selector will be added here by JS -->
-                </div>
-
+                
                 <div class="create-llm-actions">
                     <button class="create-llm-button secondary">Reset</button>
                     <button class="create-llm-button">Create LLM</button>
                 </div>
             </div>
-
+            
             <div class="create-llm-main">
                 <div class="humanoid-viewport">
                     <!-- Humanoid figure will be rendered here with Three.js -->
                 </div>
             </div>
         </div>
-
+        
         <div id="llm-collection-ui">
             <div class="collection-header">
                 <div class="collection-title">My LLMs</div>
                 <button class="collection-close">&times;</button>
             </div>
-
+            
             <div class="collection-container">
                 <div class="collection-viewport">
                     <!-- LLM models will be rendered here -->
                 </div>
-
+                
                 <div class="llm-list" id="llm-list">
                     <!-- LLM list items will be generated here -->
                 </div>
             </div>
-
+            
             <div class="collection-footer">
                 <!-- Button removed as we're now using the list item approach -->
             </div>
         </div>
-
+        
         <div id="llm-details-panel">
             <div class="details-header">
                 <div class="details-title">LLM Details</div>
                 <button class="details-close">&times;</button>
             </div>
-
+            
             <div class="details-content">
                 <h2 class="llm-detail-name">LLM Name</h2>
                 <p class="llm-detail-model">Model Type</p>
                 <p class="llm-detail-created">Created Date</p>
-
+                
                 <div class="llm-detail-attributes">
                     <!-- Attribute details will be populated here -->
                 </div>
@@ -347,22 +337,22 @@
                     <div class="logo-subtitle">Life Learning Models</div>
                 </div>
             </div>
-
+            
             <div class="loading-bar-container">
                 <div class="loading-bar"></div>
                 <div class="loading-percentage">0%</div>
             </div>
-
+            
             <div class="loading-tip-container">
                 <div class="loading-tip">
                     <span class="tip-label">TIP:</span>
                     <span class="tip-text">LLMs need regular prompting to stay happy.</span>
                 </div>
             </div>
-
+            
             <button id="skip-button">Skip Loading</button>
         </div>
-
+        
         <div class="llm-toggle-container">
             <span class="llm-toggle-label">LLM Tips:</span>
             <label class="llm-toggle">
@@ -378,7 +368,7 @@
                 <h1>The LLMs</h1>
                 <div class="subtitle">Life Learning Models</div>
             </div>
-
+            
             <div class="button-arc">
                 <button id="credits-button" class="circle-button arc-button-2">
                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
@@ -394,10 +384,10 @@
                 <button class="circle-button arc-button-3"></button>
                 <button class="circle-button arc-button-4"></button>
             </div>
-
+            
             <button id="start-button">Click Here to Start Experience</button>
         </div>
-
+        
         <div class="llm-toggle-container">
             <span class="llm-toggle-label">LLM Tips:</span>
             <label class="llm-toggle">
@@ -406,7 +396,7 @@
             </label>
         </div>
     </div>
-
+    
     <div id="confirmation-modal" class="confirmation-modal">
         <div class="confirmation-modal-content">
             <div class="confirmation-modal-title">Confirm Action</div>
@@ -432,22 +422,6 @@
         <a target="_blank" href="https://jam.pieter.com" style="font-family: 'system-ui', sans-serif; position: fixed; bottom: -1px; right: -1px; padding: 7px; font-size: 14px; font-weight: bold; background: #fff; color: #000; text-decoration: none; z-index: 10; border-top-left-radius: 12px; z-index: 10000; border: 1px solid #fff;"> Vibe Jam 2025</a>
     </div>
 
-    <div id="drone-transport-ui">
-        <!-- Content dynamically added by llmDroneTransport.js -->
-         <div class="drone-controls-info">
-            <!-- LLM Info, Keyboard Instructions added here -->
-        </div>
-        <div class="drone-touch-controls">
-             <div class="touch-control-movement">
-                <!-- Movement buttons (W,A,S,D) added here -->
-             </div>
-             <div class="touch-control-actions">
-                 <!-- Action buttons (Up, Down, Rotate) added here -->
-             </div>
-        </div>
-        <button class="drone-land-btn">Place LLM</button>
-    </div>
-
     <script type="module" src="config.js"></script>
     <script type="module" src="script.js"></script>
     <script type="module" src="cityScene.js"></script>
@@ -465,26 +439,6 @@
     <script type="module" src="musicPlayer.js"></script>
     <script type="module" src="confirmationModal.js"></script>
     <script type="module" src="llmDroneTransport.js"></script>
-    <script type="module" src="llmProfileImageDisplay.js"></script>
-    <script type="module" src="llmTtsVoiceSelector.js"></script>
-    <script type="module" src="modelBadgeSelector.js"></script>
-    <script type="module" src="llmSetupHelpers.js"></script>
-    <script type="module" src="llmCreationInterfaceCompact.js"></script>
-    <script type="module" src="llmModelStorage.js"></script>
-    <script type="module" src="llmCharacterRendererUtils.js"></script>
-    <script type="module" src="llmProfileImageUI.js"></script>
-    <script type="module" src="llmProfileImageGenerator.js"></script>
-    <script type="module" src="llmAttributeTooltips.js"></script>
-    <script type="module" src="attributeSystem.js"></script>
-    <script type="module" src="modelAttributeDefaults.js"></script>
-    <script type="module" src="llmDataManager.js"></script>
-    <script type="module" src="advancedLighting.js"></script>
-    <script type="module" src="infiniteTerrain.js"></script>
-    <script type="module" src="terrainUtils.js"></script>
-    <script type="module" src="cameraBoundaryController.js"></script>
-    <script type="module" src="citySceneUI.js"></script>
-    <script type="module" src="plotHoverInfo.js"></script>
-    <script type="module" src="llmCollectionCarousel.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

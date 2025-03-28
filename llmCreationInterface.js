@@ -16,6 +16,7 @@ import { initializeAllComponents } from './llmSetupHelpers.js';
 import { initHumanoidPreview, updateSelectedMeshColor, resetPreviewModel, displayGeneratedCharacter, createDefaultRobotModel, restoreDefaultRobotModel } from './llmModelCreationRenderer.js';
 import { optimizeUIHeight } from './llmAttributeTooltips.js'; // Keep this for resize handler
 import { showConfirmationModal } from './confirmationModal.js'; // Import the custom modal function
+import { hidePlotInfoPanel } from './plotHoverInfo.js'; // Import hide function
 
 // Removed global preview variables (humanoidScene, etc.) - managed within llmModelCreationRenderer.js now
 // Removed model variables (robotModel, customCharacter, materials) - managed within llmModelCreationRenderer.js
@@ -211,7 +212,8 @@ function resetForm() {
 function handleCreateLLMClose() {
     const createLLMUI = document.getElementById('create-llm-ui');
     createLLMUI.classList.remove('active');
-    
+    hidePlotInfoPanel(); // Hide plot info when closing this UI too
+
     // Determine where to go back to
     if (window.createLLMOpenedFrom === 'collection') {
         // Go back to collection view

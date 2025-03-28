@@ -1,48 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
-
 /* Drone transportation UI styles */
 .drone-transport-ui {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 20px;
+    left: 20px;
     z-index: 300;
     display: none;
-    padding: env(safe-area-inset-bottom, 10px) 10px 10px 10px;
-    width: 100%;
-    pointer-events: none;
 }
 
 .drone-transport-ui.active {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
+    display: block;
 }
 
 .drone-controls-info {
     background-color: rgba(0, 0, 0, 0.7);
     border: 2px solid #3cb371;
     border-radius: 10px;
-    padding: 10px;
+    padding: 15px;
     color: white;
-    width: auto;
-    min-width: 150px;
-    max-width: 250px;
+    width: 250px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    margin: 0 auto;
-    position: absolute;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    pointer-events: auto;
-    display: none;
 }
 
 .drone-controls-title {
-    font-size: 1.0rem;
+    font-size: 1.2rem;
     font-weight: bold;
     color: #3cb371;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     text-align: center;
 }
 
@@ -51,16 +34,16 @@
     background-color: rgba(60, 179, 113, 0.1);
     border: 1px solid rgba(60, 179, 113, 0.3);
     border-radius: 6px;
-    padding: 8px;
-    margin-bottom: 10px;
+    padding: 10px;
+    margin-bottom: 15px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .drone-llm-profile-image {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     overflow: hidden;
     background-color: #222;
@@ -78,8 +61,8 @@
 }
 
 .drone-llm-profile-image .placeholder-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     fill: #777;
 }
 
@@ -87,12 +70,19 @@
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    gap: 1px;
+    gap: 2px;
     overflow: hidden;
 }
 
+.llm-info-header {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-bottom: 4px;
+    display: none;
+}
+
 .llm-info-name {
-    font-size: 1.0rem;
+    font-size: 1.1rem;
     font-weight: bold;
     color: #fff;
     margin: 0;
@@ -104,23 +94,23 @@
 .llm-info-model-container {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 
 .drone-llm-model-icon {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 2px;
+    padding: 3px;
     flex-shrink: 0;
 }
 
 .drone-llm-model-icon svg {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     fill: currentColor;
 }
 
@@ -131,27 +121,28 @@
 .drone-llm-model-icon.companion { background-color: rgba(155, 89, 182, 0.2); color: #9b59b6; }
 .drone-llm-model-icon.humanoid { background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; }
 
+
 .llm-info-model {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     color: #ddd;
     text-transform: capitalize;
     margin: 0;
 }
 
 .drone-llm-color-dot {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     border: 1px solid #555;
-    margin-left: 4px;
+    margin-left: 5px;
     flex-shrink: 0;
 }
 
 /* End New LLM Info Section Styles */
 
+
 .drone-instructions {
     margin-bottom: 15px;
-    display: none;
 }
 
 .drone-instructions p {
@@ -164,158 +155,106 @@
     color: #3cb371;
 }
 
-/* Mobile Touch Controls - positioned absolutely */
 .drone-touch-controls {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
-    height: 160px;
     display: none;
-    pointer-events: auto;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
 }
 
-.touch-control-movement {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 160px;
-    height: 160px;
-    display: grid;
-    grid-template-columns: repeat(3, 50px);
-    grid-template-rows: repeat(3, 50px);
-    gap: 5px;
+.touch-control-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
     justify-content: center;
-    align-content: center;
-}
-
-.touch-control-actions {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 160px;
-    height: 160px;
-    display: grid;
-    grid-template-columns: repeat(2, 50px);
-    grid-template-rows: repeat(2, 50px);
-    gap: 5px;
-    justify-content: center;
-    align-content: center;
 }
 
 .touch-spacer {
+    width: 60px;
+    height: 60px;
 }
 
 .drone-touch-btn {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     background-color: rgba(60, 179, 113, 0.4);
-    border: 1px solid rgba(60, 179, 113, 0.7);
-    border-radius: 50%;
+    border: 1px solid #3cb371;
+    border-radius: 15px;
     color: white;
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     user-select: none;
     transition: background-color 0.1s linear;
-    font-family: 'Material Symbols Outlined';
-    font-weight: 400;
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 .drone-touch-btn:active {
     background-color: rgba(60, 179, 113, 0.8);
 }
 
-/* Grid positioning for movement buttons */
-.drone-touch-btn[data-control="forward"] { grid-column: 2; grid-row: 1; content: 'arrow_upward'; }
-.drone-touch-btn[data-control="backward"] { grid-column: 2; grid-row: 3; content: 'arrow_downward'; }
-.drone-touch-btn[data-control="left"] { grid-column: 1; grid-row: 2; content: 'arrow_back'; }
-.drone-touch-btn[data-control="right"] { grid-column: 3; grid-row: 2; content: 'arrow_forward'; }
+.drone-touch-btn[data-control="up"],
+.drone-touch-btn[data-control="down"] {
+}
 
-/* Grid positioning for action buttons */
-.drone-touch-btn[data-control="up"] { grid-column: 1; grid-row: 1; content: 'keyboard_arrow_up'; }
-.drone-touch-btn[data-control="down"] { grid-column: 1; grid-row: 2; content: 'keyboard_arrow_down'; }
-.drone-touch-btn[data-control="rotateLeft"] { grid-column: 2; grid-row: 1; content: 'rotate_left'; }
-.drone-touch-btn[data-control="rotateRight"] { grid-column: 2; grid-row: 2; content: 'rotate_right'; }
-
-/* Add content using ::before pseudo-element based on data-control */
-.drone-touch-btn[data-control="forward"]::before { content: 'arrow_upward'; }
-.drone-touch-btn[data-control="backward"]::before { content: 'arrow_downward'; }
-.drone-touch-btn[data-control="left"]::before { content: 'arrow_back'; }
-.drone-touch-btn[data-control="right"]::before { content: 'arrow_forward'; }
-.drone-touch-btn[data-control="up"]::before { content: 'keyboard_arrow_up'; }
-.drone-touch-btn[data-control="down"]::before { content: 'keyboard_arrow_down'; }
-.drone-touch-btn[data-control="rotateLeft"]::before { content: 'rotate_left'; }
-.drone-touch-btn[data-control="rotateRight"]::before { content: 'rotate_right'; }
+.drone-touch-btn[data-control="rotate-left"],
+.drone-touch-btn[data-control="rotate-right"] {
+    font-size: 1.5rem;
+}
 
 .drone-land-btn {
     display: block;
-    width: auto;
-    padding: 10px 20px;
+    width: 100%;
+    padding: 12px;
     background-color: #3cb371;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
-    font-size: 1.0rem;
+    font-size: 1.1rem;
     transition: background-color 0.2s, transform 0.1s;
-    position: absolute;
-    bottom: 180px;
-    left: 50%;
-    transform: translateX(-50%);
-    pointer-events: auto;
-    white-space: nowrap;
 }
 
 .drone-land-btn:hover {
     background-color: #2a8c5a;
-    transform: translateX(-50%) translateY(-1px);
+    transform: translateY(-1px);
 }
 
 .drone-land-btn:active {
-    transform: translateX(-50%) translateY(0px);
+    transform: translateY(0px);
 }
 
-/* --- Mobile adjustments --- */
+/* Mobile adjustments */
 @media screen and (max-width: 768px) {
+    .drone-instructions {
+        display: none;
+    }
+
     .drone-touch-controls {
-        display: block;
+        display: flex;
     }
 
     .drone-controls-info {
-        display: block;
-        padding: 8px;
-        bottom: 180px;
-        max-width: 80vw;
+        width: 90vw;
+        max-width: 320px;
     }
-    .drone-controls-title { display: none; }
-    .drone-llm-info { margin-bottom: 0; }
+
+    .drone-transport-ui {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 15px;
+    }
 }
 
 /* Optional: Styles for larger screens if needed */
 @media screen and (min-width: 769px) {
-    .drone-instructions {
-        display: block;
-    }
     .drone-touch-controls {
         display: none;
     }
-    .drone-controls-info {
-        position: fixed;
-        left: 20px;
-        bottom: 20px;
-        transform: none;
-        width: 250px;
+    .drone-instructions {
         display: block;
-    }
-    .drone-land-btn {
-        width: 100%;
-        position: static;
-        transform: none;
-        margin-top: 10px;
     }
 }
