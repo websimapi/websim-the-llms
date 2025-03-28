@@ -1017,6 +1017,7 @@ function placeLLMOnPlot(plotData, placementPoint) {
     if (!currentLLMTransporting || !mainCityScene) return;
 
     // --- CRITICAL CHECK ---
+    // Add a check for cityData and cityData.lots here as well, just in case.
     if (!cityData || !Array.isArray(cityData.lots)) {
         console.error("Critical Error: cityData or cityData.lots is not available in placeLLMOnPlot!");
         deactivateDroneTransport(true); // Cancel transport on critical error
@@ -1026,38 +1027,21 @@ function placeLLMOnPlot(plotData, placementPoint) {
 
     const placedLLMModel = renderLLMCharacter(THREE, currentLLMTransporting);
 
-    // --- REVISED PLACEMENT LOGIC ---
+    // Position exactly at the raycast intersection point
+    placedLLMModel.position.copy(placementPoint);
+    // Ensure it's slightly above ground to prevent z-fighting
     try {
-        // 1. Initial placement at the intersection point
-        placedLLMModel.position.copy(placementPoint);
-
-        // 2. Force update world matrix
-        placedLLMModel.updateMatrixWorld(true);
-
-        // 3. Calculate world bounding box (use precise=true)
-        // Make sure the Box3 is initialized before setting from object
-        const box = new THREE.Box3(); 
-        box.setFromObject(placedLLMModel, true); // Use precise calculation
-
-        // 4. Get world lowest Y
-        const worldLowestY = box.min.y;
-
-        // 5. Calculate lift offset needed
-        const liftOffset = placementPoint.y - worldLowestY;
-
-        // 6. Apply final Y position (add offset to current Y)
-        placedLLMModel.position.y += liftOffset + 0.01; // Add epsilon to prevent z-fighting
-
-        console.log(`Placed model at Y: ${placedLLMModel.position.y}. Ground Y: ${placementPoint.y}, World Lowest Y: ${worldLowestY}, Lift Offset: ${liftOffset}`);
-
+        placedLLMModel.updateMatrixWorld(true); // Ensure world matrix is up-to-date
+        const box = new THREE.Box3().setFromObject(placedLLMModel);
+        const lowestPointY = box.min.y;
+        const modelOriginY = placedLLMModel.position.y; // Position is currently at placementPoint
+        const offsetToGround = modelOriginY - lowestPointY; // Distance from origin to bottom
+        placedLLMModel.position.y = placementPoint.y + offsetToGround + 0.01; // Lift model so bottom is slightly above ground
+        console.log(`Placed model at Y: ${placedLLMModel.position.y}. Lowest point was: ${lowestPointY}, OriginY: ${modelOriginY}, Offset: ${offsetToGround}, GroundY: ${placementPoint.y}`);
     } catch (error) {
-        console.error("Error calculating precise placement:", error);
-        // Fallback positioning if calculation fails
-        placedLLMModel.position.copy(placementPoint);
-        placedLLMModel.position.y += 0.01; // Simple offset above ground
+        console.error("Error calculating bounding box for placement:", error);
+        placedLLMModel.position.y = placementPoint.y + 0.01; // Fallback positioning
     }
-    // --- END REVISED PLACEMENT LOGIC ---
-
 
     // Optionally, orient the model - e.g., face towards plot center or away from drone position
     const directionToCenter = new THREE.Vector3(plotData.x - placedLLMModel.position.x, 0, plotData.z - placedLLMModel.position.z).normalize();
