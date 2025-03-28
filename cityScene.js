@@ -152,6 +152,9 @@ function initCityScene() {
     // Initialize plot hover info after the scene is ready
     initPlotHoverInfo(camera, scene, renderer);
 
+    // Add touch support for mobile devices
+    renderer.domElement.addEventListener('touchstart', handleTouchStart);
+
     // Handle window resize
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -163,34 +166,38 @@ function initCityScene() {
     function animate() {
         requestAnimationFrame(animate);
 
-        // Check global drone state directly
-        const isDroneActive = window.droneActive === true;
+        // Only update controls and boundaries if drone is NOT active
+        const isDroneActive = window.droneActive === true; // Check global drone state if available
+
 
         // Handle intro camera animation
         if (!introComplete) {
             const elapsed = Date.now() - introStartTime;
             const progress = Math.min(elapsed / introDuration, 1);
-            const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
 
             if (progress < 1) {
                 // Interpolate camera position for smooth pan
-                const startPos = new THREE.Vector3(50, 30, 50);
-                const endPos = new THREE.Vector3(15, 25, 30);
-                camera.position.lerpVectors(startPos, endPos, easeProgress);
+                const targetX = 15;
+                const targetY = 25;
+                const targetZ = 30;
+
+                camera.position.x = 50 * (1 - progress) + targetX * progress;
+                camera.position.y = 30 * (1 - progress) + targetY * progress;
+                camera.position.z = 50 * (1 - progress) + targetZ * progress;
                 camera.lookAt(0, 0, 0);
+
             } else {
                 introComplete = true;
-                if (!isDroneActive) controls.enabled = true; // Enable controls only if intro done AND drone inactive
+                 if (!isDroneActive) controls.enabled = true; // Enable controls only if drone isn't active
             }
-        } else if (!isDroneActive) { // Only update OrbitControls/boundaries if intro done AND drone inactive
-            if (controls.enabled) { // Check if controls are enabled before updating
-                controls.update();
-                // Apply camera boundary restrictions
-                boundaryController.update();
-            }
-        } else { // If drone is active, ensure OrbitControls are disabled
-            controls.enabled = false;
+        } else if (!isDroneActive) { // Only update controls/boundaries if intro done AND drone inactive
+             if (controls.enabled) { // Check if controls are enabled before updating
+                 controls.update();
+                 // Apply camera boundary restrictions
+                 boundaryController.update();
+             }
         }
+
 
         // Call animation functions for other components (like lighting)
         if (window.cityAnimateLightsFn) {
@@ -202,6 +209,25 @@ function initCityScene() {
     }
 
     animate(); // Start the main animation loop
+}
+
+function handleTouchStart(event) {
+    event.preventDefault();
+
+    if (event.touches.length === 1) {
+        const touch = event.touches[0];
+
+        // Forward the touch as a mock mouse event to the plot hover system
+        const mockEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        };
+
+        // Trigger the same events as mouse hover
+        if (window.plotHoverHandlers && window.plotHoverHandlers.onTouchStart) {
+            window.plotHoverHandlers.onTouchStart(mockEvent);
+        }
+    }
 }
 
 function createBuildingLots(scene) {
