@@ -90,10 +90,13 @@ function initCityScene() {
     renderer = new THREE.WebGLRenderer({ // Assign to global variable
         antialias: true,
         powerPreference: "high-performance",
+        // Logarithmic depth buffer might cause issues with fog/transparency, disable if needed
+        // logarithmicDepthBuffer: true
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimized pixel ratio
-    // Shadow map configuration moved to setupSceneLighting
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadow mapping
     renderer.outputColorSpace = THREE.SRGBColorSpace; // Correct property name for r152+
     renderer.toneMapping = THREE.ACESFilmicToneMapping; // Improved tone mapping
     renderer.toneMappingExposure = 1.2; // Adjust exposure for better lighting
@@ -108,10 +111,6 @@ function initCityScene() {
 
     // Create infinite terrain instead of just a ground plane
     const terrain = createInfiniteTerrain(scene, config.citySize || 500); // Use config size
-    // Ensure terrain elements receive shadows
-    if (terrain.primaryGround) terrain.primaryGround.receiveShadow = true;
-    if (terrain.distantTerrain) terrain.distantTerrain.receiveShadow = true;
-    if (terrain.horizonTerrain) terrain.horizonTerrain.receiveShadow = true; // Might not be necessary but won't hurt
 
     // Add distance mist for better horizon
     const mistLayers = createDistanceMist(scene, (config.citySize || 500) * 5, 60); // Adjust mist distance based on terrain
@@ -122,8 +121,6 @@ function initCityScene() {
     // Add grid for reference - 1m x 1m grid squares
     const gridHelper = new THREE.GridHelper(config.citySize || 500, (config.citySize || 500) / 10, 0x000000, 0x555555); // Adjust grid size
     gridHelper.position.y = 0.01; // Place slightly above ground
-    // Grid doesn't typically receive or cast shadows, but could if needed:
-    // gridHelper.receiveShadow = true;
     scene.add(gridHelper);
 
     // Hide grid by default
@@ -132,7 +129,7 @@ function initCityScene() {
     // Store grid reference globally for console access
     window.cityGrid = gridHelper;
 
-    // Create building lots from cityData - Ensure plot outlines cast/receive shadows
+    // Create building lots from cityData
     createBuildingLots(scene);
 
     // Update orbit controls settings
@@ -145,7 +142,6 @@ function initCityScene() {
     controls.enabled = false; // Disable controls during intro animation
 
     // Setup advanced lighting - use new function from dedicated file
-    // Renderer passed to configure shadows inside setupSceneLighting
     setupSceneLighting(scene, renderer);
 
     // Call imported setup functions
@@ -198,10 +194,10 @@ function initCityScene() {
                 boundaryController.update();
             }
         } else { // If drone is active, ensure OrbitControls are disabled
-            // Camera is controlled by drone logic, but ensure OrbitControls internal state doesn't interfere
-            controls.enabled = false;
-            // Explicitly call update() maybe needed if drone logic relies on OrbitControls state? Test first.
-            // controls.update(); // Might not be needed if drone directly manipulates camera/target
+             // Camera is controlled by drone logic, but ensure OrbitControls internal state doesn't interfere
+             controls.enabled = false;
+             // Explicitly call update() maybe needed if drone logic relies on OrbitControls state? Test first.
+             // controls.update(); // Might not be needed if drone directly manipulates camera/target
         }
 
         // Call animation functions for other components (like lighting)
@@ -273,6 +269,7 @@ function handleCityClick(event) {
         }
     }
 
+
     // If a plot was clicked and it's available
     if (clickedPlotData && clickedPlotData.available) {
         console.log(`Plot clicked: ${clickedPlotData.name} (ID: ${clickedPlotData.id})`);
@@ -297,15 +294,8 @@ function createBuildingLots(scene) {
 
     lots.forEach(lot => {
         // Create plot outline with construction elements
-        const plotOutline = createPlotOutline(lot, scene); // This adds to scene internally
+        const plotOutline = createPlotOutline(lot, scene);
         plotOutline.userData = { type: 'lot', id: lot.id }; // Ensure userData is set here
-        // Ensure the outline and its children cast/receive shadows
-        plotOutline.traverse(child => {
-            if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-            }
-        });
 
         // Create an invisible plane for click detection covering the plot area
         const clickTargetGeometry = new THREE.PlaneGeometry(lot.width, lot.height);
@@ -341,14 +331,14 @@ function addCityNameText(scene) {
     const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
     leftPillar.position.set(-8, 5, -30);
     leftPillar.castShadow = true;
-    leftPillar.receiveShadow = true; // Pillars should receive shadows
+    leftPillar.receiveShadow = true;
     scene.add(leftPillar);
 
     // Right pillar
     const rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
     rightPillar.position.set(8, 5, -30);
     rightPillar.castShadow = true;
-    rightPillar.receiveShadow = true; // Pillars should receive shadows
+    rightPillar.receiveShadow = true;
     scene.add(rightPillar);
 
     // Create text canvas for front and back
@@ -425,10 +415,9 @@ function addCityNameText(scene) {
 
     // Create box with different materials per face
     const geometry = new THREE.BoxGeometry(20, 5, 0.5);
-    const sign = new THREE.Mesh(geometry, materials); // materials defined in existing code
+    const sign = new THREE.Mesh(geometry, materials);
     sign.position.set(0, 8.5, -30);
     sign.castShadow = true;
-    sign.receiveShadow = true; // Sign should receive shadows
     scene.add(sign);
 }
 
