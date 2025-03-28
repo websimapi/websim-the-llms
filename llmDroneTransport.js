@@ -123,14 +123,14 @@ function createDroneUI(llm) {
                     </div>
                 </div>
             </div>
-            <div class="drone-instructions">
+            <div class="drone-instructions" data-desktop-only>
                 <p>Use <strong>WASD</strong> to move horizontally</p>
                 <p>Use <strong>E/Q</strong> to go up/down</p>
                 <p>Use <strong>←/→</strong> keys to rotate</p>
                 <p>Press <strong>P</strong> to place LLM</p>
                 <p>Press <strong>Esc</strong> to cancel</p>
             </div>
-            <div class="drone-touch-controls">
+            <div class="drone-touch-controls" data-mobile-only>
                 <div class="touch-control-row">
                     <button class="drone-touch-btn" data-control="up">▲</button> <!-- E -->
                      <button class="drone-touch-btn" data-control="forward">↑</button> <!-- W -->
@@ -144,6 +144,23 @@ function createDroneUI(llm) {
                 <div class="touch-control-row">
                      <button class="drone-touch-btn" data-control="rotateLeft">↺</button>
                      <button class="drone-touch-btn" data-control="rotateRight">↻</button>
+                </div>
+            </div>
+            <div class="mobile-drone-controls" data-mobile-only>
+                <div class="drone-left-controls">
+                    <div class="d-pad">
+                        <button class="d-pad-btn d-pad-up" data-control="forward">↑</button>
+                        <button class="d-pad-btn d-pad-left" data-control="left">←</button>
+                        <button class="d-pad-btn d-pad-right" data-control="right">→</button>
+                        <button class="d-pad-btn d-pad-down" data-control="backward">↓</button>
+                        <div class="d-pad-center"></div>
+                    </div>
+                </div>
+                <div class="drone-right-controls">
+                    <button class="action-btn" data-control="up">▲</button>
+                    <button class="action-btn" data-control="down">▼</button>
+                    <button class="action-btn" data-control="rotateLeft">↺</button>
+                    <button class="action-btn" data-control="rotateRight">↻</button>
                 </div>
             </div>
             <button class="drone-land-btn">Place LLM</button>
@@ -346,7 +363,19 @@ function handleKeyUp(event) {
 }
 
 function setupTouchButtonListeners() {
+    // Remove listeners from old structure if they exist
     droneContainer.querySelectorAll('.drone-touch-btn').forEach(btn => {
+        const control = btn.getAttribute('data-control');
+        // Assuming handleTouchStart and handleTouchEnd store listeners, implement removal logic if needed
+        // For simple addEventListener, just ensure new listeners replace old ones if IDs conflict
+    });
+
+    // Add listeners to new D-pad and action buttons
+    droneContainer.querySelectorAll('.drone-touch-btn').forEach(btn => {
+        const control = btn.getAttribute('data-control');
+        // ... (event listeners for old buttons - might be removed later if structure changes completely)
+    });
+    droneContainer.querySelectorAll('.d-pad-btn, .action-btn').forEach(btn => {
         const control = btn.getAttribute('data-control');
         btn.addEventListener('touchstart', (e) => handleTouchStart(e, control), { passive: false }); // Need passive: false for preventDefault
         btn.addEventListener('touchend', (e) => handleTouchEnd(e, control));
@@ -363,7 +392,11 @@ function handleTouchStart(event, control) {
     droneControls[control] = true;
     touchActiveControls[control] = true; // Mark as active by touch
     // Visual feedback
-    event.target.style.backgroundColor = 'rgba(60, 179, 113, 0.8)';
+    const targetButton = event.target.closest('button'); // Ensure we target the button element
+    if (targetButton) {
+        targetButton.classList.add('active-touch');
+        // targetButton.style.backgroundColor = 'rgba(60, 179, 113, 0.8)'; // Use class instead
+    }
 }
 
 function handleTouchEnd(event, control) {
@@ -375,9 +408,10 @@ function handleTouchEnd(event, control) {
         delete touchActiveControls[control];
     }
     // Reset visual feedback - Need to find the button again if event.target isn't reliable
-    const btn = droneContainer.querySelector(`.drone-touch-btn[data-control="${control}"]`);
+    const btn = droneContainer.querySelector(`button[data-control="${control}"]`);
     if (btn) {
-        btn.style.backgroundColor = 'rgba(60, 179, 113, 0.4)';
+        btn.classList.remove('active-touch');
+        // btn.style.backgroundColor = 'rgba(60, 179, 113, 0.4)'; // Use class instead
     }
 }
 
