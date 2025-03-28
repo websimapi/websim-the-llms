@@ -153,9 +153,10 @@ function setupDynamicShadows(scene, sunLight, targetObject) {
         shadowFollowSpeed: 0.1, // Smoothing factor for shadow movement
         shadowResolution: 2048, // Default shadow resolution
         lastCameraPosition: new THREE.Vector3(), // Track camera movement
-        movementThreshold: 5, // Units of movement before shadow gets updated
-        updateInterval: 100, // Milliseconds between forced updates
-        lastUpdateTime: 0
+        movementThreshold: 10, // Increased from 5 to 10 units of movement before shadow gets updated
+        updateInterval: 500, // Increased from 100 to 500 milliseconds between forced updates
+        lastUpdateTime: 0,
+        transitionInProgress: false
     };
     
     // Store the shadow helper on the scene for the animation loop to access
@@ -173,40 +174,71 @@ function setupDynamicShadows(scene, sunLight, targetObject) {
         const cameraMovement = camera.position.distanceTo(helper.lastCameraPosition);
         const timeSinceUpdate = now - helper.lastUpdateTime;
         
-        if (cameraMovement > helper.movementThreshold || timeSinceUpdate > helper.updateInterval) {
-            // Update shadow camera to focus on area around camera view
+        // Only update if movement threshold exceeded or time interval passed, and no transition in progress
+        if ((cameraMovement > helper.movementThreshold || timeSinceUpdate > helper.updateInterval) 
+            && !helper.transitionInProgress) {
+            
+            helper.transitionInProgress = true;
+            
             // Calculate target point - average of camera position and look target
             const cameraTarget = new THREE.Vector3();
             camera.getWorldDirection(cameraTarget);
             cameraTarget.multiplyScalar(30).add(camera.position); // Look 30 units ahead
             
-            // Move the shadow camera target smoothly
-            helper.targetObject.position.lerp(cameraTarget, helper.shadowFollowSpeed);
+            // Store initial values for smooth transition
+            const initialTarget = helper.targetObject.position.clone();
+            const initialSunPosition = helper.sunLight.position.clone();
             
-            // Adjust shadow camera frustum based on camera height and distance
+            // Calculate final shadow camera values
+            const finalShadowTarget = new THREE.Vector3().copy(cameraTarget);
             const height = Math.max(20, camera.position.y * 1.5);
             const shadowSize = Math.max(40, height * 1.5);
             
-            // Update shadow camera size
-            helper.sunLight.shadow.camera.left = -shadowSize;
-            helper.sunLight.shadow.camera.right = shadowSize;
-            helper.sunLight.shadow.camera.top = shadowSize;
-            helper.sunLight.shadow.camera.bottom = -shadowSize;
-            
             // Position the sun light relative to the camera but maintain height and angle
-            const sunPosition = new THREE.Vector3(
+            const finalSunPosition = new THREE.Vector3(
                 camera.position.x + 50, 
                 100, // Keep consistent height
                 camera.position.z + 50
             );
-            helper.sunLight.position.lerp(sunPosition, helper.shadowFollowSpeed);
             
-            // Update shadow camera
+            // Update shadow camera size immediately to prevent size flashing
+            helper.sunLight.shadow.camera.left = -shadowSize;
+            helper.sunLight.shadow.camera.right = shadowSize;
+            helper.sunLight.shadow.camera.top = shadowSize;
+            helper.sunLight.shadow.camera.bottom = -shadowSize;
             helper.sunLight.shadow.camera.updateProjectionMatrix();
             
-            // Store last values
-            helper.lastCameraPosition.copy(camera.position);
-            helper.lastUpdateTime = now;
+            // Perform smooth transition for position
+            const transitionDuration = 300; // 300ms transition
+            const startTime = now;
+            
+            function performTransition() {
+                const elapsedTime = performance.now() - startTime;
+                const progress = Math.min(elapsedTime / transitionDuration, 1);
+                
+                // Use cubic ease out for smooth transition
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+                
+                // Smoothly interpolate positions
+                helper.targetObject.position.lerpVectors(initialTarget, finalShadowTarget, easedProgress);
+                helper.sunLight.position.lerpVectors(initialSunPosition, finalSunPosition, easedProgress);
+                
+                // Update shadow camera
+                helper.sunLight.shadow.camera.updateProjectionMatrix();
+                
+                if (progress < 1) {
+                    // Continue transition
+                    requestAnimationFrame(performTransition);
+                } else {
+                    // Transition complete
+                    helper.lastCameraPosition.copy(camera.position);
+                    helper.lastUpdateTime = performance.now();
+                    helper.transitionInProgress = false;
+                }
+            }
+            
+            // Start transition
+            performTransition();
         }
     };
 }
