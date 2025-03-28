@@ -9,6 +9,8 @@ import { CameraBoundaryController } from './cameraBoundaryController.js';
 import { createDistanceMist } from './terrainUtils.js';
 import { setupUIInteractions, setupConsolePanel } from './citySceneUI.js';
 import { initPlotHoverInfo } from './plotHoverInfo.js';
+// Import the drone auto-navigation function
+import { startAutoNavigation } from './llmDroneTransport.js';
 
 // Expose main scene components globally or via getters for drone transport
 let scene, camera, controls, renderer;
@@ -100,6 +102,9 @@ function initCityScene() {
     renderer.toneMappingExposure = 1.2; // Adjust exposure for better lighting
     cityViewElement.appendChild(renderer.domElement);
 
+    // Add click listener for drone auto-navigation
+    renderer.domElement.addEventListener('click', handleCityClick);
+
     // Add orbit controls
     controls = new OrbitControls(camera, renderer.domElement); // Assign to global variable
     window.controls = controls; // Update global reference
@@ -189,7 +194,10 @@ function initCityScene() {
                 boundaryController.update();
             }
         } else { // If drone is active, ensure OrbitControls are disabled
-            controls.enabled = false;
+             // Camera is controlled by drone logic, but ensure OrbitControls internal state doesn't interfere
+             controls.enabled = false;
+             // Explicitly call update() maybe needed if drone logic relies on OrbitControls state? Test first.
+             // controls.update(); // Might not be needed if drone directly manipulates camera/target
         }
 
         // Call animation functions for other components (like lighting)
@@ -204,13 +212,77 @@ function initCityScene() {
     animate(); // Start the main animation loop
 }
 
+function handleCityClick(event) {
+    // Only handle clicks if drone is active
+    if (!window.droneActive) return;
+
+    // Ignore clicks if auto-navigation is already active
+    if (window.isAutoNavigating) return;
+
+    // Get mouse coordinates relative to the canvas
+    const rect = renderer.domElement.getBoundingClientRect();
+    const mouse = new THREE.Vector2();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    // Raycast from the main camera
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+
+    // Find all plot objects in the scene
+    const plotObjects = [];
+    scene.traverse(obj => {
+        if (obj.userData && obj.userData.type === 'lot' && obj.name === 'plot_outline') {
+            plotObjects.push(obj);
+        }
+    });
+
+    let intersects = raycaster.intersectObjects(plotObjects, true); // recursive check
+
+    let clickedPlotData = null;
+    let clickedPoint = null;
+
+    if (intersects.length > 0) {
+        // Find the actual plot parent object (plot_outline)
+        let plotGroup = intersects[0].object;
+        while (plotGroup && (!plotGroup.userData || plotGroup.userData.type !== 'lot')) {
+            plotGroup = plotGroup.parent;
+            if (!plotGroup) break;
+        }
+
+        if (plotGroup && plotGroup.userData && plotGroup.userData.id) {
+             // Find corresponding plot data in cityData
+            clickedPlotData = cityData.lots.find(lot => lot.id === plotGroup.userData.id);
+            clickedPoint = intersects[0].point; // Store the intersection point
+        }
+    }
+
+    // If a plot was clicked and it's available
+    if (clickedPlotData && clickedPlotData.available) {
+        console.log(`Plot clicked: ${clickedPlotData.name} (ID: ${clickedPlotData.id})`);
+
+        // Calculate target position (center of the plot, slightly above ground)
+        const targetX = clickedPlotData.x;
+        const targetZ = clickedPlotData.z;
+        const targetY = 5; // Target altitude above the plot
+
+        const targetPosition = new THREE.Vector3(targetX, targetY, targetZ);
+
+        // Call the drone's auto-navigation function
+        startAutoNavigation(targetPosition, clickedPlotData.id);
+    } else if (clickedPlotData && !clickedPlotData.available) {
+        console.log(`Plot ${clickedPlotData.name} is occupied.`);
+        // Optionally provide user feedback (e.g., temporary message)
+    }
+}
+
 function createBuildingLots(scene) {
     const lots = cityData.lots;
 
     lots.forEach(lot => {
         // Create plot outline with construction elements instead of box geometry
         const plotOutline = createPlotOutline(lot, scene);
-        plotOutline.userData = { type: 'lot', id: lot.id };
+        plotOutline.userData = { type: 'lot', id: lot.id }; // Ensure userData is set here
 
         // No need to add to scene as createPlotOutline already does this
     });

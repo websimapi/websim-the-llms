@@ -7,7 +7,6 @@ import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
 import { setupMusicPlayer, playTrack, fadeInMusic } from './musicPlayer.js'; 
 import { marked } from 'marked'; 
-import { setupAudioInteractionListener, playClickSound } from './uiSounds.js'; // Import sound functions
 
 let bgAudio;
 let musicVolume;
@@ -23,9 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup music player UI
     setupMusicPlayer();
-
-    // Setup listener to initialize audio context on first user interaction
-    setupAudioInteractionListener();
 
     const startOverlay = document.getElementById('start-overlay');
     const startButton = document.getElementById('start-button');
@@ -394,37 +390,4 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', handleViewportResize);
 
     setupConsolePanel();
-
-    // Add global click listener for button sounds
-    document.addEventListener('click', (event) => {
-        // Check if the clicked element or its parent is a button or acts like one
-        const target = event.target;
-        const buttonClasses = [
-            'menu-button', 'console-button', 'control-button', 'attribute-button',
-            'create-llm-button', 'collection-close', 'details-close', 'credits-close',
-            'llm-edit-btn', 'llm-delete-btn', 'collection-button', 'transport-button',
-            'preview-button', 'camera-button', 'carousel-arrow', 'drone-touch-btn',
-            'drone-land-btn', 'confirmation-modal-button', 'music-toggle-button',
-            'music-option', 'show-all-languages', 'skip-button', 'main-button',
-            'circle-button', 'llm-list-image-placeholder' // Add placeholder click
-        ];
-        const isButton = target.tagName === 'BUTTON' ||
-                         buttonClasses.some(cls => target.classList.contains(cls)) ||
-                         (target.closest('button') && target.closest('button').tagName === 'BUTTON') || // Check parents
-                         buttonClasses.some(cls => target.closest(`.${cls}`)); // Check parents for classes
-
-        if (isButton) {
-            // Avoid playing sound for clicks that open file inputs or color pickers
-             if (target.closest('.custom-track') || target.closest('.color-picker-container') || target.type === 'file' || target.type === 'color') {
-                 return;
-             }
-
-             // Avoid playing sound for the initial start button clicks
-             if (target.id === 'start-button' || target.id === 'play-button') {
-                if (startOverlay.style.display !== 'none') return;
-             }
-
-            playClickSound();
-        }
-    });
 });

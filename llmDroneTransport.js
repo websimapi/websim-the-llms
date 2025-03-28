@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { renderLLMCharacter } from './llmCharacterRenderer.js';
 import { llmDataManager } from './llmDataManager.js';
-import { getModelTypeIcon } from './llmCollectionView.js'; 
-import { config } from './config.js'; 
+import { getModelTypeIcon } from './llmCollectionView.js';
+import { config } from './config.js';
 import { playTrack } from './musicPlayer.js'; // Import music player function
+import { cityData } from './cityData.js'; // Import cityData for plot info
 
 let droneActive = false;
 let droneModel, llmModel;
@@ -12,11 +13,22 @@ let droneRotation = new THREE.Euler(0, 0, 0);
 let droneVelocity = new THREE.Vector3();
 let droneAngularVelocity = new THREE.Euler();
 let droneAnimationId = null;
-let cameraTransitionId = null; 
+let cameraTransitionId = null;
 let droneContainer;
 let currentLLMTransporting = null;
 let mainCityScene, mainCityCamera, mainCityControls;
-let originalCameraPosition, originalCameraTarget; 
+let originalCameraPosition, originalCameraTarget;
+
+// Auto-navigation state
+let isAutoNavigating = false;
+let autoNavTargetPosition = new THREE.Vector3();
+let autoNavTargetPlotId = null;
+let autoNavReachedTarget = false; // Flag to check if target reached
+const AUTO_NAV_SPEED = 0.15; // Slightly slower than max manual speed
+const AUTO_NAV_ROTATION_SPEED = 0.03;
+const AUTO_NAV_ARRIVAL_THRESHOLD = 1.0; // Distance threshold to consider arrived
+const AUTO_NAV_STOP_THRESHOLD = 0.5; // Distance threshold to fully stop
+const AUTO_NAV_HOVER_ALTITUDE = 5.0; // Altitude to hover above plot center
 
 let joystickActive = false;
 let joystickThumb, joystickContainerElement;
@@ -25,7 +37,7 @@ let joystickRadius = 0;
 
 const MAX_SPEED = 0.25;
 const ACCELERATION = 0.02;
-const DECELERATION = 0.95; 
+const DECELERATION = 0.95;
 const ROTATION_SPEED = 0.01;
 const MAX_ROTATION_SPEED = 0.05;
 const ROTATION_DAMPING = 0.90;
@@ -34,10 +46,10 @@ const MIN_ALTITUDE = 1.0;
 const CAMERA_FOLLOW_DISTANCE = 8;
 const CAMERA_FOLLOW_HEIGHT = 4;
 const CAMERA_LERP_FACTOR = 0.05;
-const DRONE_BASE_COLOR = 0xffffff; 
-const DRONE_ACCENT_COLOR = 0xcccccc; 
-const DRONE_DARK_ACCENT_COLOR = 0x888888; 
-const JOYSTICK_MAX_DISPLACEMENT = 35; 
+const DRONE_BASE_COLOR = 0xffffff;
+const DRONE_ACCENT_COLOR = 0xcccccc;
+const DRONE_DARK_ACCENT_COLOR = 0x888888;
+const JOYSTICK_MAX_DISPLACEMENT = 35;
 
 let droneControls = {
     forward: false,
@@ -49,7 +61,10 @@ let droneControls = {
     rotateLeft: false,
     rotateRight: false,
 };
-let touchActiveControls = {}; 
+let touchActiveControls = {};
+
+// Expose auto-navigating state globally
+window.isAutoNavigating = isAutoNavigating;
 
 export function activateDroneTransport(llmId) {
     if (droneActive) return;
@@ -89,21 +104,133 @@ export function activateDroneTransport(llmId) {
     console.log("Stored original camera state:", originalCameraPosition, originalCameraTarget);
 
     const mapSize = config.citySize || 500;
-    dronePosition.set(0, 50, mapSize / 2 + 50); 
-    droneRotation.set(0, Math.PI, 0); 
+    dronePosition.set(0, 50, mapSize / 2 + 50);
+    droneRotation.set(0, Math.PI, 0);
     droneVelocity.set(0, 0, 0);
     droneAngularVelocity.set(0, 0, 0);
     resetControlState();
 
     initDroneScene(llm);
-    positionCameraForDroneView(true); 
+    positionCameraForDroneView(true);
 
-    setupInputListeners(); 
+    setupInputListeners();
 
     droneActive = true;
-    window.droneActive = true; 
+    window.droneActive = true;
+    isAutoNavigating = false; // Ensure auto-nav is off initially
+    window.isAutoNavigating = false;
+    autoNavReachedTarget = false;
 
-    animateDrone(); 
+    animateDrone();
+}
+
+// Function to start auto-navigation
+export function startAutoNavigation(targetPosition, targetPlotId) {
+    if (!droneActive || isAutoNavigating) return;
+
+    console.log("Starting auto-navigation to:", targetPosition, "Plot ID:", targetPlotId);
+    isAutoNavigating = true;
+    window.isAutoNavigating = true;
+    autoNavTargetPosition.copy(targetPosition);
+    // Adjust target Y position for hovering
+    autoNavTargetPosition.y = AUTO_NAV_HOVER_ALTITUDE;
+    autoNavTargetPlotId = targetPlotId;
+    autoNavReachedTarget = false; // Reset reached flag
+
+    // Disable manual controls visually and functionally
+    disableManualControls();
+
+    // Update UI
+    updateDroneUIButtonText("Cancel Auto-Pilot");
+    const landButton = droneContainer.querySelector('.drone-land-btn');
+    if (landButton) {
+        landButton.onclick = cancelAutoNavigation; // Change button action
+    }
+}
+
+// Function to cancel auto-navigation
+export function cancelAutoNavigation() {
+    if (!isAutoNavigating) return;
+
+    console.log("Cancelling auto-navigation.");
+    isAutoNavigating = false;
+    window.isAutoNavigating = false;
+    autoNavTargetPlotId = null;
+    autoNavReachedTarget = false;
+    droneVelocity.multiplyScalar(0.5); // Reduce speed gently
+
+    // Re-enable manual controls
+    enableManualControls();
+
+    // Reset UI
+    updateDroneUIButtonText("Place LLM");
+    const landButton = droneContainer.querySelector('.drone-land-btn');
+    if (landButton) {
+        landButton.onclick = handlePlaceAttempt; // Restore original action
+    }
+}
+
+function disableManualControls() {
+    resetControlState(); // Ensure all flags are false
+    // Disable keyboard/touch input temporarily
+    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('keyup', handleKeyUp);
+    disableTouchButtonListeners();
+    disableJoystickListeners();
+}
+
+function enableManualControls() {
+    // Re-enable keyboard/touch input
+    setupInputListeners(); // This re-adds all listeners
+}
+
+function disableTouchButtonListeners() {
+    droneContainer.querySelectorAll('.drone-touch-btn').forEach(btn => {
+        // Remove listeners - requires named functions or tracking listeners
+        // For simplicity, just visually disable for now
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
+    });
+}
+
+function enableTouchButtonListeners() {
+    droneContainer.querySelectorAll('.drone-touch-btn').forEach(btn => {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+    });
+    // Re-add listeners if they were fully removed
+    setupTouchButtonListeners();
+}
+
+function disableJoystickListeners() {
+    if (joystickContainerElement) {
+        joystickContainerElement.removeEventListener('touchstart', handleJoystickStart);
+        joystickContainerElement.removeEventListener('touchmove', handleJoystickMove);
+        joystickContainerElement.removeEventListener('touchend', handleJoystickEnd);
+        joystickContainerElement.removeEventListener('touchcancel', handleJoystickEnd);
+        joystickContainerElement.removeEventListener('mousedown', handleJoystickStart);
+        window.removeEventListener('mousemove', handleJoystickMove);
+        window.removeEventListener('mouseup', handleJoystickEnd);
+        joystickContainerElement.style.opacity = '0.5';
+        joystickContainerElement.style.pointerEvents = 'none';
+        if (joystickActive) handleJoystickEnd(); // Ensure joystick resets
+    }
+}
+
+function enableJoystickListeners() {
+    if (joystickContainerElement) {
+        joystickContainerElement.style.opacity = '1';
+        joystickContainerElement.style.pointerEvents = 'auto';
+        // Re-add listeners if they were fully removed
+        setupJoystickListeners();
+    }
+}
+
+function updateDroneUIButtonText(text) {
+    const landButton = droneContainer.querySelector('.drone-land-btn');
+    if (landButton) {
+        landButton.textContent = text;
+    }
 }
 
 function createDroneUI(llm) {
@@ -136,11 +263,12 @@ function createDroneUI(llm) {
                 </div>
             </div>
             <div class="drone-instructions">
-                <p>Use <strong>WASD</strong> to move horizontally</p>
-                <p>Use <strong>E/Q</strong> to go up/down</p>
-                <p>Use <strong>←/→</strong> keys to rotate</p>
-                <p>Press <strong>P</strong> to place LLM</p>
-                <p>Press <strong>Esc</strong> to cancel</p>
+                <p><strong>Click/Tap</strong> an available plot to auto-fly</p>
+                <p>Use <strong>WASD</strong> or <strong>Joystick</strong> to move</p>
+                <p>Use <strong>E/Q</strong> or <strong>▲/▼</strong> to change altitude</p>
+                <p>Use <strong>←/→</strong> or <strong>↺/↻</strong> to rotate</p>
+                <p>Press <strong>P</strong> or <strong>Button Below</strong> to place LLM</p>
+                <p>Press <strong>Esc</strong> or <strong>Cancel Button</strong> to cancel</p>
             </div>
 
             <div class="drone-touch-controls">
@@ -149,9 +277,9 @@ function createDroneUI(llm) {
                 </div>
 
                 <div class="drone-action-buttons">
-                    <button class="drone-touch-btn" data-control="up">▲</button> 
+                    <button class="drone-touch-btn" data-control="up">▲</button>
                     <button class="drone-touch-btn" data-control="rotateLeft">↺</button>
-                    <button class="drone-touch-btn" data-control="down">▼</button> 
+                    <button class="drone-touch-btn" data-control="down">▼</button>
                     <button class="drone-touch-btn" data-control="rotateRight">↻</button>
                 </div>
 
@@ -168,6 +296,12 @@ function createDroneUI(llm) {
 
     joystickContainerElement = droneContainer.querySelector('.drone-joystick-container');
     joystickThumb = droneContainer.querySelector('.drone-joystick-thumb');
+
+    // Set initial handler for land button
+    const landButton = droneContainer.querySelector('.drone-land-btn');
+    if (landButton) {
+        landButton.onclick = handlePlaceAttempt;
+    }
 }
 
 function initDroneScene(llm) {
@@ -183,30 +317,30 @@ function createDroneWithLLM(llm) {
     const propellerHubMaterial = new THREE.MeshStandardMaterial({ color: DRONE_DARK_ACCENT_COLOR, metalness: 0.8, roughness: 0.2 });
     const propellerBladeMaterial = new THREE.MeshStandardMaterial({ color: DRONE_ACCENT_COLOR, metalness: 0.4, roughness: 0.6, side: THREE.DoubleSide });
 
-    const centralBodyRadius = 0.3; 
-    const centralBodyHeight = 0.2; 
+    const centralBodyRadius = 0.3;
+    const centralBodyHeight = 0.2;
     const centralBody = new THREE.Mesh(
-        new THREE.CylinderGeometry(centralBodyRadius * 0.8, centralBodyRadius, centralBodyHeight, 12), 
+        new THREE.CylinderGeometry(centralBodyRadius * 0.8, centralBodyRadius, centralBodyHeight, 12),
         bodyMaterial
     );
     centralBody.castShadow = true;
     droneModel.add(centralBody);
 
-    const propDistance = 1.0; 
-    const armWidth = 0.08; 
-    const armHeight = 0.08; 
-    const armLength = propDistance; 
+    const propDistance = 1.0;
+    const armWidth = 0.08;
+    const armHeight = 0.08;
+    const armLength = propDistance;
 
-    const angleRad = Math.PI / 4; 
+    const angleRad = Math.PI / 4;
     const propellerPositions = [
-         { x: propDistance * Math.sin(angleRad), z: -propDistance * Math.cos(angleRad) }, 
-         { x: -propDistance * Math.sin(angleRad), z: -propDistance * Math.cos(angleRad) }, 
-         { x: -propDistance * Math.sin(angleRad), z: propDistance * Math.cos(angleRad) }, 
-         { x: propDistance * Math.sin(angleRad), z: propDistance * Math.cos(angleRad) }  
+        { x: propDistance * Math.sin(angleRad), z: -propDistance * Math.cos(angleRad) },
+        { x: -propDistance * Math.sin(angleRad), z: -propDistance * Math.cos(angleRad) },
+        { x: -propDistance * Math.sin(angleRad), z: propDistance * Math.cos(angleRad) },
+        { x: propDistance * Math.sin(angleRad), z: propDistance * Math.cos(angleRad) }
     ];
 
     propellerPositions.forEach((propPos, index) => {
-        const armRotationY = Math.atan2(propPos.x, propPos.z); 
+        const armRotationY = Math.atan2(propPos.x, propPos.z);
 
         const armGeometry = new THREE.BoxGeometry(armWidth, armHeight, armLength);
 
@@ -217,13 +351,13 @@ function createDroneWithLLM(llm) {
         droneModel.add(arm);
 
         const propeller = createPropeller(propellerHubMaterial, propellerBladeMaterial);
-        propeller.position.set(propPos.x, armHeight / 2 + 0.05, propPos.z); 
+        propeller.position.set(propPos.x, armHeight / 2 + 0.05, propPos.z);
         droneModel.add(propeller);
     });
 
     llmModel = renderLLMCharacter(THREE, llm);
-    llmModel.scale.set(0.4, 0.4, 0.4); 
-    llmModel.position.set(0, -0.8, 0); 
+    llmModel.scale.set(0.4, 0.4, 0.4);
+    llmModel.position.set(0, -0.8, 0);
     llmModel.castShadow = true;
     llmModel.receiveShadow = true;
     droneModel.add(llmModel);
@@ -235,16 +369,18 @@ function createDroneWithLLM(llm) {
         }
     });
 
-    if (mainCityScene) {
+    if (droneModel && mainCityScene) { // Check if droneModel was successfully created
         mainCityScene.add(droneModel);
         droneModel.position.copy(dronePosition);
         droneModel.rotation.copy(droneRotation);
+    } else if (!droneModel) {
+        console.error("Failed to create drone model.");
     } else {
         console.error("Main city scene not available when creating drone.");
     }
 }
 
-function createPropeller(hubMaterial, bladeMaterial) { 
+function createPropeller(hubMaterial, bladeMaterial) {
     const propellerGroup = new THREE.Group();
     propellerGroup.name = "Propeller";
 
@@ -252,7 +388,7 @@ function createPropeller(hubMaterial, bladeMaterial) {
     const hubHeight = 0.08;
     const hub = new THREE.Mesh(
         new THREE.CylinderGeometry(hubRadius, hubRadius, hubHeight, 8),
-        hubMaterial 
+        hubMaterial
     );
     hub.castShadow = true;
     propellerGroup.add(hub);
@@ -261,16 +397,16 @@ function createPropeller(hubMaterial, bladeMaterial) {
     blades.name = "Blades";
     propellerGroup.add(blades);
 
-    const bladeLength = 0.6; 
-    const bladeWidth = 0.1; 
+    const bladeLength = 0.6;
+    const bladeWidth = 0.1;
     const bladeThickness = 0.01;
     const bladeGeometry = new THREE.BoxGeometry(bladeLength, bladeThickness, bladeWidth);
 
-    const blade1 = new THREE.Mesh(bladeGeometry, bladeMaterial); 
+    const blade1 = new THREE.Mesh(bladeGeometry, bladeMaterial);
     blade1.castShadow = true;
     blades.add(blade1);
 
-    const blade2 = new THREE.Mesh(bladeGeometry, bladeMaterial); 
+    const blade2 = new THREE.Mesh(bladeGeometry, bladeMaterial);
     blade2.rotation.y = Math.PI / 2;
     blade2.castShadow = true;
     blades.add(blade2);
@@ -281,25 +417,29 @@ function createPropeller(hubMaterial, bladeMaterial) {
 }
 
 function setupInputListeners() {
-    resetControlState();
+    resetControlState(); // Clear flags
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    setupTouchButtonListeners();
-    setupJoystickListeners();
-    droneContainer.querySelector('.drone-land-btn').addEventListener('click', handlePlaceAttempt);
+    enableTouchButtonListeners(); // Use enable function to setup/re-enable
+    enableJoystickListeners(); // Use enable function to setup/re-enable
+
+    // Ensure land button handler is correct
+    const landButton = droneContainer?.querySelector('.drone-land-btn');
+    if (landButton) {
+        landButton.onclick = handlePlaceAttempt;
+        updateDroneUIButtonText("Place LLM"); // Ensure correct text
+    }
 }
 
 function removeInputListeners() {
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('keyup', handleKeyUp);
-    if (joystickContainerElement) {
-        joystickContainerElement.removeEventListener('touchstart', handleJoystickStart);
-        joystickContainerElement.removeEventListener('touchmove', handleJoystickMove);
-        joystickContainerElement.removeEventListener('touchend', handleJoystickEnd);
-        joystickContainerElement.removeEventListener('touchcancel', handleJoystickEnd);
-        joystickContainerElement.removeEventListener('mousedown', handleJoystickStart); 
-        window.removeEventListener('mousemove', handleJoystickMove); 
-        window.removeEventListener('mouseup', handleJoystickEnd); 
+    disableTouchButtonListeners();
+    disableJoystickListeners();
+
+    const landButton = droneContainer?.querySelector('.drone-land-btn');
+    if (landButton) {
+        landButton.onclick = null; // Remove handler
     }
 }
 
@@ -314,7 +454,7 @@ function resetControlState() {
 }
 
 function handleKeyDown(event) {
-    if (!droneActive) return;
+    if (!droneActive || isAutoNavigating) return; // Ignore manual input during auto-nav
     if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT')) {
         return;
     }
@@ -323,8 +463,8 @@ function handleKeyDown(event) {
     let handled = true;
 
     switch (key) {
-        case 'w': droneControls.backward = true; break; 
-        case 's': droneControls.forward = true; break; 
+        case 'w': droneControls.backward = true; break;
+        case 's': droneControls.forward = true; break;
         case 'a': droneControls.left = true; break;
         case 'd': droneControls.right = true; break;
         case 'q': droneControls.down = true; break;
@@ -332,18 +472,18 @@ function handleKeyDown(event) {
         case 'arrowleft': droneControls.rotateLeft = true; break;
         case 'arrowright': droneControls.rotateRight = true; break;
         case 'p': handlePlaceAttempt(); break;
-        case 'escape': deactivateDroneTransport(true); break; 
+        case 'escape': deactivateDroneTransport(true); break;
         default: handled = false;
     }
     if (handled) event.preventDefault();
 }
 
 function handleKeyUp(event) {
-    if (!droneActive) return;
+    if (!droneActive || isAutoNavigating) return; // Ignore manual input during auto-nav
     const key = event.key.toLowerCase();
     switch (key) {
-        case 'w': droneControls.backward = false; break; 
-        case 's': droneControls.forward = false; break; 
+        case 'w': droneControls.backward = false; break;
+        case 's': droneControls.forward = false; break;
         case 'a': droneControls.left = false; break;
         case 'd': droneControls.right = false; break;
         case 'q': droneControls.down = false; break;
@@ -357,28 +497,51 @@ function setupTouchButtonListeners() {
     droneContainer.querySelectorAll('.drone-touch-btn').forEach(btn => {
         const control = btn.getAttribute('data-control');
         if (!['forward', 'backward', 'left', 'right'].includes(control)) {
-            btn.addEventListener('touchstart', (e) => handleTouchStart(e, control), { passive: false }); 
-            btn.addEventListener('touchend', (e) => handleTouchEnd(e, control));
-            btn.addEventListener('touchcancel', (e) => handleTouchEnd(e, control)); 
-            btn.addEventListener('mousedown', (e) => handleTouchStart(e, control));
-            btn.addEventListener('mouseup', (e) => handleTouchEnd(e, control));
-            btn.addEventListener('mouseleave', (e) => handleTouchEnd(e, control)); 
+            // Remove existing listeners before adding new ones to prevent duplicates
+            btn.removeEventListener('touchstart', handleTouchStartWrapper);
+            btn.removeEventListener('touchend', handleTouchEndWrapper);
+            btn.removeEventListener('touchcancel', handleTouchEndWrapper);
+            btn.removeEventListener('mousedown', handleTouchStartWrapper);
+            btn.removeEventListener('mouseup', handleTouchEndWrapper);
+            btn.removeEventListener('mouseleave', handleTouchEndWrapper);
+
+            // Add new listeners using wrappers
+            btn.addEventListener('touchstart', handleTouchStartWrapper, { passive: false });
+            btn.addEventListener('touchend', handleTouchEndWrapper);
+            btn.addEventListener('touchcancel', handleTouchEndWrapper);
+            btn.addEventListener('mousedown', handleTouchStartWrapper);
+            btn.addEventListener('mouseup', handleTouchEndWrapper);
+            btn.addEventListener('mouseleave', handleTouchEndWrapper);
+
+            // Store control reference on the element for wrappers
+            btn.dataset.controlRef = control;
         }
     });
 }
 
+// Wrapper functions to pass control parameter
+function handleTouchStartWrapper(e) {
+    if (isAutoNavigating) return; // Ignore if auto-navigating
+    handleTouchStart(e, e.currentTarget.dataset.controlRef);
+}
+
+function handleTouchEndWrapper(e) {
+    if (isAutoNavigating) return; // Ignore if auto-navigating
+    handleTouchEnd(e, e.currentTarget.dataset.controlRef);
+}
+
 function handleTouchStart(event, control) {
     event.preventDefault();
-    event.stopPropagation(); 
+    event.stopPropagation();
     droneControls[control] = true;
-    touchActiveControls[control] = true; 
-    const targetButton = event.currentTarget; 
+    touchActiveControls[control] = true;
+    const targetButton = event.currentTarget;
     if (targetButton) targetButton.style.backgroundColor = 'rgba(60, 179, 113, 0.8)';
 }
 
 function handleTouchEnd(event, control) {
     event.preventDefault();
-    event.stopPropagation(); 
+    event.stopPropagation();
     if (touchActiveControls.hasOwnProperty(control)) {
         droneControls[control] = false;
         delete touchActiveControls[control];
@@ -397,19 +560,28 @@ function setupJoystickListeners() {
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
     };
-    joystickRadius = rect.width / 2; 
+    joystickRadius = rect.width / 2;
+
+    joystickContainerElement.removeEventListener('touchstart', handleJoystickStart);
+    joystickContainerElement.removeEventListener('touchmove', handleJoystickMove);
+    joystickContainerElement.removeEventListener('touchend', handleJoystickEnd);
+    joystickContainerElement.removeEventListener('touchcancel', handleJoystickEnd);
+    joystickContainerElement.removeEventListener('mousedown', handleJoystickStart);
+    window.removeEventListener('mousemove', handleJoystickMove);
+    window.removeEventListener('mouseup', handleJoystickEnd);
 
     joystickContainerElement.addEventListener('touchstart', handleJoystickStart, { passive: false });
     joystickContainerElement.addEventListener('touchmove', handleJoystickMove, { passive: false });
     joystickContainerElement.addEventListener('touchend', handleJoystickEnd);
     joystickContainerElement.addEventListener('touchcancel', handleJoystickEnd);
 
-    joystickContainerElement.addEventListener('mousedown', handleJoystickStart); 
-    window.addEventListener('mousemove', handleJoystickMove); 
-    window.addEventListener('mouseup', handleJoystickEnd); 
+    joystickContainerElement.addEventListener('mousedown', handleJoystickStart);
+    window.addEventListener('mousemove', handleJoystickMove);
+    window.addEventListener('mouseup', handleJoystickEnd);
 }
 
 function handleJoystickStart(event) {
+    if (isAutoNavigating) return; // Ignore during auto-nav
     event.preventDefault();
     joystickActive = true;
     const rect = joystickContainerElement.getBoundingClientRect();
@@ -417,19 +589,19 @@ function handleJoystickStart(event) {
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
     };
-    handleJoystickMove(event); 
+    handleJoystickMove(event);
 }
 
 function handleJoystickMove(event) {
-    if (!joystickActive) return;
+    if (!joystickActive || isAutoNavigating) return; // Ignore during auto-nav
     event.preventDefault();
 
     let clientX, clientY;
     if (event.touches) {
-        if (event.touches.length === 0) return; 
+        if (event.touches.length === 0) return;
         clientX = event.touches[0].clientX;
         clientY = event.touches[0].clientY;
-    } else { 
+    } else {
         clientX = event.clientX;
         clientY = event.clientY;
     }
@@ -445,14 +617,14 @@ function handleJoystickMove(event) {
 
     joystickThumb.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
 
-    const threshold = JOYSTICK_MAX_DISPLACEMENT * 0.2; 
-    const controlStrength = displacement / JOYSTICK_MAX_DISPLACEMENT; 
+    const threshold = JOYSTICK_MAX_DISPLACEMENT * 0.2;
+    const controlStrength = displacement / JOYSTICK_MAX_DISPLACEMENT;
 
     if (clampedY < -threshold) {
-        droneControls.backward = true; 
+        droneControls.backward = true;
         droneControls.forward = false;
     } else if (clampedY > threshold) {
-        droneControls.forward = true; 
+        droneControls.forward = true;
         droneControls.backward = false;
     } else {
         droneControls.forward = false;
@@ -472,10 +644,12 @@ function handleJoystickMove(event) {
 }
 
 function handleJoystickEnd(event) {
-    if (!joystickActive && event.type !== 'mouseup' && event.type !== 'mouseleave') return; 
+    if (!joystickActive && event && event.type !== 'mouseup' && event.type !== 'mouseleave') return;
     joystickActive = false;
 
-    joystickThumb.style.transform = 'translate(0, 0)';
+    if (joystickThumb) { // Add null check
+        joystickThumb.style.transform = 'translate(0, 0)';
+    }
 
     droneControls.forward = false;
     droneControls.backward = false;
@@ -483,9 +657,41 @@ function handleJoystickEnd(event) {
     droneControls.right = false;
 }
 
-function updateDronePhysics() {
+// Renamed and modified to handle both manual and auto navigation
+function updateDroneState() {
     if (!droneModel) return;
 
+    if (isAutoNavigating) {
+        updateAutoNavigationPhysics();
+    } else {
+        updateManualPhysics();
+    }
+
+    // Common physics updates (altitude, boundaries, propellers)
+    if (droneModel.position.y < MIN_ALTITUDE) {
+        droneModel.position.y = MIN_ALTITUDE;
+        droneVelocity.y = Math.max(0, droneVelocity.y);
+    }
+
+    const mapBoundary = (config.citySize || 500) / 2;
+    droneModel.position.x = THREE.MathUtils.clamp(droneModel.position.x, -mapBoundary, mapBoundary);
+    droneModel.position.z = THREE.MathUtils.clamp(droneModel.position.z, -mapBoundary, mapBoundary);
+
+    // Propeller animation based on combined velocity/input
+    const verticalThrust = droneControls.up ? 1 : (droneControls.down ? -0.5 : 0);
+    const speedSq = droneVelocity.lengthSq();
+    const propellerSpeed = 1.0 + Math.abs(droneVelocity.y) * 8 + verticalThrust * 2 + Math.sqrt(speedSq) * 5;
+    droneModel.traverse(child => {
+        if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
+            const parentPosition = child.parent.position;
+            const direction = (parentPosition.x > 0) ? 1 : -1;
+            child.rotation.y += propellerSpeed * direction * 0.25;
+        }
+    });
+}
+
+function updateManualPhysics() {
+    // --- Rotation ---
     let targetRotationY = 0;
     if (droneControls.rotateLeft) targetRotationY += ROTATION_SPEED;
     if (droneControls.rotateRight) targetRotationY -= ROTATION_SPEED;
@@ -495,37 +701,41 @@ function updateDronePhysics() {
     droneAngularVelocity.y = THREE.MathUtils.clamp(droneAngularVelocity.y, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED);
     droneModel.rotation.y += droneAngularVelocity.y;
 
+    // --- Movement ---
     const forwardVector = new THREE.Vector3();
-    droneModel.getWorldDirection(forwardVector); 
-    forwardVector.negate(); 
+    droneModel.getWorldDirection(forwardVector).negate(); // Direction drone is facing
 
-    const rightVector = new THREE.Vector3().crossVectors(mainCityCamera.up, forwardVector).normalize(); 
+    const rightVector = new THREE.Vector3().crossVectors(mainCityCamera.up, forwardVector).normalize();
 
-    let targetVelocity = new THREE.Vector3();
-    if (droneControls.forward) targetVelocity.add(forwardVector); 
-    if (droneControls.backward) targetVelocity.sub(forwardVector); 
-    if (droneControls.left) targetVelocity.sub(rightVector);
-    if (droneControls.right) targetVelocity.add(rightVector);
+    let targetVelocityInput = new THREE.Vector3();
+    if (droneControls.forward) targetVelocityInput.add(forwardVector);
+    if (droneControls.backward) targetVelocityInput.sub(forwardVector);
+    if (droneControls.left) targetVelocityInput.sub(rightVector);
+    if (droneControls.right) targetVelocityInput.add(rightVector);
 
-    const horizontalMagnitudeSq = targetVelocity.x * targetVelocity.x + targetVelocity.z * targetVelocity.z;
-    if (horizontalMagnitudeSq > 1e-6) { 
+    // Normalize horizontal input if moving diagonally
+    const horizontalMagnitudeSq = targetVelocityInput.x * targetVelocityInput.x + targetVelocityInput.z * targetVelocityInput.z;
+    if (horizontalMagnitudeSq > 1e-6) {
         const scale = 1.0 / Math.sqrt(horizontalMagnitudeSq);
-        targetVelocity.x *= scale;
-        targetVelocity.z *= scale;
+        targetVelocityInput.x *= scale;
+        targetVelocityInput.z *= scale;
     }
 
     let verticalVelocityInput = 0;
     if (droneControls.up) verticalVelocityInput += VERTICAL_SPEED;
     if (droneControls.down) verticalVelocityInput -= VERTICAL_SPEED;
 
-    droneVelocity.x += (targetVelocity.x * MAX_SPEED - droneVelocity.x) * ACCELERATION;
-    droneVelocity.z += (targetVelocity.z * MAX_SPEED - droneVelocity.z) * ACCELERATION;
+    // Apply acceleration towards target input velocity
+    droneVelocity.x += (targetVelocityInput.x * MAX_SPEED - droneVelocity.x) * ACCELERATION;
+    droneVelocity.z += (targetVelocityInput.z * MAX_SPEED - droneVelocity.z) * ACCELERATION;
     droneVelocity.y += (verticalVelocityInput - droneVelocity.y) * ACCELERATION;
 
+    // Apply deceleration (friction/drag)
     droneVelocity.x *= DECELERATION;
     droneVelocity.z *= DECELERATION;
-    droneVelocity.y *= DECELERATION; 
+    droneVelocity.y *= DECELERATION;
 
+    // Clamp horizontal speed
     const currentSpeedSq = droneVelocity.x * droneVelocity.x + droneVelocity.z * droneVelocity.z;
     if (currentSpeedSq > MAX_SPEED * MAX_SPEED) {
         const scale = MAX_SPEED / Math.sqrt(currentSpeedSq);
@@ -533,72 +743,119 @@ function updateDronePhysics() {
         droneVelocity.z *= scale;
     }
 
+    // Apply final velocity to position
     droneModel.position.add(droneVelocity);
+}
 
-    if (droneModel.position.y < MIN_ALTITUDE) {
-        droneModel.position.y = MIN_ALTITUDE;
-        droneVelocity.y = Math.max(0, droneVelocity.y); 
-    }
+function updateAutoNavigationPhysics() {
+    const directionToTarget = new THREE.Vector3().subVectors(autoNavTargetPosition, droneModel.position);
+    const distanceToTarget = directionToTarget.length();
 
-    const mapBoundary = (config.citySize || 500) / 2;
-    if (droneModel.position.x < -mapBoundary) droneModel.position.x = -mapBoundary;
-    if (droneModel.position.x > mapBoundary) droneModel.position.x = mapBoundary;
-    if (droneModel.position.z < -mapBoundary) droneModel.position.z = -mapBoundary;
-    if (droneModel.position.z > mapBoundary) droneModel.position.z = mapBoundary;
+    if (distanceToTarget < AUTO_NAV_STOP_THRESHOLD && !autoNavReachedTarget) {
+        // Reached target, stop precisely
+        console.log("Auto-navigation: Reached target plot.");
+        droneVelocity.set(0, 0, 0);
+        droneAngularVelocity.set(0, 0, 0);
+        isAutoNavigating = false; // Stop auto-nav logic
+        window.isAutoNavigating = false;
+        autoNavReachedTarget = true; // Mark as reached
 
-    const verticalThrust = droneControls.up ? 1 : (droneControls.down ? -0.5 : 0);
-    const horizontalSpeed = Math.sqrt(currentSpeedSq);
-    const propellerSpeed = 1.0 + Math.abs(droneVelocity.y) * 8 + verticalThrust * 2 + horizontalSpeed * 5;
-    droneModel.traverse(child => {
-        if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
-            const parentPosition = child.parent.position;
-            const direction = (parentPosition.x > 0) ? 1 : -1;
-            child.rotation.y += propellerSpeed * direction * 0.25; 
+        // Re-enable controls and reset UI
+        enableManualControls();
+        updateDroneUIButtonText("Place LLM");
+        const landButton = droneContainer.querySelector('.drone-land-btn');
+        if (landButton) landButton.onclick = handlePlaceAttempt;
+
+        // Optional: Automatically attempt placement
+        // handlePlaceAttempt();
+
+    } else if (distanceToTarget < AUTO_NAV_ARRIVAL_THRESHOLD) {
+        // Decelerate smoothly as we approach
+        droneVelocity.multiplyScalar(0.90); // Stronger deceleration near target
+        droneAngularVelocity.y *= 0.85;
+        droneModel.rotation.y += droneAngularVelocity.y; // Apply dampened rotation
+        droneModel.position.add(droneVelocity); // Apply dampened velocity
+    } else {
+        // --- Rotation ---
+        // Calculate target rotation to face the destination
+        const targetRotationY = Math.atan2(directionToTarget.x, directionToTarget.z);
+        let deltaRotation = targetRotationY - droneModel.rotation.y;
+
+        // Ensure shortest rotation angle
+        while (deltaRotation > Math.PI) deltaRotation -= Math.PI * 2;
+        while (deltaRotation < -Math.PI) deltaRotation += Math.PI * 2;
+
+        // Apply rotation smoothly
+        const rotationStep = THREE.MathUtils.clamp(deltaRotation, -AUTO_NAV_ROTATION_SPEED, AUTO_NAV_ROTATION_SPEED);
+        droneModel.rotation.y += rotationStep;
+
+        // --- Movement ---
+        // Only move forward significantly if facing the target reasonably well
+        if (Math.abs(deltaRotation) < Math.PI / 4) { // Allow movement if within 45 degrees
+            directionToTarget.normalize();
+            // Apply velocity towards target, considering vertical separately
+            droneVelocity.x += (directionToTarget.x * AUTO_NAV_SPEED - droneVelocity.x) * ACCELERATION * 2; // Faster accel for auto-nav
+            droneVelocity.z += (directionToTarget.z * AUTO_NAV_SPEED - droneVelocity.z) * ACCELERATION * 2;
+            droneVelocity.y += (directionToTarget.y * AUTO_NAV_SPEED - droneVelocity.y) * ACCELERATION * 2; // Move vertically too
+        } else {
+            // If not facing target, prioritize rotation and reduce forward speed
+            droneVelocity.x *= 0.95;
+            droneVelocity.z *= 0.95;
+            droneVelocity.y *= 0.98; // Gentle vertical deceleration while turning
         }
-    });
+
+        // Clamp speed
+        const currentSpeedSq = droneVelocity.x * droneVelocity.x + droneVelocity.z * droneVelocity.z + droneVelocity.y * droneVelocity.y;
+        if (currentSpeedSq > AUTO_NAV_SPEED * AUTO_NAV_SPEED) {
+            const scale = AUTO_NAV_SPEED / Math.sqrt(currentSpeedSq);
+            droneVelocity.multiplyScalar(scale);
+        }
+
+        droneModel.position.add(droneVelocity);
+    }
 }
 
 function animateDrone() {
     if (!droneActive) return;
     droneAnimationId = requestAnimationFrame(animateDrone);
 
-    updateDronePhysics();
-    positionCameraForDroneView(); 
+    updateDroneState(); // Use the combined state update function
+    positionCameraForDroneView();
 
     // Rendering is handled by the main cityScene loop
 }
 
 function handlePlaceAttempt() {
-    if (!droneActive || !droneModel) return;
+    if (!droneActive || !droneModel || isAutoNavigating) return; // Prevent placing during auto-nav
 
     const raycaster = new THREE.Raycaster(droneModel.position, new THREE.Vector3(0, -1, 0));
-    const intersects = raycaster.intersectObjects(mainCityScene.children, true); 
+    const intersects = raycaster.intersectObjects(mainCityScene.children, true);
 
     let targetPlot = null;
-    let intersectPoint = null; 
+    let intersectPoint = null;
 
     for (const intersect of intersects) {
         let obj = intersect.object;
-        while (obj && (!obj.userData || obj.userData.type !== 'lot') && obj.name !== 'primaryGround' && obj.name !== 'construction_site') { 
+        while (obj && (!obj.userData || obj.userData.type !== 'lot') && obj.name !== 'primaryGround' && obj.name !== 'construction_site') {
             obj = obj.parent;
         }
 
         if (obj && obj.userData && obj.userData.type === 'lot') {
             targetPlot = cityData.lots.find(lot => lot.id === obj.userData.id);
             if (targetPlot) {
-                intersectPoint = intersect.point; 
+                intersectPoint = intersect.point;
                 break;
             }
         } else if (obj && obj.name === 'primaryGround') {
-            break; 
+            break;
         }
     }
 
     if (targetPlot) {
         if (targetPlot.available) {
             console.log(`Placing LLM ${currentLLMTransporting.name} on plot ${targetPlot.name}`);
-            placeLLMOnPlot(targetPlot, intersectPoint); 
-            deactivateDroneTransport(false); 
+            placeLLMOnPlot(targetPlot, intersectPoint);
+            deactivateDroneTransport(false);
         } else {
             console.log(`Plot ${targetPlot.name} is already occupied.`);
         }
@@ -617,8 +874,8 @@ function placeLLMOnPlot(plotData, placementPoint) {
     const directionToCenter = new THREE.Vector3(0 - placementPoint.x, 0, 0 - placementPoint.z).normalize();
     placedLLMModel.rotation.y = Math.atan2(directionToCenter.x, directionToCenter.z);
 
-    placedLLMModel.castShadow = true; 
-    placedLLMModel.receiveShadow = true; 
+    placedLLMModel.castShadow = true;
+    placedLLMModel.receiveShadow = true;
     mainCityScene.add(placedLLMModel);
 
     plotData.available = false;
@@ -628,6 +885,8 @@ function placeLLMOnPlot(plotData, placementPoint) {
     mainCityScene.traverse(obj => {
         if (obj.userData && obj.userData.type === 'lot' && obj.userData.id === plotData.id) {
             while (obj.children.length > 0) {
+                // Recursively dispose of geometry and materials
+                disposeHierarchy(obj.children[0]);
                 obj.remove(obj.children[0]);
             }
             plotOutlineToRemove = obj;
@@ -637,7 +896,7 @@ function placeLLMOnPlot(plotData, placementPoint) {
         plotOutlineToRemove.parent.remove(plotOutlineToRemove);
         import('./plotHoverInfo.js').then(module => {
             if (typeof module.hidePlotInfoPanel === 'function') {
-                 module.hidePlotInfoPanel(); 
+                module.hidePlotInfoPanel();
             }
         });
     }
@@ -649,8 +908,36 @@ function placeLLMOnPlot(plotData, placementPoint) {
     }
 }
 
+// Helper function to dispose of materials and geometry
+function disposeHierarchy(object) {
+    object.traverse(child => {
+        if (child.isMesh) {
+            if (child.geometry) {
+                child.geometry.dispose();
+            }
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(material => {
+                        if (material.map) material.map.dispose();
+                        material.dispose();
+                    });
+                } else {
+                    if (child.material.map) child.material.map.dispose();
+                    child.material.dispose();
+                }
+            }
+        }
+    });
+}
+
 export function deactivateDroneTransport(cancel = false) {
     if (!droneActive) return;
+
+    // Cancel auto-navigation if active
+    if (isAutoNavigating) {
+        cancelAutoNavigation();
+    }
+
     droneActive = false;
     window.droneActive = false;
 
@@ -668,7 +955,7 @@ export function deactivateDroneTransport(cancel = false) {
                 droneContainer.parentNode.removeChild(droneContainer);
             }
             droneContainer = null;
-        }, 500); 
+        }, 500);
     }
 
     if (droneModel) {
@@ -678,18 +965,7 @@ export function deactivateDroneTransport(cancel = false) {
         if (droneModel.parent) {
             droneModel.parent.remove(droneModel);
         }
-        droneModel.traverse(child => {
-            if (child.isMesh) {
-                child.geometry.dispose();
-                if (child.material.isMaterial) {
-                    if (Array.isArray(child.material)) {
-                        child.material.forEach(material => material.dispose());
-                    } else {
-                        child.material.dispose();
-                    }
-                }
-            }
-        });
+        disposeHierarchy(droneModel); // Use helper to dispose
         droneModel = null;
         llmModel = null;
     }
@@ -700,7 +976,7 @@ export function deactivateDroneTransport(cancel = false) {
     // --- End Music Change ---
 
     if (mainCityControls) {
-        mainCityControls.enabled = true; 
+        mainCityControls.enabled = true;
 
         if (originalCameraPosition && originalCameraTarget) {
             console.log("Starting camera transition back...");
@@ -715,24 +991,23 @@ export function deactivateDroneTransport(cancel = false) {
                     cameraTransitionId = null;
                     return;
                 }
-                 // Ensure originalCameraPosition and originalCameraTarget are still valid
+                // Ensure originalCameraPosition and originalCameraTarget are still valid
                 if (!originalCameraPosition || !originalCameraTarget) {
-                     console.warn("Original camera state missing during transition. Stopping.");
-                     cameraTransitionId = null;
-                     if (mainCityControls) mainCityControls.enabled = true;
-                     return;
-                 }
-
+                    console.warn("Original camera state missing during transition. Stopping.");
+                    cameraTransitionId = null;
+                    if (mainCityControls) mainCityControls.enabled = true;
+                    return;
+                }
 
                 const elapsed = performance.now() - startTime;
                 const progress = Math.min(elapsed / transitionDuration, 1);
-                const easeProgress = 1 - Math.pow(1 - progress, 3); 
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
 
                 mainCityCamera.position.lerpVectors(startCamPos, originalCameraPosition, easeProgress);
                 mainCityControls.target.lerpVectors(startTarget, originalCameraTarget, easeProgress);
 
                 mainCityCamera.lookAt(mainCityControls.target);
-                mainCityControls.update(); 
+                mainCityControls.update();
 
                 if (progress < 1) {
                     cameraTransitionId = requestAnimationFrame(transitionBack);
@@ -746,7 +1021,7 @@ export function deactivateDroneTransport(cancel = false) {
                     originalCameraPosition = null;
                     originalCameraTarget = null;
                     cameraTransitionId = null;
-                    mainCityControls.enabled = true; 
+                    mainCityControls.enabled = true;
                 }
             }
             if (cameraTransitionId) {
@@ -771,9 +1046,9 @@ export function deactivateDroneTransport(cancel = false) {
 function positionCameraForDroneView(instant = false) {
     if (!droneModel || !mainCityCamera || !mainCityControls) return;
 
-    mainCityControls.enabled = false; 
+    mainCityControls.enabled = false;
 
-    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, -CAMERA_FOLLOW_DISTANCE); 
+    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, -CAMERA_FOLLOW_DISTANCE);
 
     offset.applyQuaternion(droneModel.quaternion);
 
@@ -791,9 +1066,8 @@ function positionCameraForDroneView(instant = false) {
 
     mainCityCamera.lookAt(mainCityControls.target);
 
-    mainCityControls.update();
+    // Don't call controls.update() here when controls are disabled for drone
+    // mainCityControls.update();
 }
 
-function landDrone() {
-    handlePlaceAttempt();
-}
+// Removed landDrone function as handlePlaceAttempt covers it
