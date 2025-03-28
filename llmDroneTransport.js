@@ -454,19 +454,7 @@ function resetControlState() {
 }
 
 function handleKeyDown(event) {
-    // If auto-navigating, cancel it first before processing manual input
-    if (isAutoNavigating) {
-        cancelAutoNavigation();
-        // Allow a brief moment for cancellation logic before processing the key
-        setTimeout(() => processKeyDown(event), 50);
-        return; // Prevent immediate processing
-    }
-    processKeyDown(event); // Process immediately if not auto-navigating
-}
-
-// Separate function to process keydown after potential cancellation
-function processKeyDown(event) {
-    if (!droneActive || isAutoNavigating) return; // Double check auto-nav hasn't re-engaged
+    if (!droneActive || isAutoNavigating) return; // Ignore manual input during auto-nav
     if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT')) {
         return;
     }
@@ -491,8 +479,7 @@ function processKeyDown(event) {
 }
 
 function handleKeyUp(event) {
-    // KeyUp doesn't need to cancel auto-nav, just stop the manual control flag
-    if (!droneActive) return; // Ignore if drone not active
+    if (!droneActive || isAutoNavigating) return; // Ignore manual input during auto-nav
     const key = event.key.toLowerCase();
     switch (key) {
         case 'w': droneControls.backward = false; break;
@@ -534,24 +521,16 @@ function setupTouchButtonListeners() {
 
 // Wrapper functions to pass control parameter
 function handleTouchStartWrapper(e) {
-    // If auto-navigating, cancel it first
-    if (isAutoNavigating) {
-        cancelAutoNavigation();
-        // Allow a brief moment for cancellation logic before processing touch
-        setTimeout(() => processTouchStart(e, e.currentTarget.dataset.controlRef), 50);
-        return; // Prevent immediate processing
-    }
-    processTouchStart(e, e.currentTarget.dataset.controlRef); // Process immediately if not auto-navigating
+    if (isAutoNavigating) return; // Ignore if auto-navigating
+    handleTouchStart(e, e.currentTarget.dataset.controlRef);
 }
 
 function handleTouchEndWrapper(e) {
-    // TouchEnd doesn't need to cancel auto-nav, just stop the manual control flag
-    processTouchEnd(e, e.currentTarget.dataset.controlRef);
+    if (isAutoNavigating) return; // Ignore if auto-navigating
+    handleTouchEnd(e, e.currentTarget.dataset.controlRef);
 }
 
-// Separate function to process touch start after potential cancellation
-function processTouchStart(event, control) {
-    if (!droneActive || isAutoNavigating) return; // Double check auto-nav hasn't re-engaged
+function handleTouchStart(event, control) {
     event.preventDefault();
     event.stopPropagation();
     droneControls[control] = true;
@@ -560,16 +539,14 @@ function processTouchStart(event, control) {
     if (targetButton) targetButton.style.backgroundColor = 'rgba(60, 179, 113, 0.8)';
 }
 
-// Renamed from handleTouchEnd to avoid conflict
-function processTouchEnd(event, control) {
-    if (!droneActive) return;
+function handleTouchEnd(event, control) {
     event.preventDefault();
     event.stopPropagation();
     if (touchActiveControls.hasOwnProperty(control)) {
         droneControls[control] = false;
         delete touchActiveControls[control];
     }
-    const btn = droneContainer?.querySelector(`.drone-touch-btn[data-control="${control}"]`); // Optional chaining
+    const btn = droneContainer.querySelector(`.drone-touch-btn[data-control="${control}"]`);
     if (btn) {
         btn.style.backgroundColor = 'rgba(60, 179, 113, 0.4)';
     }
@@ -604,19 +581,7 @@ function setupJoystickListeners() {
 }
 
 function handleJoystickStart(event) {
-    // If auto-navigating, cancel it first
-    if (isAutoNavigating) {
-        cancelAutoNavigation();
-        // Allow a brief moment for cancellation logic
-        setTimeout(() => processJoystickStart(event), 50);
-        return; // Prevent immediate processing
-    }
-    processJoystickStart(event); // Process immediately if not auto-navigating
-}
-
-// Separate function to process joystick start
-function processJoystickStart(event) {
-    if (!droneActive || isAutoNavigating) return; // Double check auto-nav
+    if (isAutoNavigating) return; // Ignore during auto-nav
     event.preventDefault();
     joystickActive = true;
     const rect = joystickContainerElement.getBoundingClientRect();
@@ -624,24 +589,11 @@ function processJoystickStart(event) {
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
     };
-    handleJoystickMove(event); // Process initial position
+    handleJoystickMove(event);
 }
 
 function handleJoystickMove(event) {
-    // If auto-navigating, cancel it first (needed for mouse drag)
-    // Check if joystick itself is active *before* cancelling, only cancel on *new* movement
-    if (isAutoNavigating && joystickActive) {
-        cancelAutoNavigation();
-        // Allow a brief moment for cancellation logic
-        setTimeout(() => processJoystickMove(event), 50);
-        return; // Prevent immediate processing
-    }
-    processJoystickMove(event); // Process immediately if not auto-navigating or already cancelled
-}
-
-// Separate function to process joystick move
-function processJoystickMove(event) {
-    if (!joystickActive || isAutoNavigating) return; // Double check auto-nav
+    if (!joystickActive || isAutoNavigating) return; // Ignore during auto-nav
     event.preventDefault();
 
     let clientX, clientY;
@@ -649,7 +601,7 @@ function processJoystickMove(event) {
         if (event.touches.length === 0) return;
         clientX = event.touches[0].clientX;
         clientY = event.touches[0].clientY;
-    } else { // Mouse event
+    } else {
         clientX = event.clientX;
         clientY = event.clientY;
     }
@@ -668,12 +620,11 @@ function processJoystickMove(event) {
     const threshold = JOYSTICK_MAX_DISPLACEMENT * 0.2;
     const controlStrength = displacement / JOYSTICK_MAX_DISPLACEMENT;
 
-    // Determine movement based on clamped values and threshold
     if (clampedY < -threshold) {
-        droneControls.backward = true; // Touch Down = Move Backward
+        droneControls.backward = true;
         droneControls.forward = false;
     } else if (clampedY > threshold) {
-        droneControls.forward = true; // Touch Up = Move Forward
+        droneControls.forward = true;
         droneControls.backward = false;
     } else {
         droneControls.forward = false;
@@ -681,10 +632,10 @@ function processJoystickMove(event) {
     }
 
     if (clampedX < -threshold) {
-        droneControls.left = true; // Touch Left = Strafe Left
+        droneControls.left = true;
         droneControls.right = false;
     } else if (clampedX > threshold) {
-        droneControls.right = true; // Touch Right = Strafe Right
+        droneControls.right = true;
         droneControls.left = false;
     } else {
         droneControls.left = false;
@@ -693,11 +644,10 @@ function processJoystickMove(event) {
 }
 
 function handleJoystickEnd(event) {
-    // JoystickEnd doesn't need to cancel auto-nav
     if (!joystickActive && event && event.type !== 'mouseup' && event.type !== 'mouseleave') return;
     joystickActive = false;
 
-    if (joystickThumb) {
+    if (joystickThumb) { // Add null check
         joystickThumb.style.transform = 'translate(0, 0)';
     }
 
@@ -1119,3 +1069,5 @@ function positionCameraForDroneView(instant = false) {
     // Don't call controls.update() here when controls are disabled for drone
     // mainCityControls.update();
 }
+
+// Removed landDrone function as handlePlaceAttempt covers it
