@@ -98,7 +98,7 @@ export function activateDroneTransport(llmId) {
     console.log(`Activating drone transport for LLM: ${llm.name}`);
 
     // --- Music Change ---
-    playTrack('city'); // Ensure city music is playing for drone
+    playTrack('edge_of_time'); // Play edge of time during transport
     // --- End Music Change ---
 
     document.getElementById('llm-collection-ui').classList.remove('active');

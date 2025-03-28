@@ -7,7 +7,8 @@ let musicPlayerInitialized = false;
 // Updated paths to use MP3 files
 const CITY_MUSIC_TRACK = '/LLMs Morning Oasis - Sonauto.mp3'; 
 const CREATION_MUSIC_TRACK = '/The LLMs - Creation Awaits.mp3'; 
-let currentTrackType = 'city'; // 'city' or 'creation' or 'custom'
+const EDGE_OF_TIME_TRACK = '/The LLMs - Edge Of Time.mp3'; // New track
+let currentTrackType = 'city'; // 'city' or 'creation' or 'edge_of_time' or 'custom'
 let targetTrackType = 'city'; // Track the intended state
 let fadeInterval = null; // Track active fade interval
 let customMusicSelected = false;
@@ -63,6 +64,7 @@ function createMusicPlayerUI() {
         <div class="music-menu-options">
             <button class="music-option default-track" data-track-type="city">City Music</button>
             <button class="music-option creation-track" data-track-type="creation">Creation Music</button>
+            <button class="music-option edge-of-time-track" data-track-type="edge_of_time">Edge Of Time Music</button>
             <label class="music-option custom-track">
                 Custom Music
                 <input type="file" accept="audio/*" class="custom-music-input">
@@ -85,6 +87,8 @@ function initializeAudio() {
         // Determine current track type based on src
         if (bgAudio.src.includes(CREATION_MUSIC_TRACK)) {
             currentTrackType = 'creation';
+        } else if (bgAudio.src.includes(EDGE_OF_TIME_TRACK)) {
+            currentTrackType = 'edge_of_time';
         } else {
             currentTrackType = 'city'; // Assume city or custom
         }
@@ -154,6 +158,7 @@ function setupEventListeners() {
     if (defaultTrackBtn) {
         defaultTrackBtn.addEventListener('click', () => {
             playTrack('city');
+            customMusicSelected = false;
             toggleMusicMenu();
         });
     }
@@ -163,6 +168,17 @@ function setupEventListeners() {
     if (creationTrackBtn) {
         creationTrackBtn.addEventListener('click', () => {
             playTrack('creation');
+            customMusicSelected = false;
+            toggleMusicMenu();
+        });
+    }
+    
+    // Edge of time track selection
+    const edgeOfTimeTrackBtn = document.querySelector('.edge-of-time-track');
+    if (edgeOfTimeTrackBtn) {
+        edgeOfTimeTrackBtn.addEventListener('click', () => {
+            playTrack('edge_of_time');
+            customMusicSelected = false;
             toggleMusicMenu();
         });
     }
@@ -184,11 +200,11 @@ function setupEventListeners() {
     // Click outside closes menu
     document.addEventListener('click', (e) => {
         const musicMenu = document.querySelector('.music-menu');
-        const toggleButton = document.querySelector('.music-toggle-button');
-        
+        const musicControls = document.querySelector('.music-control-container'); // Check container instead of just button
+
         if (musicMenu && !musicMenu.classList.contains('hidden') &&
             !musicMenu.contains(e.target) &&
-            toggleButton && !toggleButton.contains(e.target)) {
+            musicControls && !musicControls.contains(e.target)) { // Check if click is outside the entire control container
             musicMenu.classList.add('hidden');
         }
     });
@@ -313,7 +329,7 @@ function createMusicToggle() {
 
 /**
  * Plays the specified track type, fading out the current track if necessary.
- * @param {'city' | 'creation' | 'custom'} type - The type of track to play.
+ * @param {'city' | 'creation' | 'edge_of_time' | 'custom'} type - The type of track to play.
  * @param {string} [customSrc] - The source URL if type is 'custom'.
  */
 export async function playTrack(type, customSrc = '') {
@@ -337,6 +353,7 @@ export async function playTrack(type, customSrc = '') {
 
     const newTrackSrc = type === 'creation' ? CREATION_MUSIC_TRACK :
                        type === 'city' ? CITY_MUSIC_TRACK :
+                       type === 'edge_of_time' ? EDGE_OF_TIME_TRACK :
                        type === 'custom' ? customSrc : CITY_MUSIC_TRACK;
 
     if (!newTrackSrc) {
