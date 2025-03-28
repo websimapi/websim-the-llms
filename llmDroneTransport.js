@@ -83,6 +83,7 @@ export function activateDroneTransport(llmId) {
     const llm = llmDataManager.getLLMById(llmId);
     if (!llm) return;
 
+    // Assign global references *before* using them
     mainCityScene = window.cityScene;
     mainCityCamera = window.camera;
     mainCityControls = window.controls;
@@ -1056,22 +1057,29 @@ function placeLLMOnPlot(plotData, placementPoint) {
     // Remove plot outline and click target
     console.log(`Removing outline/target for plot ID: ${currentPlotData.id}`);
     let plotOutlineToRemove = null;
+    const objectsToRemove = []; // Collect objects to remove after traversal
+
     mainCityScene.traverse(obj => {
-        // Find both the outline and the click target for the same plot ID
-        if (obj.userData && obj.userData.id === currentPlotData.id && (obj.name === 'plot_outline' || obj.name === 'plot_click_target')) {
-            // Remove the object itself
-            if (obj.parent) {
-                // Dispose geometry and materials before removing
-                disposeHierarchy(obj);
-                console.log(`Removing ${obj.name} from parent ${obj.parent.name}`);
-                obj.parent.remove(obj);
-            }
-            // Keep track of the outline to hide hover info if needed
+        // Safety check for obj and obj.userData
+        if (obj && obj.userData && obj.userData.id === currentPlotData.id && (obj.name === 'plot_outline' || obj.name === 'plot_click_target')) {
+            objectsToRemove.push(obj); // Add to removal list
             if (obj.name === 'plot_outline') {
-                plotOutlineToRemove = obj;
+                plotOutlineToRemove = obj; // Keep track for hover info hiding
             }
         }
     });
+
+    // Dispose and remove collected objects *after* traversal completes
+    objectsToRemove.forEach(obj => {
+        if (obj.parent) {
+            disposeHierarchy(obj); // Dispose geometry/materials and remove from parent
+            console.log(`Removed ${obj.name} (ID: ${obj.userData.id})`);
+        } else {
+            console.warn(`Object ${obj.name} has no parent, cannot remove.`);
+            disposeHierarchy(obj); // Still attempt disposal
+        }
+    });
+
 
     if (plotOutlineToRemove) {
         import('./plotHoverInfo.js').then(module => {
@@ -1084,28 +1092,43 @@ function placeLLMOnPlot(plotData, placementPoint) {
     }
 
     console.log(`LLM ${currentLLMTransporting.name} placed on plot ${currentPlotData.name}.`);
+
+    // Deactivate drone after successful placement
+    deactivateDroneTransport(false);
 }
 
 function disposeHierarchy(object) {
+    // Safety check: Ensure the object is valid before proceeding
+    if (!object) {
+        console.warn("disposeHierarchy called with null or undefined object.");
+        return;
+    }
+
     object.traverse(child => {
-        if (child.isMesh) {
+        // Safety check: Ensure child is valid before accessing properties
+        if (child && child.isMesh) {
             if (child.geometry) {
                 child.geometry.dispose();
             }
             if (child.material) {
+                // Check if material is an array
                 if (Array.isArray(child.material)) {
                     child.material.forEach(material => {
-                        if (material.map) material.map.dispose();
-                        material.dispose();
+                        // Safety check: Ensure material instance is valid
+                        if (material) {
+                            if (material.map) material.map.dispose();
+                            material.dispose();
+                        }
                     });
                 } else {
+                    // Safety check: Ensure material instance is valid
                     if (child.material.map) child.material.map.dispose();
                     child.material.dispose();
                 }
             }
         }
     });
-    // Remove the object itself if it's not already removed by parent logic
+    // Remove the object itself from its parent *after* disposing children
     if (object.parent) {
         object.parent.remove(object);
     }
