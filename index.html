@@ -169,88 +169,85 @@
                                 <input type="radio" name="model-type" value="humanoid" class="model-badge-input">
                                 <div class="model-badge-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor">
-                                        <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/>
+                                        <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
                                     </svg>
                                 </div>
                                 <span class="model-badge-label">Humanoid</span>
                             </label>
                         </div>
                     </div>
-                    <div class="setting-item">
-                        <label class="setting-label" for="llm-color">Color (click on any body part to select it)</label>
-                        <div class="color-picker-container">
-                            <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
-                            <span id="selected-mesh-name" class="selected-mesh-name hidden">No part selected</span>
-                        </div>
-                        
-                        <div class="no-selection-message">Select a body part to manipulate it</div>
-                        
-                        <div class="manipulation-controls">
-                            <!-- Rotation Controls -->
-                            <div class="control-group">
-                                <span class="control-group-label">Rotation:</span>
-                                
-                                <!-- X Axis -->
-                                <button id="rotate-x-minus" class="control-button axis-x">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
-                                </button>
-                                <span id="rotation-x-value" class="control-value">0.00</span>
-                                <button id="rotate-x-plus" class="control-button axis-x">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
-                                </button>
-                                
-                                <!-- Y Axis -->
-                                <button id="rotate-y-minus" class="control-button axis-y">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
-                                </button>
-                                <span id="rotation-y-value" class="control-value">0.00</span>
-                                <button id="rotate-y-plus" class="control-button axis-y">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
-                                </button>
-                                
-                                <!-- Z Axis -->
-                                <button id="rotate-z-minus" class="control-button axis-z">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
-                                </button>
-                                <span id="rotation-z-value" class="control-value">0.00</span>
-                                <button id="rotate-z-plus" class="control-button axis-z">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z
-                                </button>
-                            </div>
-                            
-                            <!-- Position Controls -->
-                            <div class="control-group">
-                                <span class="control-group-label">Position:</span>
-                                
-                                <!-- X Axis -->
-                                <button id="position-x-minus" class="control-button axis-x">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>X
-                                </button>
-                                <span id="position-x-value" class="control-value">0.00</span>
-                                <button id="position-x-plus" class="control-button axis-x">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>X
-                                </button>
-                                
-                                <!-- Y Axis -->
-                                <button id="position-y-minus" class="control-button axis-y">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Y
-                                </button>
-                                <span id="position-y-value" class="control-value">0.00</span>
-                                <button id="position-y-plus" class="control-button axis-y">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Y
-                                </button>
-                                
-                                <!-- Z Axis -->
-                                <button id="position-z-minus" class="control-button axis-z">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>Z
-                                </button>
-                                <span id="position-z-value" class="control-value">0.00</span>
-                                <button id="position-z-plus" class="control-button axis-z">
-                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Z
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                </div>
+                
+                <div class="settings-group"> 
+                     <div class="settings-group-title">Appearance</div>
+                     <div class="setting-item">
+                         <label class="setting-label" for="llm-color">Base Color & Part Editor</label>
+                         <div class="color-picker-container">
+                             <input type="color" id="llm-color" class="setting-input color-input" value="#3cb371">
+                             <span id="selected-mesh-name" class="selected-mesh-name hidden">No part selected</span>
+                         </div>
+                         <div class="no-selection-message">Select a body part to manipulate it</div>
+                         <div class="manipulation-controls">
+                             <!-- Rotation Controls -->
+                             <div class="control-group">
+                                 <span class="control-group-label">Rotation:</span>
+                                 <!-- X -->
+                                 <button id="rotate-x-minus" class="control-button axis-x" title="Rotate X Down">
+                                     <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                                 </button>
+                                 <span id="rotation-x-value" class="control-value">0.00</span>
+                                 <button id="rotate-x-plus" class="control-button axis-x" title="Rotate X Up">
+                                     <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
+                                 </button>
+                                 <!-- Y -->
+                                 <button id="rotate-y-minus" class="control-button axis-y" title="Rotate Y Left">
+                                     <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"/></svg>
+                                 </button>
+                                 <span id="rotation-y-value" class="control-value">0.00</span>
+                                 <button id="rotate-y-plus" class="control-button axis-y" title="Rotate Y Right">
+                                     <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg>
+                                 </button>
+                                 <!-- Z -->
+                                 <button id="rotate-z-minus" class="control-button axis-z" title="Rotate Z Counter-Clockwise">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.84 18.25 4.59 15H8v-2H2v6h2v-3.59l3.25 3.25L8.66 20l3.5-3.5 3.5 3.5 1.41-1.41-3.5-3.5 3.5-3.5-1.41-1.41-3.5 3.5-3.5-3.5L7.24 4l3.5 3.5L14.24 4l1.41 1.41-3.5 3.5 3.5 3.5-1.41 1.41-3.5-3.5-3.5 3.5-1.42-1.41z"/></svg>
+                                 </button>
+                                 <span id="rotation-z-value" class="control-value">0.00</span>
+                                 <button id="rotate-z-plus" class="control-button axis-z" title="Rotate Z Clockwise">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.16 18.25 19.41 15H16v-2h6v6h-2v-3.59l-3.25 3.25L15.34 20l-3.5-3.5-3.5 3.5-1.41-1.41 3.5-3.5-3.5-3.5 1.41-1.41 3.5 3.5 3.5-3.5L16.76 4l-3.5 3.5L9.76 4 8.34 5.41l3.5 3.5-3.5 3.5 1.41 1.41 3.5-3.5 3.5 3.5 1.42-1.41z"/></svg>
+                                 </button>
+                             </div>
+                             <!-- Position Controls -->
+                             <div class="control-group">
+                                 <span class="control-group-label">Position:</span>
+                                 <!-- X -->
+                                 <button id="position-x-minus" class="control-button axis-x" title="Move Left">
+                                     <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"/></svg>
+                                 </button>
+                                 <span id="position-x-value" class="control-value">0.00</span>
+                                 <button id="position-x-plus" class="control-button axis-x" title="Move Right">
+                                     <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"/></svg>
+                                 </button>
+                                 <!-- Y -->
+                                 <button id="position-y-minus" class="control-button axis-y" title="Move Down">
+                                      <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                                 </button>
+                                 <span id="position-y-value" class="control-value">0.00</span>
+                                 <button id="position-y-plus" class="control-button axis-y" title="Move Up">
+                                      <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
+                                 </button>
+                                 <!-- Z -->
+                                 <button id="position-z-minus" class="control-button axis-z" title="Move Backward">
+                                      <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+                                 </button>
+                                 <span id="position-z-value" class="control-value">0.00</span>
+                                 <button id="position-z-plus" class="control-button axis-z" title="Move Forward">
+                                      <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6 1.41 1.41z"/></svg>
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                     <!-- Removed style select -->
+                     <!-- TTS Voice Selector inserted here by JS -->
                 </div>
 
                 <div class="settings-group">

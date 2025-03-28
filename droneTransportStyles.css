@@ -17,24 +17,20 @@
 }
 
 .drone-controls-info {
-    background-color: rgba(0, 0, 0, 0.75);
-    border: 2px solid #3cb371;
+    background-color: rgba(0, 0, 0, 0); 
+    border: none;
     border-radius: 15px;
     padding: 15px;
     color: white;
     width: 100%;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: none; 
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
 .drone-controls-title {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #3cb371;
-    margin-bottom: 5px; 
-    text-align: center;
+    display: none; 
 }
 
 /* LLM Info Section Styles */
@@ -170,12 +166,12 @@
 
 /* Container for vertical and rotation buttons */
 .drone-action-buttons {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    grid-template-rows: repeat(2, 1fr);    
     gap: 15px;
-    min-height: 130px; 
+    justify-items: center; 
+    align-items: center;
 }
 
 /* Individual action buttons (Up/Down, Rotate) */
@@ -193,6 +189,13 @@
     cursor: pointer;
     user-select: none;
     transition: background-color 0.1s linear;
+}
+
+.drone-touch-btn[data-control="up"],
+.drone-touch-btn[data-control="down"],
+.drone-touch-btn[data-control="rotateLeft"],
+.drone-touch-btn[data-control="rotateRight"] {
+    display: flex; 
 }
 
 .drone-touch-btn:active {
@@ -223,6 +226,7 @@
     justify-content: center;
     align-items: center;
     border: 2px solid rgba(255, 255, 255, 0.3);
+    order: -1; 
 }
 
 .drone-joystick-thumb {

@@ -111,7 +111,6 @@ function createDroneUI(llm) {
 
     droneContainer.innerHTML = `
         <div class="drone-controls-info">
-            <div class="drone-controls-title">Drone Transport</div>
             <div class="drone-llm-info">
                 <div class="drone-llm-profile-image">${profileImageHTML}</div>
                 <div class="drone-llm-text-info">
@@ -131,29 +130,22 @@ function createDroneUI(llm) {
                 <p>Press <strong>Esc</strong> to cancel</p>
             </div>
 
-            <!-- Mobile Touch Controls -->
             <div class="drone-touch-controls">
-                <!-- Action Buttons (Left Side) -->
-                <div class="drone-action-buttons">
-                    <button class="drone-touch-btn" data-control="up">▲</button> 
-                    <button class="drone-touch-btn" data-control="down">▼</button> 
-                </div>
-
-                <!-- Joystick (Center) -->
                 <div class="drone-joystick-container">
                     <div class="drone-joystick-thumb"></div>
                 </div>
 
-                <!-- Action Buttons (Right Side) -->
                 <div class="drone-action-buttons">
+                    <button class="drone-touch-btn" data-control="up">▲</button> 
                     <button class="drone-touch-btn" data-control="rotateLeft">↺</button>
+                    <button class="drone-touch-btn" data-control="down">▼</button> 
                     <button class="drone-touch-btn" data-control="rotateRight">↻</button>
                 </div>
-                 <!-- Hidden original direction buttons for logic -->
-                 <button class="drone-touch-btn" data-control="forward"></button>
-                 <button class="drone-touch-btn" data-control="backward"></button>
-                 <button class="drone-touch-btn" data-control="left"></button>
-                 <button class="drone-touch-btn" data-control="right"></button>
+
+                <button class="drone-touch-btn" data-control="forward"></button>
+                <button class="drone-touch-btn" data-control="backward"></button>
+                <button class="drone-touch-btn" data-control="left"></button>
+                <button class="drone-touch-btn" data-control="right"></button>
             </div>
 
             <button class="drone-land-btn">Place LLM</button>
