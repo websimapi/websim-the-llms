@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { config } from './config.js'; // Import config for ground size
 
 /**
  * Sets up advanced lighting for the city scene using modern Three.js techniques
@@ -34,15 +33,13 @@ export function setupSceneLighting(scene, renderer) {
     sunLight.shadow.mapSize.width = 2048;  // Higher res shadows
     sunLight.shadow.mapSize.height = 2048;
     
-    // Optimize shadow camera frustum to cover a larger area
-    const shadowFrustumSize = (config.citySize || 500) * 0.6; // Cover slightly more than primary ground
+    // Optimize shadow camera frustum to cover scene area
     sunLight.shadow.camera.near = 10;
-    // Increase far plane to cover more distant terrain elements that might cast shadows
-    sunLight.shadow.camera.far = 300; 
-    sunLight.shadow.camera.left = -shadowFrustumSize;
-    sunLight.shadow.camera.right = shadowFrustumSize;
-    sunLight.shadow.camera.top = shadowFrustumSize;
-    sunLight.shadow.camera.bottom = -shadowFrustumSize;
+    sunLight.shadow.camera.far = 200;
+    sunLight.shadow.camera.left = -60;
+    sunLight.shadow.camera.right = 60;
+    sunLight.shadow.camera.top = 60;
+    sunLight.shadow.camera.bottom = -60;
     sunLight.shadow.bias = -0.0005; // Reduce shadow acne
     sunLight.shadow.normalBias = 0.02; // Improve normal-mapped materials shadowing
     
@@ -61,12 +58,16 @@ export function setupSceneLighting(scene, renderer) {
     
     // Add subtle point lights for visual interest around central area
     addPointLights(scene);
+
+    // Setup dynamic shadow mapping based on camera position
+    setupDynamicShadows(scene, sunLight, targetObject);
     
     return {
         sunLight,
         fillLight,
         ambientLight,
-        hemisphereLight
+        hemisphereLight,
+        targetObject // Export the target for use in dynamic shadows
     };
 }
 
@@ -139,4 +140,73 @@ function setupLightAnimation(scene) {
     
     // Store the animation function for use in the main animation loop
     window.cityAnimateLightsFn = animateLights;
+}
+
+// New function to setup dynamic shadows that follow the camera
+function setupDynamicShadows(scene, sunLight, targetObject) {
+    // Create a helper object to store shadow update properties
+    const shadowHelper = {
+        camera: null,
+        sunLight: sunLight,
+        targetObject: targetObject,
+        shadowCameraSize: 50, // Default size - will be adjusted based on camera
+        shadowFollowSpeed: 0.1, // Smoothing factor for shadow movement
+        shadowResolution: 2048, // Default shadow resolution
+        lastCameraPosition: new THREE.Vector3(), // Track camera movement
+        movementThreshold: 5, // Units of movement before shadow gets updated
+        updateInterval: 100, // Milliseconds between forced updates
+        lastUpdateTime: 0
+    };
+    
+    // Store the shadow helper on the scene for the animation loop to access
+    scene.userData.shadowHelper = shadowHelper;
+
+    // Define the shadow update function that will be called in the animation loop
+    window.updateDynamicShadows = function(camera, delta) {
+        if (!scene.userData.shadowHelper || !camera) return;
+        
+        const helper = scene.userData.shadowHelper;
+        helper.camera = camera; // Keep camera reference updated
+        
+        // Check if enough time has passed since last update or camera moved substantially
+        const now = performance.now();
+        const cameraMovement = camera.position.distanceTo(helper.lastCameraPosition);
+        const timeSinceUpdate = now - helper.lastUpdateTime;
+        
+        if (cameraMovement > helper.movementThreshold || timeSinceUpdate > helper.updateInterval) {
+            // Update shadow camera to focus on area around camera view
+            // Calculate target point - average of camera position and look target
+            const cameraTarget = new THREE.Vector3();
+            camera.getWorldDirection(cameraTarget);
+            cameraTarget.multiplyScalar(30).add(camera.position); // Look 30 units ahead
+            
+            // Move the shadow camera target smoothly
+            helper.targetObject.position.lerp(cameraTarget, helper.shadowFollowSpeed);
+            
+            // Adjust shadow camera frustum based on camera height and distance
+            const height = Math.max(20, camera.position.y * 1.5);
+            const shadowSize = Math.max(40, height * 1.5);
+            
+            // Update shadow camera size
+            helper.sunLight.shadow.camera.left = -shadowSize;
+            helper.sunLight.shadow.camera.right = shadowSize;
+            helper.sunLight.shadow.camera.top = shadowSize;
+            helper.sunLight.shadow.camera.bottom = -shadowSize;
+            
+            // Position the sun light relative to the camera but maintain height and angle
+            const sunPosition = new THREE.Vector3(
+                camera.position.x + 50, 
+                100, // Keep consistent height
+                camera.position.z + 50
+            );
+            helper.sunLight.position.lerp(sunPosition, helper.shadowFollowSpeed);
+            
+            // Update shadow camera
+            helper.sunLight.shadow.camera.updateProjectionMatrix();
+            
+            // Store last values
+            helper.lastCameraPosition.copy(camera.position);
+            helper.lastUpdateTime = now;
+        }
+    };
 }

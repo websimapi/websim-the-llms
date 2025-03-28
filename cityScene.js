@@ -163,8 +163,11 @@ function initCityScene() {
     controls.maxPolarAngle = Math.PI / 2.1; // Allow slightly lower angle
     controls.enabled = false; // Disable controls during intro animation
 
+    // Setup clock for animation and shadow updates
+    const clock = new THREE.Clock();
+
     // Setup advanced lighting - use new function from dedicated file
-    setupSceneLighting(scene, renderer);
+    const lightingSetup = setupSceneLighting(scene, renderer);
 
     // Call imported setup functions
     setupUIInteractions();
@@ -225,6 +228,11 @@ function initCityScene() {
         // Call animation functions for other components (like lighting)
         if (window.cityAnimateLightsFn) {
             window.cityAnimateLightsFn();
+        }
+        
+        // Update dynamic shadows based on camera position
+        if (window.updateDynamicShadows) {
+            window.updateDynamicShadows(camera, clock.getDelta());
         }
 
         // Render the scene
