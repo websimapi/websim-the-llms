@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { config } from './config.js'; // Import config for ground size
 
 /**
  * Sets up advanced lighting for the city scene using modern Three.js techniques
@@ -33,13 +34,15 @@ export function setupSceneLighting(scene, renderer) {
     sunLight.shadow.mapSize.width = 2048;  // Higher res shadows
     sunLight.shadow.mapSize.height = 2048;
     
-    // Optimize shadow camera frustum to cover scene area
+    // Optimize shadow camera frustum to cover a larger area
+    const shadowFrustumSize = (config.citySize || 500) * 0.6; // Cover slightly more than primary ground
     sunLight.shadow.camera.near = 10;
-    sunLight.shadow.camera.far = 200;
-    sunLight.shadow.camera.left = -60;
-    sunLight.shadow.camera.right = 60;
-    sunLight.shadow.camera.top = 60;
-    sunLight.shadow.camera.bottom = -60;
+    // Increase far plane to cover more distant terrain elements that might cast shadows
+    sunLight.shadow.camera.far = 300; 
+    sunLight.shadow.camera.left = -shadowFrustumSize;
+    sunLight.shadow.camera.right = shadowFrustumSize;
+    sunLight.shadow.camera.top = shadowFrustumSize;
+    sunLight.shadow.camera.bottom = -shadowFrustumSize;
     sunLight.shadow.bias = -0.0005; // Reduce shadow acne
     sunLight.shadow.normalBias = 0.02; // Improve normal-mapped materials shadowing
     
