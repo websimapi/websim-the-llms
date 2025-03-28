@@ -13,7 +13,7 @@ let droneRotation = new THREE.Euler(0, 0, 0);
 let droneVelocity = new THREE.Vector3();
 let droneAngularVelocity = new THREE.Euler();
 let droneAnimationId = null;
-let cameraTransitionId = null; 
+let cameraTransitionId = null;
 let droneContainer;
 let currentLLMTransporting = null;
 let mainCityScene, mainCityCamera, mainCityControls;
@@ -63,9 +63,8 @@ let droneControls = {
 };
 let touchActiveControls = {};
 
-// Expose auto-navigating state and target plot ID globally
+// Expose auto-navigating state globally
 window.isAutoNavigating = isAutoNavigating;
-window.autoNavTargetPlotId = autoNavTargetPlotId;
 
 export function activateDroneTransport(llmId) {
     if (droneActive) return;
@@ -121,24 +120,13 @@ export function activateDroneTransport(llmId) {
     isAutoNavigating = false; // Ensure auto-nav is off initially
     window.isAutoNavigating = false;
     autoNavReachedTarget = false;
-    autoNavTargetPlotId = null; // Reset target plot ID
-    window.autoNavTargetPlotId = null;
 
     animateDrone();
 }
 
 // Function to start auto-navigation
 export function startAutoNavigation(targetPosition, targetPlotId) {
-    // Don't start if already navigating to the same plot
-    if (isAutoNavigating && targetPlotId === autoNavTargetPlotId) {
-        console.log("Already navigating to plot:", targetPlotId);
-        return;
-    }
-    // If navigating to a different plot, cancelAutoNavigation should have been called already
-    // but we double-check and reset state here just in case.
-    if (isAutoNavigating) {
-         cancelAutoNavigation(); // Ensure previous state is cleared if switching mid-flight
-    }
+    if (!droneActive || isAutoNavigating) return;
 
     console.log("Starting auto-navigation to:", targetPosition, "Plot ID:", targetPlotId);
     isAutoNavigating = true;
@@ -147,7 +135,6 @@ export function startAutoNavigation(targetPosition, targetPlotId) {
     // Adjust target Y position for hovering
     autoNavTargetPosition.y = AUTO_NAV_HOVER_ALTITUDE;
     autoNavTargetPlotId = targetPlotId;
-    window.autoNavTargetPlotId = targetPlotId; // Update global reference
     autoNavReachedTarget = false; // Reset reached flag
 
     // Disable manual controls visually and functionally
@@ -163,20 +150,19 @@ export function startAutoNavigation(targetPosition, targetPlotId) {
 
 // Function to cancel auto-navigation
 export function cancelAutoNavigation() {
-    if (!isAutoNavigating) return;
+    if (!isAutoNavigating) return; // Only cancel if active
 
     console.log("Cancelling auto-navigation.");
     isAutoNavigating = false;
     window.isAutoNavigating = false;
     autoNavTargetPlotId = null;
-    window.autoNavTargetPlotId = null; // Clear global reference
     autoNavReachedTarget = false;
     droneVelocity.multiplyScalar(0.5); // Reduce speed gently
 
     // Re-enable manual controls
     enableManualControls();
 
-    // Reset UI
+    // Reset UI text and action
     updateDroneUIButtonText("Place LLM");
     const landButton = droneContainer.querySelector('.drone-land-btn');
     if (landButton) {
@@ -186,66 +172,188 @@ export function cancelAutoNavigation() {
 
 function disableManualControls() {
     resetControlState(); // Ensure all flags are false
-    // Disable keyboard/touch input temporarily
+    // Only *visually* disable for simplicity, actual input blocking happens in handlers
+    disableTouchButtonListenersVisual();
+    disableJoystickListenersVisual();
+}
+
+function enableManualControls() {
+    // Re-enable visual appearance
+    enableTouchButtonListenersVisual();
+    enableJoystickListenersVisual();
+    // Ensure event listeners are attached (they check droneActive/isAutoNavigating internally)
+    // No need to re-add/remove listeners constantly if the handlers check the state
+}
+
+// Visual disabling functions (don't remove listeners, just change appearance)
+function disableTouchButtonListenersVisual() {
+    droneContainer?.querySelectorAll('.drone-touch-btn').forEach(btn => {
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none'; // Still prevent clicks during auto-nav visually
+    });
+}
+
+function enableTouchButtonListenersVisual() {
+    droneContainer?.querySelectorAll('.drone-touch-btn').forEach(btn => {
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+    });
+}
+
+function disableJoystickListenersVisual() {
+    if (joystickContainerElement) {
+        joystickContainerElement.style.opacity = '0.5';
+        joystickContainerElement.style.pointerEvents = 'none'; // Still prevent clicks during auto-nav visually
+        if (joystickActive) handleJoystickEnd(); // Ensure joystick resets if active
+    }
+}
+
+function enableJoystickListenersVisual() {
+    if (joystickContainerElement) {
+        joystickContainerElement.style.opacity = '1';
+        joystickContainerElement.style.pointerEvents = 'auto';
+    }
+}
+
+function setupInputListeners() {
+    resetControlState(); // Clear flags
+    // Use addEventListener with named functions for easier removal/checking
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    enableTouchButtonListeners(); // Sets up or re-enables touch button listeners
+    enableJoystickListeners(); // Sets up or re-enables joystick listeners
+
+    // Ensure land button handler is correct
+    const landButton = droneContainer?.querySelector('.drone-land-btn');
+    if (landButton) {
+        landButton.onclick = handlePlaceAttempt;
+        updateDroneUIButtonText("Place LLM"); // Ensure correct text
+    }
+}
+
+function removeInputListeners() {
+    // Use removeEventListener with the same named functions
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('keyup', handleKeyUp);
     disableTouchButtonListeners();
     disableJoystickListeners();
-}
 
-function enableManualControls() {
-    // Re-enable keyboard/touch input
-    setupInputListeners(); // This re-adds all listeners
-}
-
-function disableTouchButtonListeners() {
-    droneContainer.querySelectorAll('.drone-touch-btn').forEach(btn => {
-        // Remove listeners - requires named functions or tracking listeners
-        // For simplicity, just visually disable for now
-        btn.style.opacity = '0.5';
-        btn.style.pointerEvents = 'none';
-    });
-}
-
-function enableTouchButtonListeners() {
-    droneContainer.querySelectorAll('.drone-touch-btn').forEach(btn => {
-        btn.style.opacity = '1';
-        btn.style.pointerEvents = 'auto';
-    });
-    // Re-add listeners if they were fully removed
-    setupTouchButtonListeners();
-}
-
-function disableJoystickListeners() {
-    if (joystickContainerElement) {
-        joystickContainerElement.removeEventListener('touchstart', handleJoystickStart);
-        joystickContainerElement.removeEventListener('touchmove', handleJoystickMove);
-        joystickContainerElement.removeEventListener('touchend', handleJoystickEnd);
-        joystickContainerElement.removeEventListener('touchcancel', handleJoystickEnd);
-        joystickContainerElement.removeEventListener('mousedown', handleJoystickStart);
-        window.removeEventListener('mousemove', handleJoystickMove);
-        window.removeEventListener('mouseup', handleJoystickEnd);
-        joystickContainerElement.style.opacity = '0.5';
-        joystickContainerElement.style.pointerEvents = 'none';
-        if (joystickActive) handleJoystickEnd(); // Ensure joystick resets
-    }
-}
-
-function enableJoystickListeners() {
-    if (joystickContainerElement) {
-        joystickContainerElement.style.opacity = '1';
-        joystickContainerElement.style.pointerEvents = 'auto';
-        // Re-add listeners if they were fully removed
-        setupJoystickListeners();
-    }
-}
-
-function updateDroneUIButtonText(text) {
-    const landButton = droneContainer.querySelector('.drone-land-btn');
+    const landButton = droneContainer?.querySelector('.drone-land-btn');
     if (landButton) {
-        landButton.textContent = text;
+        landButton.onclick = null; // Remove handler
     }
 }
+
+// ... resetControlState ...
+
+function handleKeyDown(event) {
+    // Check if auto-navigating FIRST
+    if (isAutoNavigating) {
+        // Check if the key pressed is a drone control key
+        const controlKeys = ['w', 's', 'a', 'd', 'q', 'e', 'arrowleft', 'arrowright'];
+        if (controlKeys.includes(event.key.toLowerCase())) {
+            console.log("Manual keyboard input detected during auto-pilot. Cancelling auto-pilot.");
+            cancelAutoNavigation();
+            // Proceed to handle the key press normally AFTER cancelling auto-nav
+        } else if (event.key.toLowerCase() === 'escape') {
+             // Allow Esc to cancel drone mode even during auto-nav
+             deactivateDroneTransport(true);
+             event.preventDefault();
+             return; // Exit early
+        } else {
+            // Ignore other keys during auto-nav
+            return;
+        }
+    }
+
+    if (!droneActive) return; // Ignore if drone is not active
+
+    // Ignore input if focus is on an input element
+    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT')) {
+        return;
+    }
+
+    const key = event.key.toLowerCase();
+    let handled = true;
+
+    switch (key) {
+        case 'w': droneControls.backward = true; break;
+        case 's': droneControls.forward = true; break;
+        case 'a': droneControls.left = true; break;
+        case 'd': droneControls.right = true; break;
+        case 'q': droneControls.down = true; break;
+        case 'e': droneControls.up = true; break;
+        case 'arrowleft': droneControls.rotateLeft = true; break;
+        case 'arrowright': droneControls.rotateRight = true; break;
+        case 'p': handlePlaceAttempt(); break;
+        // Esc handled above for auto-nav case, and here for manual
+        case 'escape': deactivateDroneTransport(true); break;
+        default: handled = false;
+    }
+    if (handled) event.preventDefault();
+}
+
+// handleKeyUp remains mostly the same, just needs the !isAutoNavigating check added if not already present
+function handleKeyUp(event) {
+    // No need to cancel auto-nav on keyup, only on keydown
+    if (!droneActive || isAutoNavigating) return;
+    const key = event.key.toLowerCase();
+    switch (key) {
+        case 'w': droneControls.backward = false; break;
+        case 's': droneControls.forward = false; break;
+        case 'a': droneControls.left = false; break;
+        case 'd': droneControls.right = false; break;
+        case 'q': droneControls.down = false; break;
+        case 'e': droneControls.up = false; break;
+        case 'arrowleft': droneControls.rotateLeft = false; break;
+        case 'arrowright': droneControls.rotateRight = false; break;
+    }
+}
+
+// ... setupTouchButtonListeners ...
+
+// Wrapper functions to pass control parameter and check auto-nav
+function handleTouchStartWrapper(e) {
+    if (isAutoNavigating) {
+        console.log("Manual touch input detected during auto-pilot. Cancelling auto-pilot.");
+        cancelAutoNavigation();
+        // Proceed to handle touch normally AFTER cancelling
+    }
+    handleTouchStart(e, e.currentTarget.dataset.controlRef);
+}
+
+function handleTouchEndWrapper(e) {
+    // No need to cancel auto-nav on touchend
+    if (isAutoNavigating) return;
+    handleTouchEnd(e, e.currentTarget.dataset.controlRef);
+}
+
+// handleTouchStart and handleTouchEnd remain the same internally
+
+// ... setupJoystickListeners ...
+
+function handleJoystickStart(event) {
+    // Check if auto-navigating FIRST
+    if (isAutoNavigating) {
+        console.log("Manual joystick input detected during auto-pilot. Cancelling auto-pilot.");
+        cancelAutoNavigation();
+        // Proceed to handle joystick normally AFTER cancelling
+    }
+    if (!droneActive) return; // Add guard for inactive drone
+
+    event.preventDefault();
+    joystickActive = true;
+    const rect = joystickContainerElement.getBoundingClientRect();
+    joystickOrigin = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+    };
+    handleJoystickMove(event); // Start tracking position immediately
+}
+
+// handleJoystickMove and handleJoystickEnd remain the same internally
+
+// ... other functions ...
 
 function createDroneUI(llm) {
     const existingContainer = document.getElementById('drone-transport-ui');
@@ -432,10 +540,11 @@ function createPropeller(hubMaterial, bladeMaterial) {
 
 function setupInputListeners() {
     resetControlState(); // Clear flags
+    // Use addEventListener with named functions for easier removal/checking
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    enableTouchButtonListeners(); // Use enable function to setup/re-enable
-    enableJoystickListeners(); // Use enable function to setup/re-enable
+    enableTouchButtonListeners(); // Sets up or re-enables touch button listeners
+    enableJoystickListeners(); // Sets up or re-enables joystick listeners
 
     // Ensure land button handler is correct
     const landButton = droneContainer?.querySelector('.drone-land-btn');
@@ -446,6 +555,7 @@ function setupInputListeners() {
 }
 
 function removeInputListeners() {
+    // Use removeEventListener with the same named functions
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('keyup', handleKeyUp);
     disableTouchButtonListeners();
@@ -468,7 +578,28 @@ function resetControlState() {
 }
 
 function handleKeyDown(event) {
-    if (!droneActive || isAutoNavigating) return; // Ignore manual input during auto-nav
+    // Check if auto-navigating FIRST
+    if (isAutoNavigating) {
+        // Check if the key pressed is a drone control key
+        const controlKeys = ['w', 's', 'a', 'd', 'q', 'e', 'arrowleft', 'arrowright'];
+        if (controlKeys.includes(event.key.toLowerCase())) {
+            console.log("Manual keyboard input detected during auto-pilot. Cancelling auto-pilot.");
+            cancelAutoNavigation();
+            // Proceed to handle the key press normally AFTER cancelling auto-nav
+        } else if (event.key.toLowerCase() === 'escape') {
+             // Allow Esc to cancel drone mode even during auto-nav
+             deactivateDroneTransport(true);
+             event.preventDefault();
+             return; // Exit early
+        } else {
+            // Ignore other keys during auto-nav
+            return;
+        }
+    }
+
+    if (!droneActive) return; // Ignore if drone is not active
+
+    // Ignore input if focus is on an input element
     if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT')) {
         return;
     }
@@ -486,6 +617,7 @@ function handleKeyDown(event) {
         case 'arrowleft': droneControls.rotateLeft = true; break;
         case 'arrowright': droneControls.rotateRight = true; break;
         case 'p': handlePlaceAttempt(); break;
+        // Esc handled above for auto-nav case, and here for manual
         case 'escape': deactivateDroneTransport(true); break;
         default: handled = false;
     }
@@ -493,7 +625,8 @@ function handleKeyDown(event) {
 }
 
 function handleKeyUp(event) {
-    if (!droneActive || isAutoNavigating) return; // Ignore manual input during auto-nav
+    // No need to cancel auto-nav on keyup, only on keydown
+    if (!droneActive || isAutoNavigating) return;
     const key = event.key.toLowerCase();
     switch (key) {
         case 'w': droneControls.backward = false; break;
@@ -535,12 +668,17 @@ function setupTouchButtonListeners() {
 
 // Wrapper functions to pass control parameter
 function handleTouchStartWrapper(e) {
-    if (isAutoNavigating) return; // Ignore if auto-navigating
+    if (isAutoNavigating) {
+        console.log("Manual touch input detected during auto-pilot. Cancelling auto-pilot.");
+        cancelAutoNavigation();
+        // Proceed to handle touch normally AFTER cancelling
+    }
     handleTouchStart(e, e.currentTarget.dataset.controlRef);
 }
 
 function handleTouchEndWrapper(e) {
-    if (isAutoNavigating) return; // Ignore if auto-navigating
+    // No need to cancel auto-nav on touchend
+    if (isAutoNavigating) return;
     handleTouchEnd(e, e.currentTarget.dataset.controlRef);
 }
 
@@ -595,7 +733,14 @@ function setupJoystickListeners() {
 }
 
 function handleJoystickStart(event) {
-    if (isAutoNavigating) return; // Ignore during auto-nav
+    // Check if auto-navigating FIRST
+    if (isAutoNavigating) {
+        console.log("Manual joystick input detected during auto-pilot. Cancelling auto-pilot.");
+        cancelAutoNavigation();
+        // Proceed to handle joystick normally AFTER cancelling
+    }
+    if (!droneActive) return; // Add guard for inactive drone
+
     event.preventDefault();
     joystickActive = true;
     const rect = joystickContainerElement.getBoundingClientRect();
@@ -603,7 +748,7 @@ function handleJoystickStart(event) {
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
     };
-    handleJoystickMove(event);
+    handleJoystickMove(event); // Start tracking position immediately
 }
 
 function handleJoystickMove(event) {
@@ -772,8 +917,6 @@ function updateAutoNavigationPhysics() {
         droneAngularVelocity.set(0, 0, 0);
         isAutoNavigating = false; // Stop auto-nav logic
         window.isAutoNavigating = false;
-        autoNavTargetPlotId = null; // Clear target ID upon arrival
-        window.autoNavTargetPlotId = null;
         autoNavReachedTarget = true; // Mark as reached
 
         // Re-enable controls and reset UI
@@ -794,8 +937,6 @@ function updateAutoNavigationPhysics() {
     } else {
         // --- Rotation ---
         // Calculate target rotation to face the destination
-        // Ensure droneModel.rotation exists and is an Euler
-        if (!droneModel.rotation) droneModel.rotation = new THREE.Euler();
         const targetRotationY = Math.atan2(directionToTarget.x, directionToTarget.z);
         let deltaRotation = targetRotationY - droneModel.rotation.y;
 
@@ -952,7 +1093,7 @@ export function deactivateDroneTransport(cancel = false) {
     if (!droneActive) return;
 
     // Cancel auto-navigation if active
-    if (window.isAutoNavigating) { // Use window reference for safety
+    if (isAutoNavigating) {
         cancelAutoNavigation();
     }
 
@@ -1059,8 +1200,6 @@ export function deactivateDroneTransport(cancel = false) {
 
     if (cancel) console.log('Drone transport cancelled');
     currentLLMTransporting = null;
-    autoNavTargetPlotId = null; // Ensure reset on full deactivation
-    window.autoNavTargetPlotId = null;
 }
 
 function positionCameraForDroneView(instant = false) {
@@ -1090,38 +1229,9 @@ function positionCameraForDroneView(instant = false) {
     // mainCityControls.update();
 }
 
-// Additional code
-export function handlePlotClick(clickedPlotData) {
-    console.log(`Plot clicked: ${clickedPlotData.name} (ID: ${clickedPlotData.id})`);
-
-    // Calculate target position (center of the plot, slightly above ground)
-    const targetX = clickedPlotData.x;
-    const targetZ = clickedPlotData.z;
-    const targetY = 5; // Target altitude above the plot
-
-    const targetPosition = new THREE.Vector3(targetX, targetY, targetZ);
-
-    // Check if already auto-navigating
-    if (window.isAutoNavigating) {
-        // If navigating to a *different* plot, cancel the current navigation first
-        if (window.autoNavTargetPlotId !== clickedPlotData.id) {
-            console.log(`Switching auto-navigation target from ${window.autoNavTargetPlotId} to ${clickedPlotData.id}`);
-            cancelAutoNavigation(); // Cancel current flight
-            // Start new navigation after a tiny delay to ensure state updates
-            setTimeout(() => {
-                startAutoNavigation(targetPosition, clickedPlotData.id);
-            }, 50);
-        } else {
-             console.log(`Already auto-navigating to plot ${clickedPlotData.id}. Ignoring click.`);
-             // Optionally, could re-initiate the approach sequence if needed, but ignoring is simpler.
-        }
-
-    } else {
-        // If not already auto-navigating, start normally
-        startAutoNavigation(targetPosition, clickedPlotData.id);
+function updateDroneUIButtonText(text) {
+    const landButton = droneContainer.querySelector('.drone-land-btn');
+    if (landButton) {
+        landButton.textContent = text;
     }
-
-} else if (clickedPlotData && !clickedPlotData.available) {
-    console.log(`Plot ${clickedPlotData.name} is occupied.`);
-    // Optionally provide user feedback (e.g., temporary message)
 }

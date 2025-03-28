@@ -10,7 +10,7 @@ import { createDistanceMist } from './terrainUtils.js';
 import { setupUIInteractions, setupConsolePanel } from './citySceneUI.js';
 import { initPlotHoverInfo } from './plotHoverInfo.js';
 // Import the drone auto-navigation function
-import { startAutoNavigation, cancelAutoNavigation } from './llmDroneTransport.js';
+import { startAutoNavigation } from './llmDroneTransport.js';
 
 // Expose main scene components globally or via getters for drone transport
 let scene, camera, controls, renderer;
@@ -216,8 +216,8 @@ function handleCityClick(event) {
     // Only handle clicks if drone is active
     if (!window.droneActive) return;
 
-    // Ignore clicks if camera transition is happening
-    if (cameraTransitionId) return;
+    // Ignore clicks if auto-navigation is already active
+    if (window.isAutoNavigating) return;
 
     // Get mouse coordinates relative to the canvas
     const rect = renderer.domElement.getBoundingClientRect();
@@ -269,6 +269,7 @@ function handleCityClick(event) {
         }
     }
 
+
     // If a plot was clicked and it's available
     if (clickedPlotData && clickedPlotData.available) {
         console.log(`Plot clicked: ${clickedPlotData.name} (ID: ${clickedPlotData.id})`);
@@ -280,25 +281,8 @@ function handleCityClick(event) {
 
         const targetPosition = new THREE.Vector3(targetX, targetY, targetZ);
 
-        // Check if already auto-navigating
-        if (window.isAutoNavigating) {
-            // If navigating to a *different* plot, cancel the current navigation first
-            if (window.autoNavTargetPlotId !== clickedPlotData.id) {
-                console.log(`Switching auto-navigation target from ${window.autoNavTargetPlotId} to ${clickedPlotData.id}`);
-                cancelAutoNavigation(); // Cancel current flight
-                // Start new navigation after a tiny delay to ensure state updates
-                setTimeout(() => {
-                    startAutoNavigation(targetPosition, clickedPlotData.id);
-                }, 50);
-            } else {
-                 console.log(`Already auto-navigating to plot ${clickedPlotData.id}. Ignoring click.`);
-                 // Optionally, could re-initiate the approach sequence if needed, but ignoring is simpler.
-            }
-        } else {
-            // If not already auto-navigating, start normally
-            startAutoNavigation(targetPosition, clickedPlotData.id);
-        }
-
+        // Call the drone's auto-navigation function
+        startAutoNavigation(targetPosition, clickedPlotData.id);
     } else if (clickedPlotData && !clickedPlotData.available) {
         console.log(`Plot ${clickedPlotData.name} is occupied.`);
         // Optionally provide user feedback (e.g., temporary message)
