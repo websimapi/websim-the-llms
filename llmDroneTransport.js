@@ -19,6 +19,7 @@ let currentLLMTransporting = null;
 let mainCityScene, mainCityCamera, mainCityControls;
 let originalCameraPosition, originalCameraTarget;
 let gameplayStartPosition; // Keep track of the gameplay start position for smooth transition
+const gameplayStartRotation = new THREE.Euler(0, 0, 0); // Define gameplay start rotation
 
 // --- Constants ---
 const MAX_SPEED = 0.25;
@@ -554,6 +555,7 @@ function updateDroneCutscene(elapsedTime) {
     // Interpolate drone position
     droneModel.position.lerpVectors(cutsceneStartPosition, gameplayStartPosition, easeProgress);
 
+    // Interpolate drone rotation (from facing back to facing forward)
     // Keep rotation fixed during cutscene (facing city - Y=0)
     droneModel.rotation.set(0, 0, 0);
 
@@ -565,18 +567,19 @@ function updateDroneCutscene(elapsedTime) {
 
     // Check if cutscene is finished
     if (progress >= 1) {
-        droneCutsceneActive = false;
         // Set final gameplay position and rotation accurately from gameplayStartPosition
-        // No need to copy again as lerp handles the final step
         droneModel.position.copy(gameplayStartPosition);
         // Ensure final rotation is set correctly (Y=0 to face city)
-        droneModel.rotation.set(0, 0, 0);
+        droneModel.rotation.copy(gameplayStartRotation); // Use the defined start rotation
 
         // Copy the final drone state to the global state variables
         dronePosition.copy(droneModel.position);
         droneRotation.copy(droneModel.rotation);
         droneVelocity.set(0,0,0); // Reset velocity
         droneAngularVelocity.set(0,0,0); // Reset angular velocity
+
+        // Mark cutscene as finished BEFORE enabling controls or fading UI
+        droneCutsceneActive = false;
 
         // Fade in UI controls
         const controlsElement = droneContainer?.querySelector('.drone-controls-info');
@@ -601,6 +604,7 @@ function animateDrone() {
         const cutsceneElapsedTime = currentTime - droneCutsceneStartTime;
         updateDroneCutscene(cutsceneElapsedTime);
     } else {
+        // Only update physics and camera for gameplay view *after* cutscene is done
         updateDronePhysics();
         positionCameraForDroneView(); // Update camera smoothly
     }
