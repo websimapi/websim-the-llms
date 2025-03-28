@@ -63,8 +63,9 @@ let droneControls = {
 };
 let touchActiveControls = {};
 
-// Expose auto-navigating state globally
+// Expose auto-navigating state and target plot ID globally
 window.isAutoNavigating = isAutoNavigating;
+window.autoNavTargetPlotId = autoNavTargetPlotId;
 
 export function activateDroneTransport(llmId) {
     if (droneActive) return;
@@ -120,13 +121,24 @@ export function activateDroneTransport(llmId) {
     isAutoNavigating = false; // Ensure auto-nav is off initially
     window.isAutoNavigating = false;
     autoNavReachedTarget = false;
+    autoNavTargetPlotId = null; // Reset target plot ID
+    window.autoNavTargetPlotId = null;
 
     animateDrone();
 }
 
 // Function to start auto-navigation
 export function startAutoNavigation(targetPosition, targetPlotId) {
-    if (!droneActive || isAutoNavigating) return;
+    // Don't start if already navigating to the same plot
+    if (isAutoNavigating && targetPlotId === autoNavTargetPlotId) {
+        console.log("Already navigating to plot:", targetPlotId);
+        return;
+    }
+    // If navigating to a different plot, cancelAutoNavigation should have been called already
+    // but we double-check and reset state here just in case.
+    if (isAutoNavigating) {
+         cancelAutoNavigation(); // Ensure previous state is cleared if switching mid-flight
+    }
 
     console.log("Starting auto-navigation to:", targetPosition, "Plot ID:", targetPlotId);
     isAutoNavigating = true;
@@ -135,6 +147,7 @@ export function startAutoNavigation(targetPosition, targetPlotId) {
     // Adjust target Y position for hovering
     autoNavTargetPosition.y = AUTO_NAV_HOVER_ALTITUDE;
     autoNavTargetPlotId = targetPlotId;
+    window.autoNavTargetPlotId = targetPlotId; // Update global reference
     autoNavReachedTarget = false; // Reset reached flag
 
     // Disable manual controls visually and functionally
@@ -156,6 +169,7 @@ export function cancelAutoNavigation() {
     isAutoNavigating = false;
     window.isAutoNavigating = false;
     autoNavTargetPlotId = null;
+    window.autoNavTargetPlotId = null; // Clear global reference
     autoNavReachedTarget = false;
     droneVelocity.multiplyScalar(0.5); // Reduce speed gently
 
@@ -758,6 +772,8 @@ function updateAutoNavigationPhysics() {
         droneAngularVelocity.set(0, 0, 0);
         isAutoNavigating = false; // Stop auto-nav logic
         window.isAutoNavigating = false;
+        autoNavTargetPlotId = null; // Clear target ID upon arrival
+        window.autoNavTargetPlotId = null;
         autoNavReachedTarget = true; // Mark as reached
 
         // Re-enable controls and reset UI
@@ -778,6 +794,8 @@ function updateAutoNavigationPhysics() {
     } else {
         // --- Rotation ---
         // Calculate target rotation to face the destination
+        // Ensure droneModel.rotation exists and is an Euler
+        if (!droneModel.rotation) droneModel.rotation = new THREE.Euler();
         const targetRotationY = Math.atan2(directionToTarget.x, directionToTarget.z);
         let deltaRotation = targetRotationY - droneModel.rotation.y;
 
@@ -934,7 +952,7 @@ export function deactivateDroneTransport(cancel = false) {
     if (!droneActive) return;
 
     // Cancel auto-navigation if active
-    if (isAutoNavigating) {
+    if (window.isAutoNavigating) { // Use window reference for safety
         cancelAutoNavigation();
     }
 
@@ -1041,6 +1059,8 @@ export function deactivateDroneTransport(cancel = false) {
 
     if (cancel) console.log('Drone transport cancelled');
     currentLLMTransporting = null;
+    autoNavTargetPlotId = null; // Ensure reset on full deactivation
+    window.autoNavTargetPlotId = null;
 }
 
 function positionCameraForDroneView(instant = false) {
@@ -1069,5 +1089,3 @@ function positionCameraForDroneView(instant = false) {
     // Don't call controls.update() here when controls are disabled for drone
     // mainCityControls.update();
 }
-
-// Removed landDrone function as handlePlaceAttempt covers it
