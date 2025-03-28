@@ -51,27 +51,30 @@ export function setupLLMCollectionView(selectLLMId = null) {
     // Setup the collection UI
     const collectionUI = document.getElementById('llm-collection-ui');
     collectionUI.classList.add('active');
-    
+
+    // Find the header to add the transport button
+    const collectionHeader = collectionUI.querySelector('.collection-header');
+
     // Wait a moment for the UI to be visible before initializing the viewport
     setTimeout(() => {
         const collectionViewport = document.querySelector('.collection-viewport');
         const llmList = document.getElementById('llm-list');
-        
+
         // Clear existing content
         llmList.innerHTML = '';
         collectionViewport.innerHTML = '';
-        
+
         // Cancel any existing animation
         if (collectionAnimationId) {
             cancelAnimationFrame(collectionAnimationId);
         }
-        
+
         // Clean up any existing carousel
         cleanupCarousel();
-        
-        // Get all LLMs 
+
+        // Get all LLMs
         const llms = llmDataManager.getAllLLMs();
-        
+
         if (llms.length === 0) {
             // Show empty state
             llmList.innerHTML = `
@@ -104,14 +107,14 @@ export function setupLLMCollectionView(selectLLMId = null) {
                     </div>
                 `;
                 llmList.appendChild(llmItem);
-                
+
                 // Add click event to select LLM
                 llmItem.addEventListener('click', (e) => {
                     // Don't trigger if clicking on a button
                     if (e.target.tagName !== 'BUTTON') {
                         const id = llmItem.getAttribute('data-id');
                         selectModel(id);
-                        
+
                         // Update button state when selection changes
                         const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
                         if (editSelectedBtn) {
@@ -120,7 +123,7 @@ export function setupLLMCollectionView(selectLLMId = null) {
                     }
                 });
             });
-            
+
             // Add "Create New LLM" entry at the bottom of the list
             const createNewItem = document.createElement('div');
             createNewItem.className = 'llm-list-item create-new-item';
@@ -137,7 +140,7 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 </div>
             `;
             llmList.appendChild(createNewItem);
-            
+
             // Add click event for create new item
             createNewItem.addEventListener('click', () => {
                 document.getElementById('llm-collection-ui').classList.remove('active');
@@ -146,17 +149,19 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 window.createLLMOpenedFrom = 'collection';
                 // Initialize the creation interface
                 setupLLMCreationInterface();
-                
+
                 // Clean up carousel
                 cleanupCarousel();
             });
 
-            // Add transport button to the collection view
-            addTransportButton(collectionUI);
-            
+            // Add transport button to the collection header
+            if (collectionHeader) {
+                addTransportButton(collectionHeader); // Pass header element
+            }
+
             // Setup carousel
             setupLLMCarousel(collectionViewport, llms);
-            
+
             // Add profile images to the list items
             import('./llmProfileImageDisplay.js').then(module => {
                 if (typeof module.addProfileImagesToLLMList === 'function') {
@@ -167,10 +172,10 @@ export function setupLLMCollectionView(selectLLMId = null) {
             }).catch(error => {
                 console.error('Error importing llmProfileImageDisplay module:', error);
             });
-            
+
             // Add click event to viewport for model selection
             collectionViewport.addEventListener('click', handleViewportClick);
-            
+
             // Add event listeners for buttons
             document.querySelectorAll('.llm-edit-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -178,14 +183,14 @@ export function setupLLMCollectionView(selectLLMId = null) {
                     handleEditLLM(id);
                 });
             });
-            
+
             document.querySelectorAll('.llm-delete-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const id = e.target.getAttribute('data-id');
                     deleteLLM(id);
                 });
             });
-            
+
             // Select specific LLM if ID provided, otherwise select first one
             if (selectLLMId) {
                 selectModel(selectLLMId);
@@ -194,10 +199,10 @@ export function setupLLMCollectionView(selectLLMId = null) {
             }
         }
     }, 100);
-    
+
     // Add close button event listener
-    const closeButton = document.querySelector('.collection-close'); 
-    if (closeButton.closest('#llm-collection-ui')) { 
+    const closeButton = document.querySelector('.collection-close');
+    if (closeButton && closeButton.closest('#llm-collection-ui')) {
         const newCloseButton = closeButton.cloneNode(true);
         closeButton.parentNode.replaceChild(newCloseButton, closeButton);
 
@@ -205,55 +210,56 @@ export function setupLLMCollectionView(selectLLMId = null) {
             collectionUI.classList.remove('active');
             cleanupCarousel();
             window.createLLMOpenedFrom = 'plot';
-            hidePlotInfoPanel(); 
+            hidePlotInfoPanel();
         });
     }
 }
 
-function addTransportButton(collectionUI) {
+function addTransportButton(headerElement) { 
     const existingButton = document.querySelector('.transport-button-container');
     if (existingButton) {
         existingButton.remove();
     }
-    
+
     const transportButtonContainer = document.createElement('div');
     transportButtonContainer.className = 'transport-button-container';
-    
+
     transportButtonContainer.innerHTML = `
-        <button class="transport-button" title="Transport LLMs to Plots">
+        <button class="transport-button" title="Transport Selected LLM to Plot">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="2" />
-                <rect x="6.5" y="11.5" width="11" height="1" rx="0.5" />
-                <rect x="11.5" y="7" width="1" height="11" rx="0.5" />
-                <g class="propeller" style="transform-origin: 6.5px 11.5px;">
-                    <circle cx="6.5" cy="11.5" r="1" />
-                    <ellipse cx="6.5" cy="11.5" rx="3" ry="0.5" />
-                    <ellipse cx="6.5" cy="11.5" rx="0.5" ry="3" />
-                </g>
-                <g class="propeller" style="transform-origin: 17.5px 11.5px;">
-                    <circle cx="17.5" cy="11.5" r="1" />
-                    <ellipse cx="17.5" cy="11.5" rx="3" ry="0.5" />
-                    <ellipse cx="17.5" cy="11.5" rx="0.5" ry="3" />
-                </g>
-                <g class="propeller" style="transform-origin: 12px 7.5px;">
-                    <circle cx="12" cy="7.5" r="1" />
-                    <ellipse cx="12" cy="7.5" rx="3" ry="0.5" />
-                    <ellipse cx="12" cy="7.5" rx="0.5" ry="3" />
-                </g>
-                <g class="propeller" style="transform-origin: 12px 17.5px;">
-                    <circle cx="12" cy="17.5" r="1" />
-                    <ellipse cx="12" cy="17.5" rx="3" ry="0.5" />
-                    <ellipse cx="12" cy="17.5" rx="0.5" ry="3" />
-                </g>
-                <rect x="9" y="20" width="6" height="3" rx="1" />
-                <path d="M10,20.5h4v0.5H10V20.5z" />
-                <path d="M10,21.5h4v0.5H10V21.5z" />
-                <path d="M10.5,20.75h1v1.5h-1V20.75z" />
-                <path d="M12.5,20.75h1v1.5h-1V20.75z" />
+                <!-- Drone Icon SVG -->
+                 <circle cx="12" cy="12" r="2" />
+                 <rect x="6.5" y="11.5" width="11" height="1" rx="0.5" />
+                 <rect x="11.5" y="7" width="1" height="11" rx="0.5" />
+                 <g class="propeller" style="transform-origin: 6.5px 11.5px;">
+                     <circle cx="6.5" cy="11.5" r="1" />
+                     <ellipse cx="6.5" cy="11.5" rx="3" ry="0.5" />
+                     <ellipse cx="6.5" cy="11.5" rx="0.5" ry="3" />
+                 </g>
+                 <g class="propeller" style="transform-origin: 17.5px 11.5px;">
+                     <circle cx="17.5" cy="11.5" r="1" />
+                     <ellipse cx="17.5" cy="11.5" rx="3" ry="0.5" />
+                     <ellipse cx="17.5" cy="11.5" rx="0.5" ry="3" />
+                 </g>
+                 <g class="propeller" style="transform-origin: 12px 7.5px;">
+                     <circle cx="12" cy="7.5" r="1" />
+                     <ellipse cx="12" cy="7.5" rx="3" ry="0.5" />
+                     <ellipse cx="12" cy="7.5" rx="0.5" ry="3" />
+                 </g>
+                 <g class="propeller" style="transform-origin: 12px 17.5px;">
+                     <circle cx="12" cy="17.5" r="1" />
+                     <ellipse cx="12" cy="17.5" rx="3" ry="0.5" />
+                     <ellipse cx="12" cy="17.5" rx="0.5" ry="3" />
+                 </g>
+                 <rect x="9" y="20" width="6" height="3" rx="1" />
+                 <path d="M10,20.5h4v0.5H10V20.5z" />
+                 <path d="M10,21.5h4v0.5H10V21.5z" />
+                 <path d="M10.5,20.75h1v1.5h-1V20.75z" />
+                 <path d="M12.5,20.75h1v1.5h-1V20.75z" />
             </svg>
         </button>
     `;
-    
+
     transportButtonContainer.querySelector('.transport-button').addEventListener('click', () => {
         const selectedModelId = getSelectedModelId();
         if (selectedModelId) {
@@ -262,8 +268,14 @@ function addTransportButton(collectionUI) {
             alert('Please select an LLM to transport');
         }
     });
-    
-    collectionUI.appendChild(transportButtonContainer);
+
+    // Insert the button container into the header, before the close button
+    const closeButton = headerElement.querySelector('.collection-close');
+    if (closeButton) {
+        headerElement.insertBefore(transportButtonContainer, closeButton);
+    } else {
+        headerElement.appendChild(transportButtonContainer); // Fallback
+    }
 }
 
 function viewLLMDetails(id) {

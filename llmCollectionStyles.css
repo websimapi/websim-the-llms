@@ -197,29 +197,29 @@
 
 /* Add new transport button styles */
 .transport-button-container {
-    position: fixed;
-    bottom: 20px;
-    right: 80px;
-    z-index: 250;
+    margin-left: auto;
+    margin-right: 20px;
+    display: flex;
+    align-items: center;
 }
 
 .transport-button {
-    width: 60px;
-    height: 60px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background-color: #3cb371;
+    background-color: rgba(60, 179, 113, 0.8);
     border: none;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s, background-color 0.3s;
 }
 
 .transport-button:hover {
     transform: scale(1.1);
-    background-color: #2a8c5a;
+    background-color: rgba(60, 179, 113, 1);
 }
 
 .transport-button:active {
@@ -227,17 +227,60 @@
 }
 
 .transport-button svg {
-    width: 36px;
-    height: 36px;
+    width: 24px;
+    height: 24px;
     fill: white;
 }
 
-.transport-button .propeller {
-    transform-origin: center;
+/* Adjust header layout */
+.collection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #1a1a1a;
+    border-bottom: 2px solid #3cb371;
 }
 
-.transport-button:hover .propeller {
-    animation: spin-propeller 0.5s linear infinite;
+.collection-title {
+    color: #3cb371;
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-right: auto;
+}
+
+.collection-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+}
+
+/* Mobile adjustments for header */
+@media screen and (max-width: 768px) {
+    .collection-header {
+        padding: 10px 15px;
+    }
+    .collection-title {
+        font-size: 1.4rem;
+    }
+    .transport-button-container {
+        margin-right: 10px;
+    }
+    .transport-button {
+        width: 36px;
+        height: 36px;
+    }
+    .transport-button svg {
+        width: 20px;
+        height: 20px;
+    }
+    .collection-close {
+        font-size: 1.4rem;
+    }
 }
 
 /* Fix for viewport rendering */
