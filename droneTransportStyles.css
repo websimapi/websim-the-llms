@@ -208,23 +208,36 @@
     display: block;
     width: 100%;
     padding: 12px;
-    background-color: #3cb371;
-    color: white;
+    background-color: #555; 
+    color: #aaa; 
     border: none;
     border-radius: 8px;
-    cursor: pointer;
+    cursor: not-allowed; 
     font-weight: bold;
     font-size: 1.1rem;
-    transition: background-color 0.2s, transform 0.1s;
+    transition: background-color 0.2s, transform 0.1s, color 0.2s;
 }
 
-.drone-land-btn:hover {
+.drone-land-btn:not(:disabled) {
+    background-color: #3cb371; 
+    color: white; 
+    cursor: pointer; 
+}
+
+.drone-land-btn:not(:disabled):hover {
     background-color: #2a8c5a;
     transform: translateY(-1px);
 }
 
-.drone-land-btn:active {
+.drone-land-btn:not(:disabled):active {
     transform: translateY(0px);
+}
+
+.drone-land-btn:disabled {
+    background-color: #555 !important;
+    color: #aaa !important;
+    cursor: not-allowed !important;
+    transform: none !important;
 }
 
 /* Mobile adjustments */
