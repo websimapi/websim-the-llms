@@ -37,11 +37,13 @@ export function initPlotHoverInfo(mainCamera, mainScene, mainRenderer) {
 
     // Expose handlers globally for other modules (if needed)
     window.plotHoverHandlers = {
-        onTouchStart: onTouchStart
+        onTouchStart: onTouchStart,
+        hideInfoPanel: hideInfoPanel, // Expose hide function
+        getActivePlotId: getActivePlotId // Expose function to get active plot ID
     };
 
     // Start checking for plot hovers (will work for both mouse and touch)
-    checkPlotHovers();
+    //checkPlotHovers(); // Removed continuous checking, now event-driven
 
     // Update mobile flag on resize
     window.addEventListener('resize', () => {
@@ -118,9 +120,11 @@ function onTouchEnd(event) {
 }
 
 // Hide the info panel
-function hideInfoPanel() {
-    infoPanel.style.display = 'none';
-    infoPanel.classList.remove('mobile-fixed'); // Remove fixed class
+export function hideInfoPanel() { // Export the function
+    if (infoPanel) {
+        infoPanel.style.display = 'none';
+        infoPanel.classList.remove('mobile-fixed'); // Remove fixed class
+    }
 
     // Reset any highlighted plots
     if (activePlotId) {
@@ -151,6 +155,18 @@ function showInfoPanel(plot, clientX, clientY) {
     const minTimeFormatted = formatTime(minSeconds);
     const maxTimeFormatted = formatTime(maxSeconds);
 
+    // Determine availability text and class
+    let availabilityText = plotData.available ? 'Available' : 'Occupied';
+    let availabilityClass = plotData.available ? 'available' : 'unavailable';
+    if (!plotData.available && plotData.occupiedBy) {
+        // Try to find the occupying LLM's name
+        const occupyingLLM = llmDataManager.getLLMById(plotData.occupiedBy);
+        if (occupyingLLM) {
+            availabilityText = `Occupied by ${occupyingLLM.name}`;
+        }
+    }
+
+
     // Build HTML content
     let htmlContent = `
         <div class="plot-info-header">${plotData.name}</div>
@@ -173,30 +189,30 @@ function showInfoPanel(plot, clientX, clientY) {
             </div>
             <div class="plot-info-row">
                 <span class="plot-info-label">Status:</span>
-                <span class="plot-info-value ${plotData.available ? 'available' : 'unavailable'}">
-                    ${plotData.available ? 'Available' : 'Occupied'}
+                <span class="plot-info-value ${availabilityClass}">
+                    ${availabilityText}
                 </span>
             </div>`;
-    
+
     // Add requirements section for commercial plots
     if ((plotData.type === 'commercial' || plotData.type === 'residential') && plotData.requirements && plotData.requirements.length > 0) {
         htmlContent += `
             <div class="plot-info-requirements">
                 <div class="requirements-title">Required Models:</div>
                 <div class="requirements-icons">`;
-        
+
         // Add icons for each required model type
         plotData.requirements.forEach(modelType => {
             htmlContent += `<div class="requirement-icon ${modelType}" title="${capitalizeFirstLetter(modelType)}">
                 ${getModelTypeIcon(modelType)}
             </div>`;
         });
-        
+
         htmlContent += `
                 </div>
             </div>`;
     }
-    
+
     // Add description and close content div
     htmlContent += `
             <div class="plot-info-description">${plotData.description}</div>
@@ -216,8 +232,29 @@ function showInfoPanel(plot, clientX, clientY) {
     } else {
         // Follow cursor for desktop
         infoPanel.classList.remove('mobile-fixed');
-        infoPanel.style.left = `${clientX + 15}px`;
-        infoPanel.style.top = `${clientY + 15}px`;
+
+        // Adjust position to prevent going off-screen
+        const panelWidth = infoPanel.offsetWidth;
+        const panelHeight = infoPanel.offsetHeight;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let left = clientX + 15;
+        let top = clientY + 15;
+
+        if (left + panelWidth > viewportWidth - 10) { // 10px buffer
+            left = clientX - panelWidth - 15;
+        }
+        if (top + panelHeight > viewportHeight - 10) { // 10px buffer
+            top = clientY - panelHeight - 15;
+        }
+        // Ensure it doesn't go off the top/left either
+        if (left < 10) left = 10;
+        if (top < 10) top = 10;
+
+
+        infoPanel.style.left = `${left}px`;
+        infoPanel.style.top = `${top}px`;
     }
 }
 
@@ -257,77 +294,40 @@ function getModelTypeIcon(modelType) {
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21.71.33 1.47.33 2.26 0 4.41-3.59 8-8 8z"/>
             </svg>`;
         case 'humanoid':
+             // Updated Humanoid Icon SVG
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
+                <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
             </svg>`;
         default:
             return '';
     }
 }
 
-// Keep a reference to the animation frame request
-let hoverCheckFrameId = null;
-
-// Continuous check for plot hovers
+// Immediate check for plot hovers triggered by mouse/touch events
 function checkPlotHovers(clientX, clientY) {
-    // Cancel previous frame request if any
-    if(hoverCheckFrameId) cancelAnimationFrame(hoverCheckFrameId);
+    if (!scene || !camera || !raycaster) return;
 
-    // Schedule the check for the next animation frame
-    hoverCheckFrameId = requestAnimationFrame(() => {
-        _performHoverCheck(clientX, clientY);
-        hoverCheckFrameId = null; // Reset ID after execution
-    });
-}
-
-// Renamed the internal checking logic
-function _performHoverCheck(clientX, clientY) {
-    if (!scene || !camera) return;
-
-    // Update the picking ray
+    // Update the picking ray with the current mouse coordinates
     raycaster.setFromCamera(mouse, camera);
 
-    // Find all plot objects in the scene
+    // Find all plot objects in the scene (only the parent groups)
     const plotObjects = [];
     scene.traverse(obj => {
+        // Only consider the main plot group, identified by userData.type === 'lot'
         if (obj.userData && obj.userData.type === 'lot') {
             plotObjects.push(obj);
         }
     });
 
-    // First try direct hits on the plot outlines
-    let intersects = raycaster.intersectObjects(plotObjects, true);
-
-    // If no hits, check against the plot bounding boxes, which are larger
-    if (intersects.length === 0) {
-        // Create a box for each plot to check against
-        for (const plot of plotObjects) {
-            // Create a bounding box if not already created
-            if (!plot.userData.boundingBox) {
-                const box = new THREE.Box3().setFromObject(plot);
-                // Store the box in userData
-                plot.userData.boundingBox = box;
-            }
-
-            // Check if ray intersects the bounding box
-            const intersectPoint = new THREE.Vector3();
-            if (raycaster.ray.intersectsBox(plot.userData.boundingBox, intersectPoint)) {
-                // Create a fake intersection with the plot
-                intersects.push({
-                    object: plot,
-                    distance: raycaster.ray.origin.distanceTo(intersectPoint)
-                });
-                break; // Only need one hit
-            }
-        }
-    }
+    // Raycast against the plot objects (checking their children)
+    let intersects = raycaster.intersectObjects(plotObjects, true); // Check recursively
 
     let foundIntersect = false;
     if (intersects.length > 0) {
         // Find the actual plot parent object (not the construction tape or cones)
         let plot = intersects[0].object;
 
-        // Traverse up to find the parent plot
+        // Traverse up to find the parent plot group
         while (plot && (!plot.userData || plot.userData.type !== 'lot')) {
             plot = plot.parent;
             if (!plot) break; // Safety check
@@ -335,8 +335,10 @@ function _performHoverCheck(clientX, clientY) {
 
         if (plot && plot.userData && plot.userData.id) {
             foundIntersect = true;
+            const currentId = plot.userData.id;
+
             // If we're hovering over a different plot, reset the previous one
-            if (activePlotId && activePlotId !== plot.userData.id) {
+            if (activePlotId && activePlotId !== currentId) {
                 const previousPlot = findPlotObject(activePlotId);
                 if (previousPlot) {
                     resetPlotHighlight(previousPlot);
@@ -344,27 +346,26 @@ function _performHoverCheck(clientX, clientY) {
             }
 
             // Highlight the current plot only if it's not already active
-            if (activePlotId !== plot.userData.id) {
+            if (activePlotId !== currentId) {
                 highlightPlot(plot);
+                 activePlotId = currentId; // Update active plot ID *after* highlighting
             }
 
             // Show info panel (pass coordinates for positioning)
             showInfoPanel(plot, clientX, clientY);
-
-            // Store current active plot ID
-            activePlotId = plot.userData.id;
         }
     }
 
-    // If no valid intersections found this frame
-    if (!foundIntersect && !isMobile) { // Don't auto-hide on mobile hover-off
-        hideInfoPanel();
+    // If no valid intersections found this frame and not on mobile
+    if (!foundIntersect && !isMobile) {
+        hideInfoPanel(); // Hides panel and resets activePlotId
     }
 }
 
 // Find a plot object by ID
 function findPlotObject(id) {
     let foundPlot = null;
+    if (!scene) return null; // Guard clause
     scene.traverse(obj => {
         if (obj.userData && obj.userData.type === 'lot' && obj.userData.id === id) {
             foundPlot = obj;
@@ -375,24 +376,23 @@ function findPlotObject(id) {
 
 // Highlight a plot
 function highlightPlot(plot) {
+    if (!plot) return;
     // Find construction tape material
     plot.traverse(child => {
         if (child.isMesh) {
             // Store original material for reset only if not already highlighted
-            if (!child.userData.originalMaterial) {
-                child.userData.originalMaterial = child.material.clone();
-            }
+             if (!child.userData.originalMaterialEmissive && child.material && child.material.emissive) {
+                 child.userData.originalMaterialEmissive = child.material.emissive.clone();
+                 child.userData.originalMaterialIntensity = child.material.emissiveIntensity;
+             }
 
             // Highlight based on mesh type
             if (child.name && child.name.includes('tape')) {
-                // Safely set emissive properties
-                safeSetEmissive(child.material, 0xffff00);
+                safeSetEmissive(child.material, 0xffffaa, 0.6); // Brighter yellow glow
             } else if (child.name && child.name.includes('cone')) {
-                // Safely set emissive properties
-                safeSetEmissive(child.material, 0xff5500, 0.5);
+                safeSetEmissive(child.material, 0xff8800, 0.7); // Brighter orange glow
             } else if (child.name && child.name.includes('pole')) {
-                // Safely set emissive properties
-                safeSetEmissive(child.material, 0x8B4513, 0.2);
+                safeSetEmissive(child.material, 0xaa6622, 0.3); // Subtle wood glow
             }
         }
     });
@@ -400,26 +400,33 @@ function highlightPlot(plot) {
 
 // Reset plot highlight
 function resetPlotHighlight(plot) {
+    if (!plot) return;
     plot.traverse(child => {
-        if (child.isMesh && child.userData.originalMaterial) {
-            // Reset to original material properties safely
-            const original = child.userData.originalMaterial;
-            if (child.material.color && original.color) {
-                child.material.color.copy(original.color);
-            }
-            if (child.material.emissive && original.emissive) {
-                child.material.emissive.copy(original.emissive);
-            }
-            if (child.material.emissiveIntensity !== undefined && original.emissiveIntensity !== undefined) {
-                child.material.emissiveIntensity = original.emissiveIntensity;
-            }
-             // Remove the stored original material reference after resetting
-             delete child.userData.originalMaterial;
+        if (child.isMesh && child.userData.originalMaterialEmissive) {
+             if (child.material && child.material.emissive) {
+                 child.material.emissive.copy(child.userData.originalMaterialEmissive);
+                 if (child.userData.originalMaterialIntensity !== undefined) {
+                     child.material.emissiveIntensity = child.userData.originalMaterialIntensity;
+                 }
+             }
+             // Remove the stored original properties
+             delete child.userData.originalMaterialEmissive;
+             delete child.userData.originalMaterialIntensity;
+        } else if (child.isMesh && child.material && child.material.emissive) {
+             // If no original was stored (e.g., highlight applied before hover ended), reset to black
+             child.material.emissive.setHex(0x000000);
+             child.material.emissiveIntensity = 0;
         }
     });
 }
 
+// Function to get the currently active plot ID
+export function getActivePlotId() {
+    return activePlotId;
+}
+
 // Helper to capitalize first letter
 function capitalizeFirstLetter(string) {
+    if (!string) return '';
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
