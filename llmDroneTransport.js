@@ -12,7 +12,6 @@ let dronePosition = new THREE.Vector3(0, 15, 0); // Initial position, will be up
 let droneRotation = new THREE.Euler(0, 0, 0);
 let droneSpeed = 0.25; // Base speed
 let droneRotationSpeed = 0.05; // Rotation speed
-let droneAnimationId = null;
 let originalCameraPosition, originalCameraTarget;
 let droneContainer;
 let currentLLMTransporting = null; // Keep track of the LLM being transported
@@ -209,8 +208,6 @@ function initDroneScene(llm) {
     // Create the drone model
     createDroneWithLLM(llm);
 
-    // Start animation loop (will control drone and camera)
-    animateDrone();
 }
 
 function createDroneWithLLM(llm) {
@@ -282,12 +279,29 @@ function createPropeller() {
 
     const blade1 = new THREE.Mesh(bladeGeometry, bladeMaterial);
     blade1.castShadow = true;
+    // Position blades relative to the hub center
+    blade1.position.x = 0.3;
     blades.add(blade1); // Add to blades group
 
     const blade2 = new THREE.Mesh(bladeGeometry, bladeMaterial);
-    blade2.rotation.y = Math.PI / 2; // Rotate the second blade
+    // Position blades relative to the hub center
+    blade2.position.x = -0.3;
     blade2.castShadow = true;
     blades.add(blade2); // Add to blades group
+
+    // Add another set rotated
+    const blade3 = new THREE.Mesh(bladeGeometry, bladeMaterial);
+    blade3.rotation.y = Math.PI / 2;
+    blade3.position.z = 0.3;
+    blade3.castShadow = true;
+    blades.add(blade3);
+
+    const blade4 = new THREE.Mesh(bladeGeometry, bladeMaterial);
+    blade4.rotation.y = Math.PI / 2;
+    blade4.position.z = -0.3;
+    blade4.castShadow = true;
+    blades.add(blade4);
+
 
     return propellerGroup;
 }
@@ -344,13 +358,13 @@ function rotateY(amount) {
     }
 }
 
-function updateDronePosition() {
-    if (!droneModel || !mainCityCamera || !mainCityControls) return; // Check if main components are available
+export function updateDroneMovementAndCamera() {
+    if (!droneActive || !droneModel || !mainCityCamera || !mainCityControls) return;
 
     const moveSpeed = droneSpeed;
     const direction = new THREE.Vector3(0, 0, 0);
 
-    // Calculate forward direction based on drone's Y rotation ONLY (ignore pitch)
+    // Calculate forward direction based on drone's Y rotation ONLY
     const forwardDir = new THREE.Vector3(0, 0, -1);
     forwardDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), droneModel.rotation.y);
 
@@ -361,35 +375,33 @@ function updateDronePosition() {
     // Apply controls to direction
     if (droneControls.forward) direction.add(forwardDir);
     if (droneControls.backward) direction.sub(forwardDir);
-    if (droneControls.right) direction.add(rightDir); // Strafe right
-    if (droneControls.left) direction.sub(rightDir); // Strafe left
-    if (droneControls.up) direction.y += 1; // Vertical movement is independent of rotation
+    if (droneControls.right) direction.add(rightDir);
+    if (droneControls.left) direction.sub(rightDir);
+    if (droneControls.up) direction.y += 1;
     if (droneControls.down) direction.y -= 1;
 
     // Normalize the direction vector if it's not zero
-    if (direction.lengthSq() > 0) { // Use lengthSq for performance
+    if (direction.lengthSq() > 0) {
         direction.normalize();
     }
 
     // Apply movement
     droneModel.position.add(direction.multiplyScalar(moveSpeed));
 
-    // Keep drone above ground (consider terrain height later if applicable)
+    // Keep drone above ground
     if (droneModel.position.y < 1.0) {
         droneModel.position.y = 1.0;
     }
 
-    // Update camera position to follow drone (3rd person view)
+    // Update camera position to follow drone
     positionCameraForDroneView();
-
 
     // Animate propellers
     droneModel.traverse(child => {
-         // Check if the child is the 'Blades' group within a 'Propeller' group
-         if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
-             child.rotation.y += 0.5; // Rotate the blades group around its Y-axis
-         }
-     });
+        if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
+            child.rotation.y += 0.8; // Increase rotation speed
+        }
+    });
 }
 
 function positionCameraForDroneView(instant = false) {
@@ -415,33 +427,24 @@ function positionCameraForDroneView(instant = false) {
          mainCityControls.target.lerp(lookAtPos, 0.05); // Smoothly move orbit controls target
          // Camera's lookAt is handled automatically by OrbitControls when updating
      }
-     mainCityControls.update(); // Update controls to reflect new target/position
-}
-
-function animateDrone() {
-    if (!droneActive) return;
-
-    droneAnimationId = requestAnimationFrame(animateDrone);
-
-    updateDronePosition();
-
-    // We don't need a separate renderer.render call here,
-    // as the main cityScene animation loop should handle rendering.
-    // Ensure the cityScene's animate function is running.
+     // No need to call mainCityControls.update() here, it happens in cityScene's loop if enabled
 }
 
 function landDrone(cancel = false) {
     droneActive = false;
+    window.droneActive = false; // Update global state
 
     // Remove event listeners
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('keyup', handleKeyUp);
 
-    // Stop animation loop for the drone itself
+    // Stop animation loop for the drone itself (no longer needed as it's integrated)
+    /*
     if (droneAnimationId) {
         cancelAnimationFrame(droneAnimationId);
         droneAnimationId = null;
     }
+    */
 
     // Hide drone UI
     if (droneContainer) {
@@ -488,11 +491,13 @@ function landDrone(cancel = false) {
                       // Ensure final position/target are set exactly
                       mainCityCamera.position.copy(originalCameraPosition);
                       mainCityControls.target.copy(originalCameraTarget);
+                      mainCityControls.update(); // Final update
                  }
-                 // Update controls in each step of the transition
-                 mainCityControls.update();
+                 // Update controls in each step of the transition (only if they are enabled)
+                 // No need to call update here as the main loop handles it when enabled=true
              }
-             transitionBack();
+             // Start the transition animation frame loop
+             requestAnimationFrame(transitionBack);
 
          } else {
              // Fallback if original positions weren't saved
