@@ -26,24 +26,22 @@ export function setupSceneLighting(scene, renderer) {
     
     // Main directional light (sun)
     const sunLight = new THREE.DirectionalLight(0xfffae5, 1.0); // Warm sunlight color
-    sunLight.position.set(50, 100, 50); // Keep position
+    sunLight.position.set(50, 100, 50);
     sunLight.castShadow = true;
     
     // Configure shadow properties for better quality and performance
-    sunLight.shadow.mapSize.width = 2048;  // Keep resolution
+    sunLight.shadow.mapSize.width = 2048;  // Higher res shadows
     sunLight.shadow.mapSize.height = 2048;
     
     // Optimize shadow camera frustum to cover scene area
-    // Increase the frustum size to cover more area
-    const shadowCamSize = 150; // Increased from 60
     sunLight.shadow.camera.near = 10;
-    sunLight.shadow.camera.far = 250; // Increased far plane slightly
-    sunLight.shadow.camera.left = -shadowCamSize;
-    sunLight.shadow.camera.right = shadowCamSize;
-    sunLight.shadow.camera.top = shadowCamSize;
-    sunLight.shadow.camera.bottom = -shadowCamSize;
-    sunLight.shadow.bias = -0.0005; // Keep bias adjustments
-    sunLight.shadow.normalBias = 0.02; 
+    sunLight.shadow.camera.far = 200;
+    sunLight.shadow.camera.left = -60;
+    sunLight.shadow.camera.right = 60;
+    sunLight.shadow.camera.top = 60;
+    sunLight.shadow.camera.bottom = -60;
+    sunLight.shadow.bias = -0.0005; // Reduce shadow acne
+    sunLight.shadow.normalBias = 0.02; // Improve normal-mapped materials shadowing
     
     scene.add(sunLight);
     
@@ -60,11 +58,6 @@ export function setupSceneLighting(scene, renderer) {
     
     // Add subtle point lights for visual interest around central area
     addPointLights(scene);
-    
-    // Helper to visualize the shadow camera frustum (for debugging)
-    // Uncomment to see the shadow camera's view area
-    // const shadowHelper = new THREE.CameraHelper(sunLight.shadow.camera);
-    // scene.add(shadowHelper);
     
     return {
         sunLight,
@@ -100,7 +93,6 @@ function addPointLights(scene) {
         // Add slight animation for the light
         pointLight.userData = {
             originalY: pos.y,
-            originalIntensity: pos.intensity, // Store original intensity
             phase: Math.random() * Math.PI * 2 // Random starting phase for varied animation
         };
         
@@ -134,7 +126,7 @@ function setupLightAnimation(scene) {
                 object.position.y = object.userData.originalY + Math.sin(time + object.userData.phase) * 0.3;
                 
                 // Subtle intensity variation
-                object.intensity = (object.userData.originalIntensity || 1) * (0.9 + 0.1 * Math.sin(time * 0.5 + object.userData.phase));
+                object.intensity = object.userData.originalIntensity || 1 * (0.9 + 0.1 * Math.sin(time * 0.5 + object.userData.phase));
             }
         });
         
