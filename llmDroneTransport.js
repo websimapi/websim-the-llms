@@ -12,8 +12,6 @@ let droneRotation = new THREE.Euler(0, 0, 0); // Current rotation
 let droneVelocity = new THREE.Vector3(); // Current velocity
 let droneAngularVelocity = new THREE.Euler(); // Current angular velocity
 let droneAnimationId = null;
-let droneIntroAnimationId = null; // ID for the intro animation
-let droneIntroComplete = false; // Flag for intro completion
 let droneContainer;
 let currentLLMTransporting = null;
 let mainCityScene, mainCityCamera, mainCityControls;
@@ -34,7 +32,6 @@ const CAMERA_LERP_FACTOR = 0.05;
 const DRONE_BASE_COLOR = 0xffffff; // White
 const DRONE_ACCENT_COLOR = 0xcccccc; // Light Grey
 const DRONE_DARK_ACCENT_COLOR = 0x888888; // Darker Grey
-const DRONE_INTRO_DURATION = 3000; // 3 seconds for intro animation
 
 // --- Control State ---
 let droneControls = {
@@ -65,9 +62,6 @@ export function activateDroneTransport(llmId) {
         return;
     }
 
-    // Disable orbit controls immediately
-    mainCityControls.enabled = false;
-
     currentLLMTransporting = llm;
     console.log(`Activating drone transport for LLM: ${llm.name}`);
 
@@ -80,29 +74,22 @@ export function activateDroneTransport(llmId) {
     originalCameraTarget = mainCityControls.target.clone();
 
     const mapSize = config.citySize || 500;
-    // Start slightly behind the map center, higher up
-    dronePosition.set(0, 70, mapSize / 2 + 50); // Start higher
-    // Ensure rotation is facing towards the center (negative Z axis)
-    droneRotation.set(0, Math.PI, 0);
+    // Start slightly behind the map center
+    dronePosition.set(0, 50, mapSize / 2 + 50); // Start further back
+    droneRotation.set(0, Math.PI, 0); // Facing towards the center
     droneVelocity.set(0, 0, 0);
     droneAngularVelocity.set(0, 0, 0);
     resetControlState();
-    droneIntroComplete = false; // Reset intro flag
 
-    initDroneScene(llm); // Create the drone model
+    initDroneScene(llm);
+    positionCameraForDroneView(true); // Instant positioning
 
-    // Position drone model immediately at start position
-    if (droneModel) {
-        droneModel.position.copy(dronePosition);
-        droneModel.rotation.copy(droneRotation);
-    }
-
-    // Start the intro camera animation
-    startDroneIntroAnimation();
+    setupInputListeners(); // Setup keyboard/touch
 
     droneActive = true;
     window.droneActive = true; // Set global flag
 
+    animateDrone(); // Start the dedicated drone animation loop
 }
 
 // --- Initialization Functions ---
@@ -166,13 +153,6 @@ function createDroneUI(llm) {
 }
 
 function initDroneScene(llm) {
-    // Clear previous drone if exists
-    if (droneModel && droneModel.parent) {
-        droneModel.parent.remove(droneModel);
-    }
-    droneModel = null;
-    llmModel = null;
-
     createDroneWithLLM(llm);
 }
 
@@ -403,7 +383,7 @@ function handleTouchEnd(event, control) {
 
 // --- Movement & Update Logic ---
 function updateDronePhysics() {
-    if (!droneModel || droneIntroComplete === false) return; // Don't move drone during intro
+    if (!droneModel) return;
 
     // --- Rotation ---
     let targetRotationY = 0;
@@ -498,63 +478,8 @@ function updateDronePhysics() {
 }
 
 // --- Animation Loop ---
-// New function for drone intro animation
-function startDroneIntroAnimation() {
-    const startTime = performance.now();
-
-    // Define start and end camera parameters for the intro
-    const startCamPos = dronePosition.clone().add(new THREE.Vector3(0, 50, 60)); // Start high and behind
-    const endCamPosOffset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, CAMERA_FOLLOW_DISTANCE);
-    endCamPosOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), droneModel.rotation.y); // Apply initial drone rotation
-    const endCamPos = dronePosition.clone().add(endCamPosOffset);
-
-    const startLookAt = dronePosition.clone().add(new THREE.Vector3(0, 20, 0)); // Look down initially
-    const endLookAt = dronePosition.clone().add(new THREE.Vector3(0, 0.5, 0)); // End looking at drone center
-
-    function animateIntro() {
-        const elapsed = performance.now() - startTime;
-        const progress = Math.min(elapsed / DRONE_INTRO_DURATION, 1);
-        const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
-
-        // Interpolate camera position and target
-        mainCityCamera.position.lerpVectors(startCamPos, endCamPos, easeProgress);
-        mainCityControls.target.lerpVectors(startLookAt, endLookAt, easeProgress);
-
-        mainCityCamera.lookAt(mainCityControls.target);
-        mainCityControls.update();
-
-        // Update propeller spin during intro
-        droneModel.traverse(child => {
-            if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
-                const parentPosition = child.parent.position;
-                const direction = (parentPosition.x > 0) ? 1 : -1;
-                child.rotation.y += 1.5 * direction * 0.25; // Base spinning speed
-            }
-        });
-
-
-        if (progress < 1 && droneActive) { // Continue only if active and not finished
-            droneIntroAnimationId = requestAnimationFrame(animateIntro);
-        } else if (droneActive) { // Check if still active when finishing
-            console.log("Drone intro animation complete.");
-            droneIntroComplete = true;
-            droneIntroAnimationId = null;
-            setupInputListeners(); // Setup keyboard/touch controls AFTER intro
-            animateDrone(); // Start the main drone physics/camera loop
-        }
-    }
-    droneIntroAnimationId = requestAnimationFrame(animateIntro);
-}
-
 function animateDrone() {
-    if (!droneActive || !droneIntroComplete) { // Only run if active AND intro is complete
-         if (droneIntroAnimationId && droneIntroComplete && !droneActive) {
-             // If intro finished but drone was deactivated during it, cancel
-             cancelAnimationFrame(droneIntroAnimationId);
-             droneIntroAnimationId = null;
-         }
-         return;
-     }
+    if (!droneActive) return;
     droneAnimationId = requestAnimationFrame(animateDrone);
 
     updateDronePhysics();
@@ -565,7 +490,7 @@ function animateDrone() {
 
 // --- Placement & Deactivation ---
 function handlePlaceAttempt() {
-    if (!droneActive || !droneModel || !droneIntroComplete) return; // Don't place during intro
+    if (!droneActive || !droneModel) return;
 
     // Raycast downwards from drone position
     const raycaster = new THREE.Raycaster(droneModel.position, new THREE.Vector3(0, -1, 0));
@@ -670,16 +595,10 @@ function deactivateDroneTransport(cancel = false) {
 
     removeInputListeners();
 
-    // Cancel both potential animation loops
     if (droneAnimationId) {
         cancelAnimationFrame(droneAnimationId);
         droneAnimationId = null;
     }
-     if (droneIntroAnimationId) {
-         cancelAnimationFrame(droneIntroAnimationId);
-         droneIntroAnimationId = null;
-     }
-
 
     if (droneContainer) {
         droneContainer.classList.remove('active');
@@ -760,6 +679,8 @@ function deactivateDroneTransport(cancel = false) {
             // Fallback if original positions weren't stored
             mainCityControls.target.set(0, 0, 0);
             mainCityControls.update();
+            // Ensure camera looks at the target after reset
+            if (mainCityCamera) mainCityCamera.lookAt(mainCityControls.target);
         }
     }
 
@@ -768,21 +689,23 @@ function deactivateDroneTransport(cancel = false) {
     // Reset original camera/target refs
     originalCameraPosition = null;
     originalCameraTarget = null;
-    droneIntroComplete = false; // Reset intro flag
 }
 
 function positionCameraForDroneView(instant = false) {
-    if (!droneModel || !mainCityCamera || !mainCityControls || droneIntroComplete === false) return; // Don't move camera during intro
+    if (!droneModel || !mainCityCamera || !mainCityControls) return;
 
     // Ensure orbit controls are disabled while drone is active
     mainCityControls.enabled = false;
 
-    // Calculate the desired camera offset based on drone's rotation
-    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, CAMERA_FOLLOW_DISTANCE);
-    // Apply the drone's rotation to the offset vector
-    offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), droneModel.rotation.y);
+    // Calculate the desired camera offset BEHIND the drone's local -Z axis (assuming -Z is forward for getWorldDirection)
+    // If +Z is forward based on our movement logic, offset should be negative Z.
+    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, -CAMERA_FOLLOW_DISTANCE); // Corrected: Start with negative Z for 'behind'
 
-    // Calculate the target camera position by adding the offset to the drone's position
+    // Apply the drone's WORLD rotation (quaternion is safer) to the offset vector
+    // This rotates the offset relative to the drone's current facing direction
+    offset.applyQuaternion(droneModel.quaternion);
+
+    // Calculate the target camera position by adding the rotated offset to the drone's position
     const targetCamPos = droneModel.position.clone().add(offset);
 
     // Calculate the target look-at point (slightly above the drone's center)
@@ -801,7 +724,7 @@ function positionCameraForDroneView(instant = false) {
     // Always make the camera look at the (potentially interpolated) target
     mainCityCamera.lookAt(mainCityControls.target);
 
-    // Update the OrbitControls state (even though disabled, target needs update)
+    // Update the OrbitControls state (even though disabled, target needs update for when it's re-enabled)
     mainCityControls.update();
 }
 
