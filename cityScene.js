@@ -216,8 +216,8 @@ function handleCityClick(event) {
     // Only handle clicks if drone is active
     if (!window.droneActive) return;
 
-    // Ignore clicks if auto-navigation is already active
-    if (window.isAutoNavigating) return;
+    // --- Allow re-routing during auto-navigation ---
+    // Removed: if (window.isAutoNavigating) return;
 
     // Get mouse coordinates relative to the canvas
     const rect = renderer.domElement.getBoundingClientRect();
@@ -269,10 +269,18 @@ function handleCityClick(event) {
         }
     }
 
-
     // If a plot was clicked and it's available
     if (clickedPlotData && clickedPlotData.available) {
         console.log(`Plot clicked: ${clickedPlotData.name} (ID: ${clickedPlotData.id})`);
+
+        // --- Check if auto-navigating and if the target is different ---
+        const currentlyNavigating = window.isAutoNavigating;
+        const currentTargetPlotId = window.autoNavTargetPlotId; // Assuming autoNavTargetPlotId is exposed or accessible
+
+        if (currentlyNavigating && clickedPlotId === currentTargetPlotId) {
+            console.log("Clicked the same plot currently targeted by auto-pilot. No change.");
+            return; // Do nothing if clicking the same target
+        }
 
         // Calculate target position (center of the plot, slightly above ground)
         const targetX = clickedPlotData.x;
@@ -281,8 +289,10 @@ function handleCityClick(event) {
 
         const targetPosition = new THREE.Vector3(targetX, targetY, targetZ);
 
-        // Call the drone's auto-navigation function
+        // Call the drone's auto-navigation function (this will restart/reroute if already navigating)
+        console.log(currentlyNavigating ? "Re-routing auto-pilot..." : "Starting auto-pilot...");
         startAutoNavigation(targetPosition, clickedPlotData.id);
+
     } else if (clickedPlotData && !clickedPlotData.available) {
         console.log(`Plot ${clickedPlotData.name} is occupied.`);
         // Optionally provide user feedback (e.g., temporary message)
