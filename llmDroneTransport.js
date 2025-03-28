@@ -1022,10 +1022,21 @@ function placeLLMOnPlot(plotData, placementPoint) {
     // Position exactly at the raycast intersection point
     placedLLMModel.position.copy(placementPoint);
     // Ensure it's slightly above ground to prevent z-fighting
-    placedLLMModel.position.y = 0.01;
+    try {
+        placedLLMModel.updateMatrixWorld(true); // Ensure world matrix is up-to-date
+        const box = new THREE.Box3().setFromObject(placedLLMModel);
+        const lowestPointY = box.min.y;
+        const modelOriginY = placedLLMModel.position.y; // Position is currently at placementPoint
+        const offsetToGround = modelOriginY - lowestPointY; // Distance from origin to bottom
+        placedLLMModel.position.y = placementPoint.y + offsetToGround + 0.01; // Lift model so bottom is slightly above ground
+        console.log(`Placed model at Y: ${placedLLMModel.position.y}. Lowest point was: ${lowestPointY}, OriginY: ${modelOriginY}, Offset: ${offsetToGround}, GroundY: ${placementPoint.y}`);
+    } catch (error) {
+        console.error("Error calculating bounding box for placement:", error);
+        placedLLMModel.position.y = placementPoint.y + 0.01; // Fallback positioning
+    }
 
     // Optionally, orient the model - e.g., face towards plot center or away from drone position
-    const directionToCenter = new THREE.Vector3(plotData.x - placementPoint.x, 0, plotData.z - placementPoint.z).normalize();
+    const directionToCenter = new THREE.Vector3(plotData.x - placedLLMModel.position.x, 0, plotData.z - placedLLMModel.position.z).normalize();
     if (directionToCenter.lengthSq() > 0.001) { // Avoid issues if placed exactly at center
         placedLLMModel.rotation.y = Math.atan2(directionToCenter.x, directionToCenter.z) + Math.PI; // Face away from center
     } else {
