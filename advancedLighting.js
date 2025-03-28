@@ -58,16 +58,12 @@ export function setupSceneLighting(scene, renderer) {
     
     // Add subtle point lights for visual interest around central area
     addPointLights(scene);
-
-    // Setup dynamic shadow mapping based on camera position
-    setupDynamicShadows(scene, sunLight, targetObject);
     
     return {
         sunLight,
         fillLight,
         ambientLight,
-        hemisphereLight,
-        targetObject // Export the target for use in dynamic shadows
+        hemisphereLight
     };
 }
 
@@ -140,77 +136,4 @@ function setupLightAnimation(scene) {
     
     // Store the animation function for use in the main animation loop
     window.cityAnimateLightsFn = animateLights;
-}
-
-// New function to setup dynamic shadows that follow the camera
-function setupDynamicShadows(scene, sunLight, targetObject) {
-    // Create a helper object to store shadow update properties
-    const shadowHelper = {
-        camera: null,
-        sunLight: sunLight,
-        targetObject: targetObject,
-        // Use a larger, fixed shadow size for more stability
-        shadowCameraSize: 75, // Increased fixed size
-        shadowFollowSpeed: 0.08, // Slightly reduced speed for smoother lerp
-        shadowResolution: 2048, // Default shadow resolution
-        lastCameraPosition: new THREE.Vector3(), // Track camera movement
-        // Removed thresholds, update every frame for smoothness
-        // movementThreshold: 5,
-        // updateInterval: 100,
-        // lastUpdateTime: 0
-    };
-
-    // Store the shadow helper on the scene for the animation loop to access
-    scene.userData.shadowHelper = shadowHelper;
-
-    // Keep the sun high and relatively fixed direction relative to world, not camera
-    // Example: Always shining from roughly the same direction (e.g., south-east)
-    // We only update the *target* the shadow camera looks at.
-    // sunLight.position.set(50, 100, 50); // Set initial position
-
-    // Define the shadow update function that will be called in the animation loop
-    window.updateDynamicShadows = function(camera, controls, delta) { // Add controls parameter
-        if (!scene.userData.shadowHelper || !camera || !controls) return;
-
-        const helper = scene.userData.shadowHelper;
-        helper.camera = camera; // Keep camera reference updated
-
-        // --- Target Update ---
-        // Target the shadow camera towards the orbit controls target for stability
-        const targetPosition = controls.target;
-        // Smoothly move the shadow camera target towards the controls target
-        helper.targetObject.position.lerp(targetPosition, helper.shadowFollowSpeed);
-        // Also update the sun's target explicitly
-        helper.sunLight.target = helper.targetObject;
-
-
-        // --- Frustum Update (Fixed Size) ---
-        const shadowSize = helper.shadowCameraSize;
-        helper.sunLight.shadow.camera.left = -shadowSize;
-        helper.sunLight.shadow.camera.right = shadowSize;
-        helper.sunLight.shadow.camera.top = shadowSize;
-        helper.sunLight.shadow.camera.bottom = -shadowSize;
-
-        // Ensure the near/far planes are adequate
-        helper.sunLight.shadow.camera.near = 10;
-        helper.sunLight.shadow.camera.far = 200; // Adjust if needed based on scene scale
-
-        // Update shadow camera projection matrix
-        helper.sunLight.shadow.camera.updateProjectionMatrix();
-
-        // --- Sun Position (Optional: Keep it fixed or slightly adjust based on target) ---
-        // For stability, let's keep the sun's position relatively fixed,
-        // but ensure it stays 'behind' the shadow target to cast shadows correctly.
-        // You could lerp it slightly based on the targetObject's position if desired,
-        // but keeping it fixed often reduces flickering.
-        // Example: Maintain fixed offset from the world origin or the target
-        // const sunOffset = new THREE.Vector3(50, 100, 50);
-        // helper.sunLight.position.copy(helper.targetObject.position).add(sunOffset);
-
-
-        // Store last camera position (might not be needed if updating every frame)
-        helper.lastCameraPosition.copy(camera.position);
-        // helper.lastUpdateTime = performance.now(); // Might not be needed
-
-    };
 }
