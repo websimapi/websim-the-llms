@@ -18,6 +18,7 @@ let droneContainer;
 let currentLLMTransporting = null;
 let mainCityScene, mainCityCamera, mainCityControls;
 let originalCameraPosition, originalCameraTarget;
+let gameplayStartPosition; // Keep track of the gameplay start position for smooth transition
 
 // --- Constants ---
 const MAX_SPEED = 0.25;
@@ -83,9 +84,12 @@ export function activateDroneTransport(llmId) {
 
     // --- NEW: Define Cutscene Start/End ---
     const cutsceneStartPosition = new THREE.Vector3(0, 100, (mapSize / 2) + 150); // Start further back and higher
-    const cutsceneStartRotation = new THREE.Euler(0, Math.PI, 0); // Facing center
-    const gameplayStartPosition = new THREE.Vector3(0, 50, (mapSize / 2) + 50); // End position for cutscene
-    const gameplayStartRotation = new THREE.Euler(0, Math.PI, 0);
+    //FIX: Face the city (0 radians Y)
+    const cutsceneStartRotation = new THREE.Euler(0, 0, 0);
+    // Gameplay Start Position (end of cutscene)
+    gameplayStartPosition = new THREE.Vector3(0, 50, (mapSize / 2) + 50);
+    //FIX: Face the city (0 radians Y)
+    const gameplayStartRotation = new THREE.Euler(0, 0, 0);
 
     // Set initial state to cutscene start
     dronePosition.copy(cutsceneStartPosition);
@@ -452,10 +456,11 @@ function updateDronePhysics() {
     // --- Translation ---
     // Get drone's current forward and right vectors based on its rotation
     const forwardVector = new THREE.Vector3();
-    droneModel.getWorldDirection(forwardVector); // Gets the Z- direction
-    forwardVector.negate(); // We want the positive Z direction for forward
+    droneModel.getWorldDirection(forwardVector); // Gets the direction the local negative Z-axis is pointing
+    // forwardVector.negate(); // Negate if model faces +Z locally for forward movement
+    // Assuming model faces -Z locally for forward, do not negate
 
-    const rightVector = new THREE.Vector3().crossVectors(mainCityCamera.up, forwardVector).normalize(); // Cross up with forward for right
+    const rightVector = new THREE.Vector3().crossVectors(droneModel.up, forwardVector).normalize(); // Cross drone's up with its forward for right
 
     let targetVelocity = new THREE.Vector3();
     if (droneControls.forward) targetVelocity.add(forwardVector);
@@ -537,20 +542,20 @@ function animatePropellers(speed) {
 
 // --- Cutscene Logic ---
 function updateDroneCutscene(elapsedTime) {
-    if (!droneModel) return;
+    if (!droneModel || !gameplayStartPosition) return; // Ensure gameplayStartPosition is defined
 
     const progress = Math.min(elapsedTime / CUTSCENE_DURATION, 1);
     const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
 
     const mapSize = config.citySize || 500;
     const cutsceneStartPosition = new THREE.Vector3(0, 100, (mapSize / 2) + 150);
-    const gameplayStartPosition = new THREE.Vector3(0, 50, (mapSize / 2) + 50);
+    // const gameplayStartPosition = new THREE.Vector3(0, 50, (mapSize / 2) + 50); // Now a global variable
 
     // Interpolate drone position
     droneModel.position.lerpVectors(cutsceneStartPosition, gameplayStartPosition, easeProgress);
 
-    // Keep rotation fixed during cutscene (facing center)
-    droneModel.rotation.set(0, Math.PI, 0);
+    // Keep rotation fixed during cutscene (facing city - Y=0)
+    droneModel.rotation.set(0, 0, 0);
 
     // Animate propellers faster during cutscene
     animatePropellers(15); // Fixed high speed for cutscene
@@ -561,11 +566,15 @@ function updateDroneCutscene(elapsedTime) {
     // Check if cutscene is finished
     if (progress >= 1) {
         droneCutsceneActive = false;
-        // Set final gameplay position and rotation accurately
-        dronePosition.copy(gameplayStartPosition);
-        droneRotation.set(0, Math.PI, 0);
-        droneModel.position.copy(dronePosition);
-        droneModel.rotation.copy(droneRotation);
+        // Set final gameplay position and rotation accurately from gameplayStartPosition
+        // No need to copy again as lerp handles the final step
+        droneModel.position.copy(gameplayStartPosition);
+        // Ensure final rotation is set correctly (Y=0 to face city)
+        droneModel.rotation.set(0, 0, 0);
+
+        // Copy the final drone state to the global state variables
+        dronePosition.copy(droneModel.position);
+        droneRotation.copy(droneModel.rotation);
         droneVelocity.set(0,0,0); // Reset velocity
         droneAngularVelocity.set(0,0,0); // Reset angular velocity
 
@@ -833,6 +842,7 @@ function positionCameraForCutscene(progress) {
     const currentLookAtOffset = new THREE.Vector3().lerpVectors(startLookAtOffset, endLookAtOffset, progress);
 
     // Apply drone's rotation to the camera offset (keep camera behind drone)
+    // Since drone rotation is 0 during cutscene, this won't change offset direction
     currentOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), droneModel.rotation.y);
 
     // Calculate target camera position and look-at point
