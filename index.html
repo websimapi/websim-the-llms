@@ -394,19 +394,6 @@
         </div>
     </div>
     
-    <div id="confirmation-modal" class="confirmation-modal">
-        <div class="confirmation-modal-content">
-            <div class="confirmation-modal-title">Confirm Action</div>
-            <div id="confirmation-message" class="confirmation-modal-message">
-                Are you sure you want to proceed?
-            </div>
-            <div class="confirmation-modal-actions">
-                <button id="cancel-action-btn" class="confirmation-modal-button cancel">Cancel</button>
-                <button id="confirm-action-btn" class="confirmation-modal-button confirm">Yes</button>
-            </div>
-        </div>
-    </div>
-
     <div id="credits-panel" class="hidden">
         <div class="credits-header">
             <div class="credits-title">Credits</div>
@@ -416,9 +403,18 @@
             <!-- Markdown content will be loaded here -->
             <div class="loading-credits">Loading...</div>
         </div>
-        <a target="_blank" href="https://jam.pieter.com" style="font-family: 'system-ui', sans-serif; position: fixed; bottom: -1px; right: -1px; padding: 7px; font-size: 14px; font-weight: bold; background: #fff; color: #000; text-decoration: none; z-index: 10; border-top-left-radius: 12px; z-index: 10000; border: 1px solid #fff;"> 🕹️ Vibe Jam 2025</a>
+        <a target="_blank" href="https://jam.pieter.com" style="font-family: 'system-ui', sans-serif; position: fixed; bottom: -1px; right: -1px; padding: 7px; font-size: 14px; font-weight: bold; background: #fff; color: #000; text-decoration: none; z-index: 10; border-top-left-radius: 12px; z-index: 10000; border: 1px solid #fff;">🕹️ Vibe Jam 2025</a>
     </div>
 
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/",
+        "marked": "https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.esm.js"
+      }
+    }
+    </script>
     <script type="module" src="config.js"></script>
     <script type="module" src="script.js"></script>
     <script type="module" src="cityScene.js"></script>
