@@ -635,10 +635,10 @@ function placeLLMOnPlot(plotData, placementPoint) {
     }
 }
 
-function deactivateDroneTransport(cancel = false) {
+export function deactivateDroneTransport(cancel = false) {
     if (!droneActive) return;
     droneActive = false;
-    window.droneActive = false; 
+    window.droneActive = false;
 
     removeInputListeners();
 
