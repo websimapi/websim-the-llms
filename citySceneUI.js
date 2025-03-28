@@ -1,6 +1,8 @@
 // New file for city scene UI interactions
 import { toggleConsolePanel } from './cityScene.js';
 import { hidePlotInfoPanel } from './plotHoverInfo.js'; // Import the hide function
+import { showConfirmationModal } from './confirmationModal.js';
+import { deactivateDroneTransport } from './llmDroneTransport.js'; // Import drone deactivation
 
 // Setup UI interactions for the city scene
 export function setupUIInteractions() {
@@ -15,31 +17,67 @@ function setupMenuButtons() {
 
     if (createLLMButton) {
         createLLMButton.addEventListener('click', () => {
-            console.log('Create new LLM clicked');
-            hidePlotInfoPanel(); // Hide plot info when opening menu
-            document.getElementById('create-llm-ui').classList.add('active');
-            // Set global variable to track that create LLM was opened from plot view
-            window.createLLMOpenedFrom = 'plot';
-
-            // Import and setup LLM creation interface
-            import('./llmCreationInterface.js').then(module => {
-                module.setupLLMCreationInterface();
-            });
+            if (window.droneActive) {
+                showConfirmationModal(
+                    "Cancel drone transport to create a new LLM?",
+                    () => { // onConfirm
+                        deactivateDroneTransport(true);
+                        openCreateLLMUI();
+                    },
+                    () => { // onCancel
+                        console.log("Create LLM action cancelled due to active drone transport.");
+                    }
+                );
+            } else {
+                openCreateLLMUI();
+            }
         });
     }
 
     if (moveLLMButton) {
         moveLLMButton.addEventListener('click', () => {
-            console.log('Move LLMs button clicked');
-            hidePlotInfoPanel(); // Hide plot info when opening menu
-
-            // Import and setup LLM collection view
-            import('./llmCollectionView.js').then(module => {
-                module.setupLLMCollectionView();
-                document.getElementById('llm-collection-ui').classList.add('active');
-            });
+             if (window.droneActive) {
+                showConfirmationModal(
+                    "Cancel drone transport to manage LLMs?",
+                    () => { // onConfirm
+                        deactivateDroneTransport(true);
+                        openCollectionViewUI();
+                    },
+                    () => { // onCancel
+                        console.log("Manage LLMs action cancelled due to active drone transport.");
+                    }
+                );
+            } else {
+                openCollectionViewUI();
+            }
         });
     }
+}
+
+// Helper function to open Create LLM UI
+function openCreateLLMUI() {
+    console.log('Opening Create LLM UI');
+    hidePlotInfoPanel(); // Hide plot info when opening menu
+    document.getElementById('create-llm-ui').classList.add('active');
+    // Set global variable to track that create LLM was opened from plot view
+    window.createLLMOpenedFrom = 'plot';
+
+    // Import and setup LLM creation interface
+    import('./llmCreationInterface.js').then(module => {
+        module.setupLLMCreationInterface();
+    }).catch(err => console.error("Error loading create LLM interface:", err));
+}
+
+// Helper function to open Collection View UI
+function openCollectionViewUI() {
+    console.log('Opening Collection View UI');
+    hidePlotInfoPanel(); // Hide plot info when opening menu
+
+    // Import and setup LLM collection view
+    import('./llmCollectionView.js').then(module => {
+        module.setupLLMCollectionView();
+        document.getElementById('llm-collection-ui').classList.add('active');
+    }).catch(err => console.error("Error loading collection view:", err));
 }
 
 // Setup console toggle key listener

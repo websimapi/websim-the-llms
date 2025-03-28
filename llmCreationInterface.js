@@ -17,6 +17,7 @@ import { initHumanoidPreview, updateSelectedMeshColor, resetPreviewModel, displa
 import { optimizeUIHeight } from './llmAttributeTooltips.js'; // Keep this for resize handler
 import { showConfirmationModal } from './confirmationModal.js'; // Import the custom modal function
 import { hidePlotInfoPanel } from './plotHoverInfo.js'; // Import hide function
+import { deactivateDroneTransport } from './llmDroneTransport.js'; // Import drone deactivation
 
 // Removed global preview variables (humanoidScene, etc.) - managed within llmModelCreationRenderer.js now
 // Removed model variables (robotModel, customCharacter, materials) - managed within llmModelCreationRenderer.js
@@ -131,7 +132,24 @@ export function setupLLMCreationInterface(llmToEdit) {
     const closeButton = document.querySelector('.create-llm-close');
     const newCloseBtn = closeButton.cloneNode(true);
     closeButton.parentNode.replaceChild(newCloseBtn, closeButton);
-    newCloseBtn.addEventListener('click', handleCreateLLMClose);
+    // Modify close button listener
+    newCloseBtn.addEventListener('click', () => {
+        if (window.droneActive) {
+            showConfirmationModal(
+                "Cancel drone transport to close the creator?",
+                () => { // onConfirm
+                    deactivateDroneTransport(true);
+                    handleCreateLLMClose(); // Proceed with closing
+                },
+                () => { // onCancel
+                    console.log("Close creator action cancelled due to active drone transport.");
+                }
+            );
+        } else {
+            handleCreateLLMClose(); // Close directly if drone not active
+        }
+    });
+
 
     // Add event listener for reset button
     const resetButton = document.querySelector('.create-llm-actions .create-llm-button.secondary');

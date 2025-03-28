@@ -5,12 +5,12 @@ import { createCustomCharacter } from './characterGenerator.js';
 import { setupLLMViewInterface } from './llmViewInterface.js';
 import { setupLLMCreationInterface } from './llmCreationInterface.js';
 import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId } from './llmCollectionCarousel.js';
-import { activateDroneTransport } from './llmDroneTransport.js';
+import { activateDroneTransport, deactivateDroneTransport } from './llmDroneTransport.js';
 import { hidePlotInfoPanel } from './plotHoverInfo.js';
+import { showConfirmationModal } from './confirmationModal.js';
 
 let collectionAnimationId;
 
-// Export this function so it can be used by other modules (like drone transport)
 export function getModelTypeIcon(modelType) {
     switch(modelType) {
         case 'assistant':
@@ -31,52 +31,40 @@ export function getModelTypeIcon(modelType) {
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21.71.33 1.47.33 2.26 0 4.41-3.59 8-8 8z"/>
             </svg>`;
         case 'humanoid':
-             // Updated Humanoid Icon SVG
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
             </svg>`;
         default:
-            // Fallback icon (simple circle)
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>`;
     }
 }
 
 export function setupLLMCollectionView(selectLLMId = null) {
-    // Initialize the LLM data manager
     llmDataManager.init();
 
-    // Hide plot info panel if open
     hidePlotInfoPanel();
 
-    // Setup the collection UI
     const collectionUI = document.getElementById('llm-collection-ui');
     collectionUI.classList.add('active');
 
-    // Find the header to add the transport button
     const collectionHeader = collectionUI.querySelector('.collection-header');
 
-    // Wait a moment for the UI to be visible before initializing the viewport
     setTimeout(() => {
         const collectionViewport = document.querySelector('.collection-viewport');
         const llmList = document.getElementById('llm-list');
 
-        // Clear existing content
         llmList.innerHTML = '';
         collectionViewport.innerHTML = '';
 
-        // Cancel any existing animation
         if (collectionAnimationId) {
             cancelAnimationFrame(collectionAnimationId);
         }
 
-        // Clean up any existing carousel
         cleanupCarousel();
 
-        // Get all LLMs
         const llms = llmDataManager.getAllLLMs();
 
         if (llms.length === 0) {
-            // Show empty state
             llmList.innerHTML = `
                 <div class="empty-collection">
                     <h3>No LLMs Created Yet</h3>
@@ -84,9 +72,7 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 </div>
             `;
         } else {
-            // Display LLM list
             llms.forEach((llm, index) => {
-                // Create list item
                 const llmItem = document.createElement('div');
                 llmItem.className = `llm-list-item ${llm.model}`;
                 llmItem.setAttribute('data-id', llm.id);
@@ -108,14 +94,11 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 `;
                 llmList.appendChild(llmItem);
 
-                // Add click event to select LLM
                 llmItem.addEventListener('click', (e) => {
-                    // Don't trigger if clicking on a button
                     if (e.target.tagName !== 'BUTTON') {
                         const id = llmItem.getAttribute('data-id');
                         selectModel(id);
 
-                        // Update button state when selection changes
                         const editSelectedBtn = document.getElementById('edit-selected-llm-btn');
                         if (editSelectedBtn) {
                             editSelectedBtn.disabled = !id;
@@ -124,7 +107,6 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 });
             });
 
-            // Add "Create New LLM" entry at the bottom of the list
             const createNewItem = document.createElement('div');
             createNewItem.className = 'llm-list-item create-new-item';
             createNewItem.innerHTML = `
@@ -141,28 +123,29 @@ export function setupLLMCollectionView(selectLLMId = null) {
             `;
             llmList.appendChild(createNewItem);
 
-            // Add click event for create new item
             createNewItem.addEventListener('click', () => {
-                document.getElementById('llm-collection-ui').classList.remove('active');
-                document.getElementById('create-llm-ui').classList.add('active');
-                // Set global variable to track that create LLM was opened from collection
-                window.createLLMOpenedFrom = 'collection';
-                // Initialize the creation interface
-                setupLLMCreationInterface();
-
-                // Clean up carousel
-                cleanupCarousel();
+                if (window.droneActive) {
+                    showConfirmationModal(
+                        "Cancel drone transport to create a new LLM?",
+                        () => { 
+                            deactivateDroneTransport(true);
+                            openCreateLLMFromCollection();
+                        },
+                        () => { 
+                            console.log("Create LLM action cancelled due to active drone transport.");
+                        }
+                    );
+                } else {
+                    openCreateLLMFromCollection();
+                }
             });
 
-            // Add transport button to the collection header
             if (collectionHeader) {
-                addTransportButton(collectionHeader); // Pass header element
+                addTransportButton(collectionHeader); 
             }
 
-            // Setup carousel
             setupLLMCarousel(collectionViewport, llms);
 
-            // Add profile images to the list items
             import('./llmProfileImageDisplay.js').then(module => {
                 if (typeof module.addProfileImagesToLLMList === 'function') {
                     module.addProfileImagesToLLMList();
@@ -173,14 +156,25 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 console.error('Error importing llmProfileImageDisplay module:', error);
             });
 
-            // Add click event to viewport for model selection
             collectionViewport.addEventListener('click', handleViewportClick);
 
-            // Add event listeners for buttons
             document.querySelectorAll('.llm-edit-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const id = e.target.getAttribute('data-id');
-                    handleEditLLM(id);
+                    if (window.droneActive) {
+                        showConfirmationModal(
+                            "Cancel drone transport to edit this LLM?",
+                            () => { 
+                                deactivateDroneTransport(true);
+                                handleEditLLM(id);
+                            },
+                            () => { 
+                                console.log("Edit LLM action cancelled due to active drone transport.");
+                            }
+                        );
+                    } else {
+                        handleEditLLM(id);
+                    }
                 });
             });
 
@@ -191,7 +185,6 @@ export function setupLLMCollectionView(selectLLMId = null) {
                 });
             });
 
-            // Select specific LLM if ID provided, otherwise select first one
             if (selectLLMId) {
                 selectModel(selectLLMId);
             } else if (llms.length > 0) {
@@ -200,19 +193,43 @@ export function setupLLMCollectionView(selectLLMId = null) {
         }
     }, 100);
 
-    // Add close button event listener
     const closeButton = document.querySelector('.collection-close');
     if (closeButton && closeButton.closest('#llm-collection-ui')) {
         const newCloseButton = closeButton.cloneNode(true);
         closeButton.parentNode.replaceChild(newCloseButton, closeButton);
 
         newCloseButton.addEventListener('click', () => {
-            collectionUI.classList.remove('active');
-            cleanupCarousel();
-            window.createLLMOpenedFrom = 'plot';
-            hidePlotInfoPanel();
+            if (window.droneActive) {
+                showConfirmationModal(
+                    "Cancel drone transport to close the collection?",
+                    () => { 
+                        deactivateDroneTransport(true);
+                        closeCollectionView();
+                    },
+                    () => { 
+                        console.log("Close collection action cancelled due to active drone transport.");
+                    }
+                );
+            } else {
+                closeCollectionView();
+            }
         });
     }
+}
+
+function openCreateLLMFromCollection() {
+    document.getElementById('llm-collection-ui').classList.remove('active');
+    document.getElementById('create-llm-ui').classList.add('active');
+    window.createLLMOpenedFrom = 'collection';
+    setupLLMCreationInterface();
+    cleanupCarousel();
+}
+
+function closeCollectionView() {
+    document.getElementById('llm-collection-ui').classList.remove('active');
+    cleanupCarousel();
+    window.createLLMOpenedFrom = 'plot'; 
+    hidePlotInfoPanel();
 }
 
 function addTransportButton(headerElement) { 
@@ -227,35 +244,34 @@ function addTransportButton(headerElement) {
     transportButtonContainer.innerHTML = `
         <button class="transport-button" title="Transport Selected LLM to Plot">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <!-- Drone Icon SVG -->
-                 <circle cx="12" cy="12" r="2" />
-                 <rect x="6.5" y="11.5" width="11" height="1" rx="0.5" />
-                 <rect x="11.5" y="7" width="1" height="11" rx="0.5" />
-                 <g class="propeller" style="transform-origin: 6.5px 11.5px;">
-                     <circle cx="6.5" cy="11.5" r="1" />
-                     <ellipse cx="6.5" cy="11.5" rx="3" ry="0.5" />
-                     <ellipse cx="6.5" cy="11.5" rx="0.5" ry="3" />
-                 </g>
-                 <g class="propeller" style="transform-origin: 17.5px 11.5px;">
-                     <circle cx="17.5" cy="11.5" r="1" />
-                     <ellipse cx="17.5" cy="11.5" rx="3" ry="0.5" />
-                     <ellipse cx="17.5" cy="11.5" rx="0.5" ry="3" />
-                 </g>
-                 <g class="propeller" style="transform-origin: 12px 7.5px;">
-                     <circle cx="12" cy="7.5" r="1" />
-                     <ellipse cx="12" cy="7.5" rx="3" ry="0.5" />
-                     <ellipse cx="12" cy="7.5" rx="0.5" ry="3" />
-                 </g>
-                 <g class="propeller" style="transform-origin: 12px 17.5px;">
-                     <circle cx="12" cy="17.5" r="1" />
-                     <ellipse cx="12" cy="17.5" rx="3" ry="0.5" />
-                     <ellipse cx="12" cy="17.5" rx="0.5" ry="3" />
-                 </g>
-                 <rect x="9" y="20" width="6" height="3" rx="1" />
-                 <path d="M10,20.5h4v0.5H10V20.5z" />
-                 <path d="M10,21.5h4v0.5H10V21.5z" />
-                 <path d="M10.5,20.75h1v1.5h-1V20.75z" />
-                 <path d="M12.5,20.75h1v1.5h-1V20.75z" />
+                <circle cx="12" cy="12" r="2" />
+                <rect x="6.5" y="11.5" width="11" height="1" rx="0.5" />
+                <rect x="11.5" y="7" width="1" height="11" rx="0.5" />
+                <g class="propeller" style="transform-origin: 6.5px 11.5px;">
+                    <circle cx="6.5" cy="11.5" r="1" />
+                    <ellipse cx="6.5" cy="11.5" rx="3" ry="0.5" />
+                    <ellipse cx="6.5" cy="11.5" rx="0.5" ry="3" />
+                </g>
+                <g class="propeller" style="transform-origin: 17.5px 11.5px;">
+                    <circle cx="17.5" cy="11.5" r="1" />
+                    <ellipse cx="17.5" cy="11.5" rx="3" ry="0.5" />
+                    <ellipse cx="17.5" cy="11.5" rx="0.5" ry="3" />
+                </g>
+                <g class="propeller" style="transform-origin: 12px 7.5px;">
+                    <circle cx="12" cy="7.5" r="1" />
+                    <ellipse cx="12" cy="7.5" rx="3" ry="0.5" />
+                    <ellipse cx="12" cy="7.5" rx="0.5" ry="3" />
+                </g>
+                <g class="propeller" style="transform-origin: 12px 17.5px;">
+                    <circle cx="12" cy="17.5" r="1" />
+                    <ellipse cx="12" cy="17.5" rx="3" ry="0.5" />
+                    <ellipse cx="12" cy="17.5" rx="0.5" ry="3" />
+                </g>
+                <rect x="9" y="20" width="6" height="3" rx="1" />
+                <path d="M10,20.5h4v0.5H10V20.5z" />
+                <path d="M10,21.5h4v0.5H10V21.5z" />
+                <path d="M10.5,20.75h1v1.5h-1V20.75z" />
+                <path d="M12.5,20.75h1v1.5h-1V20.75z" />
             </svg>
         </button>
     `;
@@ -263,18 +279,19 @@ function addTransportButton(headerElement) {
     transportButtonContainer.querySelector('.transport-button').addEventListener('click', () => {
         const selectedModelId = getSelectedModelId();
         if (selectedModelId) {
+            document.getElementById('llm-collection-ui').classList.remove('active');
+            cleanupCarousel();
             activateDroneTransport(selectedModelId);
         } else {
             alert('Please select an LLM to transport');
         }
     });
 
-    // Insert the button container into the header, before the close button
     const closeButton = headerElement.querySelector('.collection-close');
     if (closeButton) {
         headerElement.insertBefore(transportButtonContainer, closeButton);
     } else {
-        headerElement.appendChild(transportButtonContainer); // Fallback
+        headerElement.appendChild(transportButtonContainer); 
     }
 }
 
@@ -333,17 +350,15 @@ function handleViewportClick(event) {
 }
 
 function deleteLLM(id) {
-    import('./confirmationModal.js').then(module => {
-        module.showConfirmationModal(
-            'Are you sure you want to delete this LLM? This action cannot be undone.',
-            () => { 
-                if (llmDataManager.deleteLLM(id)) {
-                    setupLLMCollectionView();
-                }
-            },
-            () => { 
-                console.log("Deletion cancelled.");
+    showConfirmationModal(
+        'Are you sure you want to delete this LLM? This action cannot be undone.',
+        () => { 
+            if (llmDataManager.deleteLLM(id)) {
+                setupLLMCollectionView();
             }
-        );
-    });
+        },
+        () => { 
+            console.log("Deletion cancelled.");
+        }
+    );
 }
