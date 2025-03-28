@@ -502,7 +502,7 @@ function placeLLMOnPlot(plotData, placementPoint) {
     objectsToRemove.forEach(obj => {
         if (obj.parent) {
             disposeHierarchy(obj); // Dispose geometry/materials and remove from parent
-            console.log(`Removed ${obj.name} (ID: ${obj.userData.id)})`);
+            console.log(`Removed ${obj.name} (ID: ${obj.userData.id})`); 
         } else {
             console.warn(`Object ${obj.name} has no parent, cannot remove.`);
             disposeHierarchy(obj); // Still attempt disposal
