@@ -670,7 +670,7 @@ function handleJoystickEnd(event) {
 
 // Renamed and modified to handle both manual and auto navigation
 function updateDroneState() {
-    if (!droneModel || isPlacing) return; // Pause updates during placement sequence
+    if (!droneModel || !droneActive) return; // Also check if drone is active
 
     if (isAutoNavigating) {
         updateAutoNavigationPhysics();
@@ -678,7 +678,7 @@ function updateDroneState() {
         updateManualPhysics();
     }
 
-    // Common physics updates (altitude, boundaries, propellers)
+    // Common physics updates (altitude, boundaries) - only apply if not placing
     if (droneModel.position.y < MIN_ALTITUDE) {
         droneModel.position.y = MIN_ALTITUDE;
         droneVelocity.y = Math.max(0, droneVelocity.y);
@@ -688,7 +688,8 @@ function updateDroneState() {
     droneModel.position.x = THREE.MathUtils.clamp(droneModel.position.x, -mapBoundary, mapBoundary);
     droneModel.position.z = THREE.MathUtils.clamp(droneModel.position.z, -mapBoundary, mapBoundary);
 
-    // Propeller animation based on combined velocity/input
+    // Propeller animation based on combined velocity/input - should run even during placement start
+    // Calculate speed even if placing, based on current velocity and controls
     const verticalThrust = droneControls.up ? 1 : (droneControls.down ? -0.5 : 0);
     const speedSq = droneVelocity.lengthSq();
     const propellerSpeed = 1.0 + Math.abs(droneVelocity.y) * 8 + verticalThrust * 2 + Math.sqrt(speedSq) * 5;
@@ -700,9 +701,13 @@ function updateDroneState() {
         }
     });
 
-    // Check if hovering over a valid plot *after* updating position
-    checkHoveringPlot();
-    updatePlacementButtonState(); // Update button based on hover check
+    // Check if hovering over a valid plot *after* updating position,
+    // but only if not currently in the placement sequence.
+    // The placement sequence handles its own final plot check.
+    if (!isPlacing) {
+        checkHoveringPlot();
+        updatePlacementButtonState(); // Update button based on hover check
+    }
 }
 
 function updateManualPhysics() {
@@ -941,15 +946,10 @@ function startPlacementSequence() {
         // Interpolate Y position
         droneModel.position.y = THREE.MathUtils.lerp(startY, targetY, progress);
 
-        // Slow down propellers as it lowers
-        const propellerSpeed = (1.0 - progress) * 2.0 + 0.5; // Gradually decrease speed
-        droneModel.traverse(child => {
-            if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
-                const parentPosition = child.parent.position;
-                const direction = (parentPosition.x > 0) ? 1 : -1;
-                child.rotation.y += propellerSpeed * direction * 0.25;
-            }
-        });
+        // Update propeller speed during placement - moved from updateDroneState
+        const elapsedForProps = performance.now() - placementStartTime;
+        let progressForProps = Math.min(elapsedForProps / duration, 1);
+        const propellerSpeed = (1.0 - progressForProps) * 2.0 + 0.5; // Gradually decrease speed
 
         if (progress < 1) {
             placementFrameId = requestAnimationFrame(animatePlacement);
@@ -970,6 +970,14 @@ function startPlacementSequence() {
                     obj = obj.parent;
                 }
                 if (obj && obj.userData && (obj.userData.type === 'lot' || obj.userData.type === 'lot_target')) {
+                    // --- CRITICAL CHECK ---
+                    // Ensure cityData and cityData.lots are available before using find
+                    if (!cityData || !Array.isArray(cityData.lots)) {
+                        console.error("Critical Error: cityData or cityData.lots is not available in animatePlacement!");
+                        targetPlot = null; // Ensure we don't proceed
+                        break; // Exit loop
+                    }
+                    // --- END CHECK ---
                     const plotData = cityData.lots.find(lot => lot.id === obj.userData.id);
                     if (plotData && plotData.available) {
                         targetPlot = plotData;
@@ -984,11 +992,12 @@ function startPlacementSequence() {
                 placeLLMOnPlot(targetPlot, intersectPoint); // Place at the precise intersect point
             } else {
                 console.error("Placement failed: Could not find valid plot beneath final position.");
-                // Handle failure? Maybe just cancel transport?
+                // Handle failure - Reset placement state and re-enable controls
+                isPlacing = false;
+                enableManualControls(); // Re-enable manual controls
+                updatePlacementButtonState(); // Update button state (should show "Place LLM", disabled)
+                // Do NOT deactivate drone, let the user try again or cancel
             }
-
-            isPlacing = false; // Mark placement as done
-            deactivateDroneTransport(false); // Deactivate drone after placement
         }
     }
 
@@ -997,6 +1006,15 @@ function startPlacementSequence() {
 
 function placeLLMOnPlot(plotData, placementPoint) {
     if (!currentLLMTransporting || !mainCityScene) return;
+
+    // --- CRITICAL CHECK ---
+    // Add a check for cityData and cityData.lots here as well, just in case.
+    if (!cityData || !Array.isArray(cityData.lots)) {
+        console.error("Critical Error: cityData or cityData.lots is not available in placeLLMOnPlot!");
+        deactivateDroneTransport(true); // Cancel transport on critical error
+        return;
+    }
+    // --- END CHECK ---
 
     const placedLLMModel = renderLLMCharacter(THREE, currentLLMTransporting);
 
@@ -1025,19 +1043,27 @@ function placeLLMOnPlot(plotData, placementPoint) {
 
     mainCityScene.add(placedLLMModel);
 
-    // Update plot data
-    plotData.available = false;
-    plotData.occupiedBy = currentLLMTransporting.id;
+    // Find the correct plot data entry in the main cityData array to update
+    const currentPlotData = cityData.lots.find(lot => lot.id === plotData.id);
+    if (!currentPlotData) {
+        console.error(`Critical Error: Could not find plot data with ID ${plotData.id} in cityData.lots during final placement update.`);
+        deactivateDroneTransport(true); // Cancel transport
+        return;
+    }
+    currentPlotData.available = false;
+    currentPlotData.occupiedBy = currentLLMTransporting.id;
 
-    // Remove plot outline
+    // Remove plot outline and click target
+    console.log(`Removing outline/target for plot ID: ${currentPlotData.id}`);
     let plotOutlineToRemove = null;
     mainCityScene.traverse(obj => {
         // Find both the outline and the click target for the same plot ID
-        if (obj.userData && obj.userData.id === plotData.id && (obj.name === 'plot_outline' || obj.name === 'plot_click_target')) {
+        if (obj.userData && obj.userData.id === currentPlotData.id && (obj.name === 'plot_outline' || obj.name === 'plot_click_target')) {
             // Remove the object itself
             if (obj.parent) {
                 // Dispose geometry and materials before removing
                 disposeHierarchy(obj);
+                console.log(`Removing ${obj.name} from parent ${obj.parent.name}`);
                 obj.parent.remove(obj);
             }
             // Keep track of the outline to hide hover info if needed
@@ -1053,14 +1079,11 @@ function placeLLMOnPlot(plotData, placementPoint) {
                 module.hidePlotInfoPanel();
             }
         });
+    } else {
+        console.log("No plot outline found to remove or hide hover info for.");
     }
 
-    console.log(`LLM ${currentLLMTransporting.name} placed on plot ${plotData.name}.`);
-
-    // Note: cityData.saveGame() is not called here automatically. Needs explicit save action elsewhere.
-    // if (typeof cityData.saveGame === 'function') {
-    //     console.log("City data state updated (but not persisted automatically).");
-    // }
+    console.log(`LLM ${currentLLMTransporting.name} placed on plot ${currentPlotData.name}.`);
 }
 
 function disposeHierarchy(object) {
@@ -1082,6 +1105,10 @@ function disposeHierarchy(object) {
             }
         }
     });
+    // Remove the object itself if it's not already removed by parent logic
+    if (object.parent) {
+        object.parent.remove(object);
+    }
 }
 
 export function deactivateDroneTransport(cancel = false) {
@@ -1092,6 +1119,7 @@ export function deactivateDroneTransport(cancel = false) {
         console.log("Cancelling placement sequence.");
         isPlacing = false; // This will stop the animation loop in startPlacementSequence
         // Optional: Add a quick "fly away" animation here?
+        enableManualControls(); // Re-enable controls if placement is cancelled mid-sequence
     }
 
     // Cancel auto-navigation if active
