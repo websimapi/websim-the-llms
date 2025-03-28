@@ -25,7 +25,7 @@ export const config = {
     // Music player settings
     music: {
         defaultVolume: 2, // 0-4 (OFF, 25%, 50%, 75%, 100%)
-        fadeInDuration: 5000,
-        fadeOutDuration: 3000
+        fadeInDuration: 5000, // Increased fade-in duration to 5 seconds
+        fadeOutDuration: 3000 // Increased fade-out duration to 3 seconds
     }
 };
