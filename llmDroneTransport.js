@@ -16,8 +16,6 @@ let droneContainer;
 let currentLLMTransporting = null;
 let mainCityScene, mainCityCamera, mainCityControls;
 let originalCameraPosition, originalCameraTarget;
-let gyroControlActive = false; // Gyroscope control state
-let initialGyroAlpha = null; // Store initial alpha for relative yaw
 
 // --- Constants ---
 const MAX_SPEED = 0.25;
@@ -26,8 +24,6 @@ const DECELERATION = 0.95; // Multiplier for damping
 const ROTATION_SPEED = 0.01;
 const MAX_ROTATION_SPEED = 0.05;
 const ROTATION_DAMPING = 0.90;
-const GYRO_ROTATION_SPEED = 0.0005; // Sensitivity multiplier for gyro yaw
-const GYRO_PITCH_ROLL_SPEED = 0.008; // Sensitivity for pitch/roll
 const VERTICAL_SPEED = 0.15;
 const MIN_ALTITUDE = 1.0;
 const CAMERA_FOLLOW_DISTANCE = 8;
@@ -84,13 +80,11 @@ export function activateDroneTransport(llmId) {
     droneVelocity.set(0, 0, 0);
     droneAngularVelocity.set(0, 0, 0);
     resetControlState();
-    gyroControlActive = false; // Ensure gyro is off initially
-    initialGyroAlpha = null; // Reset initial gyro heading
 
     initDroneScene(llm);
     positionCameraForDroneView(true); // Instant positioning
 
-    setupInputListeners(); // Setup keyboard/touch/gyro
+    setupInputListeners(); // Setup keyboard/touch
 
     droneActive = true;
     window.droneActive = true; // Set global flag
@@ -137,7 +131,6 @@ function createDroneUI(llm) {
                 <p>Press <strong>Esc</strong> to cancel</p>
             </div>
             <div class="drone-touch-controls">
-                 <!-- Touch control buttons... -->
                 <div class="touch-control-row">
                     <button class="drone-touch-btn" data-control="up">▲</button> <!-- E -->
                      <button class="drone-touch-btn" data-control="forward">↑</button> <!-- W -->
@@ -153,7 +146,6 @@ function createDroneUI(llm) {
                      <button class="drone-touch-btn" data-control="rotateRight">↻</button>
                 </div>
             </div>
-            <button id="gyro-toggle-btn" class="gyro-toggle-btn">Enable Gyroscope Control</button>
             <button class="drone-land-btn">Place LLM</button>
         </div>
     `;
@@ -297,18 +289,12 @@ function setupInputListeners() {
     setupTouchButtonListeners();
     // Place button
     droneContainer.querySelector('.drone-land-btn').addEventListener('click', handlePlaceAttempt);
-    // Gyroscope button
-    setupGyroscopeControls();
 }
 
 function removeInputListeners() {
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('keyup', handleKeyUp);
     // Touch listeners are implicitly removed when the UI is destroyed
-    // Remove gyroscope listener if active
-    window.removeEventListener('deviceorientation', handleDeviceOrientation);
-    gyroControlActive = false;
-    initialGyroAlpha = null;
 }
 
 function resetControlState() {
@@ -335,9 +321,8 @@ function handleKeyDown(event) {
         case 'd': droneControls.right = true; break;
         case 'q': droneControls.down = true; break;
         case 'e': droneControls.up = true; break;
-        // Disable keyboard rotation if gyro is active
-        case 'arrowleft': if (!gyroControlActive) droneControls.rotateLeft = true; break;
-        case 'arrowright': if (!gyroControlActive) droneControls.rotateRight = true; break;
+        case 'arrowleft': droneControls.rotateLeft = true; break;
+        case 'arrowright': droneControls.rotateRight = true; break;
         case 'p': handlePlaceAttempt(); break;
         case 'escape': deactivateDroneTransport(true); break; // Cancel
         default: handled = false;
@@ -375,10 +360,6 @@ function setupTouchButtonListeners() {
 
 function handleTouchStart(event, control) {
     event.preventDefault();
-    // Disable touch rotation if gyro is active
-    if (gyroControlActive && (control === 'rotateLeft' || control === 'rotateRight')) {
-        return;
-    }
     droneControls[control] = true;
     touchActiveControls[control] = true; // Mark as active by touch
     // Visual feedback
@@ -387,115 +368,17 @@ function handleTouchStart(event, control) {
 
 function handleTouchEnd(event, control) {
     event.preventDefault();
-    // Only deactivate if it was activated by touch
+    // Only deactivate if it was activated by touch (prevents interference with keyboard)
+    // Check if the control exists in touchActiveControls before deleting
     if (touchActiveControls.hasOwnProperty(control)) {
         droneControls[control] = false;
         delete touchActiveControls[control];
     }
-    // Reset visual feedback
+    // Reset visual feedback - Need to find the button again if event.target isn't reliable
     const btn = droneContainer.querySelector(`.drone-touch-btn[data-control="${control}"]`);
     if (btn) {
         btn.style.backgroundColor = 'rgba(60, 179, 113, 0.4)';
     }
-}
-
-// --- Gyroscope Control ---
-function setupGyroscopeControls() {
-    const gyroBtn = document.getElementById('gyro-toggle-btn');
-    if (!gyroBtn) return;
-
-    // Check for DeviceOrientationEvent support
-    if (!window.DeviceOrientationEvent) {
-        gyroBtn.textContent = 'Gyroscope Not Supported';
-        gyroBtn.disabled = true;
-        return;
-    }
-
-    gyroBtn.addEventListener('click', async () => {
-        if (!gyroControlActive) {
-            // Request permission if necessary (iOS 13+)
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    const permissionState = await DeviceOrientationEvent.requestPermission();
-                    if (permissionState !== 'granted') {
-                        gyroBtn.textContent = 'Gyro Permission Denied';
-                        return;
-                    }
-                } catch (error) {
-                    console.error("Error requesting device orientation permission:", error);
-                    gyroBtn.textContent = 'Permission Error';
-                    return;
-                }
-            }
-            // Enable Gyro
-            window.addEventListener('deviceorientation', handleDeviceOrientation);
-            gyroControlActive = true;
-            gyroBtn.classList.add('active');
-            gyroBtn.textContent = 'Disable Gyroscope Control';
-            initialGyroAlpha = null; // Reset initial alpha on activation
-            // Disable touch rotation buttons visually
-            droneContainer.querySelectorAll('[data-control="rotateLeft"], [data-control="rotateRight"]').forEach(b => b.style.opacity = '0.5');
-
-        } else {
-            // Disable Gyro
-            window.removeEventListener('deviceorientation', handleDeviceOrientation);
-            gyroControlActive = false;
-            gyroBtn.classList.remove('active');
-            gyroBtn.textContent = 'Enable Gyroscope Control';
-            // Reset angular velocity from gyro
-            droneAngularVelocity.set(0, 0, 0);
-            initialGyroAlpha = null;
-             // Re-enable touch rotation buttons visually
-            droneContainer.querySelectorAll('[data-control="rotateLeft"], [data-control="rotateRight"]').forEach(b => b.style.opacity = '1');
-        }
-    });
-}
-
-function handleDeviceOrientation(event) {
-    if (!gyroControlActive || !droneModel || !event.alpha || !event.beta || !event.gamma) {
-        return;
-    }
-
-    // Alpha: Rotation around Z axis (0-360) - Yaw (compass heading)
-    // Beta: Rotation around X axis (-180-180) - Pitch (front/back tilt)
-    // Gamma: Rotation around Y axis (-90-90) - Roll (left/right tilt)
-
-    // --- Yaw Control (Alpha) ---
-    if (initialGyroAlpha === null) {
-        // Store the initial compass heading when gyro activates
-        initialGyroAlpha = event.alpha;
-    }
-    // Calculate the change in alpha from the initial heading
-    let deltaAlpha = event.alpha - initialGyroAlpha;
-    // Handle wrap-around (0/360 degrees)
-    if (deltaAlpha > 180) {
-        deltaAlpha -= 360;
-    } else if (deltaAlpha < -180) {
-        deltaAlpha += 360;
-    }
-    // Convert degrees to radians and apply sensitivity. Invert for intuitive control.
-    // We directly set angular velocity here, physics step will apply damping
-    droneAngularVelocity.y = -THREE.MathUtils.degToRad(deltaAlpha) * GYRO_ROTATION_SPEED;
-
-
-    // --- Pitch Control (Beta) ---
-    // Map beta (-180 to 180) to drone's X rotation (pitch).
-    // Limit the range to avoid excessive tilting (e.g., +/- 45 degrees)
-    const pitchAngleRad = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(event.beta, -45, 45));
-    // Smoothly apply pitch using angular velocity
-    droneAngularVelocity.x += (pitchAngleRad - droneModel.rotation.x) * GYRO_PITCH_ROLL_SPEED;
-
-    // --- Roll Control (Gamma) ---
-    // Map gamma (-90 to 90) to drone's Z rotation (roll).
-    // Limit the range (e.g., +/- 45 degrees)
-    const rollAngleRad = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(event.gamma, -45, 45));
-     // Smoothly apply roll using angular velocity
-    droneAngularVelocity.z += (-rollAngleRad - droneModel.rotation.z) * GYRO_PITCH_ROLL_SPEED; // Invert gamma for intuitive roll
-
-
-    // Clamp angular velocities for pitch and roll to prevent instability
-     droneAngularVelocity.x = THREE.MathUtils.clamp(droneAngularVelocity.x, -MAX_ROTATION_SPEED * 0.5, MAX_ROTATION_SPEED * 0.5);
-     droneAngularVelocity.z = THREE.MathUtils.clamp(droneAngularVelocity.z, -MAX_ROTATION_SPEED * 0.5, MAX_ROTATION_SPEED * 0.5);
 }
 
 // --- Movement & Update Logic ---
@@ -504,25 +387,15 @@ function updateDronePhysics() {
 
     // --- Rotation ---
     let targetRotationY = 0;
-    // Only apply manual rotation if gyro is NOT active
-    if (!gyroControlActive) {
-        if (droneControls.rotateLeft) targetRotationY += ROTATION_SPEED;
-        if (droneControls.rotateRight) targetRotationY -= ROTATION_SPEED;
-    }
+    if (droneControls.rotateLeft) targetRotationY += ROTATION_SPEED;
+    if (droneControls.rotateRight) targetRotationY -= ROTATION_SPEED;
 
-    // Apply angular velocity and damping (handles both manual and gyro inputs)
-    droneAngularVelocity.y += targetRotationY; // Add manual input if any
-    droneAngularVelocity.x *= ROTATION_DAMPING;
+    // Apply angular velocity and damping
+    droneAngularVelocity.y += targetRotationY;
     droneAngularVelocity.y *= ROTATION_DAMPING;
-    droneAngularVelocity.z *= ROTATION_DAMPING;
-
-    // Clamp YAW angular velocity (manual or gyro)
     droneAngularVelocity.y = THREE.MathUtils.clamp(droneAngularVelocity.y, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED);
-
     // Apply rotation to the drone model itself
-    droneModel.rotation.x += droneAngularVelocity.x;
     droneModel.rotation.y += droneAngularVelocity.y;
-    droneModel.rotation.z += droneAngularVelocity.z;
 
     // --- Translation ---
     // Get drone's current forward and right vectors based on its rotation
@@ -530,25 +403,18 @@ function updateDronePhysics() {
     droneModel.getWorldDirection(forwardVector); // Gets the Z- direction
     forwardVector.negate(); // We want the positive Z direction for forward
 
-    // Use camera's up vector for consistency, but project onto drone's horizontal plane
-     const droneUp = new THREE.Vector3(0, 1, 0).applyQuaternion(droneModel.quaternion);
-     const cameraUp = mainCityCamera.up.clone();
-     // Project camera up onto drone's horizontal plane (optional, maybe simpler without)
-     // const projectedUp = cameraUp.projectOnPlane(forwardVector).normalize();
-
-    // Calculate right vector based on drone's forward and a stable up (e.g., world up)
-    const worldUp = new THREE.Vector3(0, 1, 0);
-    const rightVector = new THREE.Vector3().crossVectors(worldUp, forwardVector).normalize(); // Use world up for stable horizontal movement
+    const rightVector = new THREE.Vector3().crossVectors(mainCityCamera.up, forwardVector).normalize(); // Cross up with forward for right
 
     let targetVelocity = new THREE.Vector3();
+    // SWAPPED LOGIC: W moves backward, S moves forward
     if (droneControls.forward) targetVelocity.sub(forwardVector); // W key = move backward relative to drone
     if (droneControls.backward) targetVelocity.add(forwardVector); // S key = move forward relative to drone
     if (droneControls.left) targetVelocity.sub(rightVector);
     if (droneControls.right) targetVelocity.add(rightVector);
 
-    // Normalize horizontal movement if needed
+    // Normalize horizontal movement if needed (prevent faster diagonal movement)
     const horizontalMagnitudeSq = targetVelocity.x * targetVelocity.x + targetVelocity.z * targetVelocity.z;
-    if (horizontalMagnitudeSq > 1e-6) {
+    if (horizontalMagnitudeSq > 1e-6) { // Use a small epsilon to avoid normalizing zero vectors
         const scale = 1.0 / Math.sqrt(horizontalMagnitudeSq);
         targetVelocity.x *= scale;
         targetVelocity.z *= scale;
@@ -562,12 +428,13 @@ function updateDronePhysics() {
     // Accelerate towards target velocity
     droneVelocity.x += (targetVelocity.x * MAX_SPEED - droneVelocity.x) * ACCELERATION;
     droneVelocity.z += (targetVelocity.z * MAX_SPEED - droneVelocity.z) * ACCELERATION;
+    // Apply vertical velocity directly, but apply damping later
     droneVelocity.y += (verticalVelocityInput - droneVelocity.y) * ACCELERATION;
 
     // Apply damping (friction)
     droneVelocity.x *= DECELERATION;
     droneVelocity.z *= DECELERATION;
-    droneVelocity.y *= DECELERATION;
+    droneVelocity.y *= DECELERATION; // Damp vertical velocity too
 
     // Clamp horizontal speed
     const currentSpeedSq = droneVelocity.x * droneVelocity.x + droneVelocity.z * droneVelocity.z;
@@ -576,6 +443,8 @@ function updateDronePhysics() {
         droneVelocity.x *= scale;
         droneVelocity.z *= scale;
     }
+    // Clamp vertical speed separately if needed (optional)
+    // droneVelocity.y = THREE.MathUtils.clamp(droneVelocity.y, -VERTICAL_SPEED, VERTICAL_SPEED);
 
     // Apply final velocity to position
     droneModel.position.add(droneVelocity);
@@ -586,23 +455,25 @@ function updateDronePhysics() {
         droneVelocity.y = Math.max(0, droneVelocity.y); // Stop downward velocity if hitting floor
     }
 
-    // Boundary constraints
+    // Boundary constraints (simple rectangular for now)
     const mapBoundary = (config.citySize || 500) / 2;
     if (droneModel.position.x < -mapBoundary) droneModel.position.x = -mapBoundary;
     if (droneModel.position.x > mapBoundary) droneModel.position.x = mapBoundary;
     if (droneModel.position.z < -mapBoundary) droneModel.position.z = -mapBoundary;
     if (droneModel.position.z > mapBoundary) droneModel.position.z = mapBoundary;
 
-    // Animate propellers
+    // Animate propellers based on overall movement and vertical thrust
     const verticalThrust = droneControls.up ? 1 : (droneControls.down ? -0.5 : 0);
     const horizontalSpeed = Math.sqrt(currentSpeedSq);
+    // Increase base speed, make vertical thrust effect stronger
     const propellerSpeed = 1.0 + Math.abs(droneVelocity.y) * 8 + verticalThrust * 2 + horizontalSpeed * 5;
     droneModel.traverse(child => {
         if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
+            // Alternate rotation direction for stability effect
             const parentPosition = child.parent.position;
-             // Determine rotation direction based on corner quadrant (approximate)
-            const direction = (parentPosition.x * parentPosition.z >= 0) ? 1 : -1; // Clockwise/Counter-clockwise pairing
-            child.rotation.y += propellerSpeed * direction * 0.25;
+            // Simple check based on x position relative to center (approximate)
+            const direction = (parentPosition.x > 0) ? 1 : -1;
+            child.rotation.y += propellerSpeed * direction * 0.25; // Increased speed multiplier
         }
     });
 }
@@ -723,7 +594,7 @@ function deactivateDroneTransport(cancel = false) {
     droneActive = false;
     window.droneActive = false; // Clear global flag
 
-    removeInputListeners(); // This now also removes gyro listener
+    removeInputListeners();
 
     if (droneAnimationId) {
         cancelAnimationFrame(droneAnimationId);
@@ -827,10 +698,12 @@ function positionCameraForDroneView(instant = false) {
     // Ensure orbit controls are disabled while drone is active
     mainCityControls.enabled = false;
 
-    // Calculate the desired camera offset BEHIND the drone's local -Z axis
-    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, -CAMERA_FOLLOW_DISTANCE);
+    // Calculate the desired camera offset BEHIND the drone's local -Z axis (assuming -Z is forward for getWorldDirection)
+    // If +Z is forward based on our movement logic, offset should be negative Z.
+    const offset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, -CAMERA_FOLLOW_DISTANCE); // Corrected: Start with negative Z for 'behind'
 
     // Apply the drone's WORLD rotation (quaternion is safer) to the offset vector
+    // This rotates the offset relative to the drone's current facing direction
     offset.applyQuaternion(droneModel.quaternion);
 
     // Calculate the target camera position by adding the rotated offset to the drone's position
