@@ -371,18 +371,35 @@ function createDroneWithLLM(llm) {
     // Render the LLM model at its default (full) scale
     llmModel = renderLLMCharacter(THREE, llm);
 
-    // Position the LLM model below the drone body.
-    // Calculate the model's bounding box to determine the offset accurately.
-    const tempLLM = llmModel.clone();
-    tempLLM.position.set(0,0,0); // Reset position for accurate local box
-    tempLLM.updateMatrixWorld(true);
-    const llmBox = new THREE.Box3().setFromObject(tempLLM);
-    const modelHeight = llmBox.max.y - llmBox.min.y;
-    const modelCenterYOffset = (llmBox.max.y + llmBox.min.y) / 2; // Offset of the model's geometric center from its origin
+    // --- Calculate correct LLM attachment position ---
+    // 1. Calculate the LLM's bounding box in its local coordinates
+    const tempLLMForBox = llmModel.clone();
+    tempLLMForBox.position.set(0, 0, 0);
+    tempLLMForBox.rotation.set(0, 0, 0);
+    tempLLMForBox.scale.set(1, 1, 1);
+    tempLLMForBox.updateMatrixWorld(true); // Ensure world matrix is updated
+    const llmBox = new THREE.Box3().setFromObject(tempLLMForBox);
 
-    // Position LLM origin so its center is below the drone's center
-    // Adjust based on central body height and model height/center offset
-    llmModel.position.set(0, -(centralBodyHeight / 2 + modelHeight / 2 - modelCenterYOffset + 0.1), 0); // Add small gap
+    // Check if bounding box calculation was successful
+    let modelTopYLocal = 0;
+    if (!llmBox.isEmpty() && isFinite(llmBox.max.y)) {
+        modelTopYLocal = llmBox.max.y; // Highest point of the LLM in its local space
+    } else {
+        console.warn("Could not compute valid bounding box for LLM model. Using default height estimate.");
+        modelTopYLocal = 1.7; // Fallback height estimate
+    }
+
+    // 2. Determine the drone body's bottom position
+    const droneBottomY = -centralBodyHeight / 2;
+
+    // 3. Calculate the required Y offset for the LLM model's origin
+    // We want modelTopYLocal (relative to LLM origin) to align slightly below droneBottomY (relative to drone origin)
+    const attachmentGap = 0.15; // Gap between drone bottom and LLM top
+    const llmOriginOffsetY = droneBottomY - modelTopYLocal - attachmentGap;
+
+    // 4. Set the LLM model's position relative to the drone's origin
+    llmModel.position.set(0, llmOriginOffsetY, 0);
+    // --- End LLM attachment position calculation ---
 
     llmModel.castShadow = true;
     llmModel.receiveShadow = true;
@@ -945,7 +962,7 @@ function handlePlaceAttempt() {
 function getModelMinYLocal(modelToMeasure) {
     if (!modelToMeasure) return 0;
     const tempModel = modelToMeasure.clone(); 
-    tempModel.position.set(0, 0, 0);
+    tempModel.position.set(0,0,0); // Reset position for accurate local box
     tempModel.rotation.set(0, 0, 0);
     tempModel.scale.set(1, 1, 1);
     tempModel.updateMatrixWorld(true); 
