@@ -1054,17 +1054,16 @@ function placeLLMOnPlot(plotData, placementPoint) {
     currentPlotData.available = false;
     currentPlotData.occupiedBy = currentLLMTransporting.id;
 
-    // Remove plot outline and click target
-    console.log(`Removing outline/target for plot ID: ${currentPlotData.id}`);
-    let plotOutlineToRemove = null;
+    // --- MODIFICATION START: Only remove click target, keep outline ---
+    console.log(`Removing click target for plot ID: ${currentPlotData.id}`);
     const objectsToRemove = []; // Collect objects to remove after traversal
 
     mainCityScene.traverse(obj => {
         // Safety check for obj and obj.userData
-        if (obj && obj.userData && obj.userData.id === currentPlotData.id && (obj.name === 'plot_outline' || obj.name === 'plot_click_target')) {
-            objectsToRemove.push(obj); // Add to removal list
-            if (obj.name === 'plot_outline') {
-                plotOutlineToRemove = obj; // Keep track for hover info hiding
+        if (obj && obj.userData && obj.userData.id === currentPlotData.id) {
+            // Only remove the invisible click target
+            if (obj.name === 'plot_click_target') {
+                objectsToRemove.push(obj); // Add to removal list
             }
         }
     });
@@ -1080,16 +1079,13 @@ function placeLLMOnPlot(plotData, placementPoint) {
         }
     });
 
-
-    if (plotOutlineToRemove) {
-        import('./plotHoverInfo.js').then(module => {
-            if (typeof module.hidePlotInfoPanel === 'function') {
-                module.hidePlotInfoPanel();
-            }
-        });
-    } else {
-        console.log("No plot outline found to remove or hide hover info for.");
-    }
+    // Hide hover info panel, even if outline remains
+    import('./plotHoverInfo.js').then(module => {
+        if (typeof module.hidePlotInfoPanel === 'function') {
+            module.hidePlotInfoPanel();
+        }
+    });
+    // --- MODIFICATION END ---
 
     console.log(`LLM ${currentLLMTransporting.name} placed on plot ${currentPlotData.name}.`);
 
