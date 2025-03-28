@@ -1,56 +1,57 @@
+@import url('/llmMobileResponsive.css');
+
 /* Drone transportation UI styles */
 .drone-transport-ui {
+    position: fixed;
     bottom: 20px;
-    left: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 300;
     display: none;
+    width: 90%;
+    max-width: 360px;
 }
 
 .drone-transport-ui.active {
-    display: block; /* For desktop */
-}
-
-/* Hide desktop-only elements on mobile */
-@media screen and (max-width: 768px) {
-    .drone-transport-ui [data-desktop-only] {
-        display: none !important;
-    }
+    display: block;
 }
 
 .drone-controls-info {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.75);
     border: 2px solid #3cb371;
-    border-radius: 10px;
+    border-radius: 15px;
     padding: 15px;
     color: white;
-    width: 250px;
+    width: 100%;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    position: fixed; /* Make info panel fixed on desktop too */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .drone-controls-title {
     font-size: 1.2rem;
     font-weight: bold;
     color: #3cb371;
-    margin-bottom: 10px;
+    margin-bottom: 5px; 
     text-align: center;
 }
 
-/* New LLM Info Section Styles */
+/* LLM Info Section Styles */
 .drone-llm-info {
     background-color: rgba(60, 179, 113, 0.1);
     border: 1px solid rgba(60, 179, 113, 0.3);
     border-radius: 6px;
-    padding: 10px;
-    margin-bottom: 15px;
+    padding: 8px; 
+    margin-bottom: 10px; 
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px; 
 }
 
 .drone-llm-profile-image {
-    width: 50px;
-    height: 50px;
+    width: 40px; 
+    height: 40px;
     border-radius: 50%;
     overflow: hidden;
     background-color: #222;
@@ -68,8 +69,8 @@
 }
 
 .drone-llm-profile-image .placeholder-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 20px; 
+    height: 20px;
     fill: #777;
 }
 
@@ -77,19 +78,12 @@
     display: flex;
     flex-direction: column;
     flex-grow: 1;
-    gap: 2px;
+    gap: 1px; 
     overflow: hidden;
 }
 
-.llm-info-header {
-    font-size: 0.8rem;
-    color: #aaa;
-    margin-bottom: 4px;
-    display: none;
-}
-
 .llm-info-name {
-    font-size: 1.1rem;
+    font-size: 1.0rem; 
     font-weight: bold;
     color: #fff;
     margin: 0;
@@ -101,23 +95,23 @@
 .llm-info-model-container {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px; 
 }
 
 .drone-llm-model-icon {
-    width: 20px;
-    height: 20px;
+    width: 18px; 
+    height: 18px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 3px;
+    padding: 2px; 
     flex-shrink: 0;
 }
 
 .drone-llm-model-icon svg {
-    width: 14px;
-    height: 14px;
+    width: 12px; 
+    height: 12px;
     fill: currentColor;
 }
 
@@ -128,26 +122,29 @@
 .drone-llm-model-icon.companion { background-color: rgba(155, 89, 182, 0.2); color: #9b59b6; }
 .drone-llm-model-icon.humanoid { background-color: rgba(241, 196, 15, 0.2); color: #f1c40f; }
 
+
 .llm-info-model {
-    font-size: 0.9rem;
+    font-size: 0.8rem; 
     color: #ddd;
     text-transform: capitalize;
     margin: 0;
 }
 
 .drone-llm-color-dot {
-    width: 12px;
-    height: 12px;
+    width: 10px; 
+    height: 10px;
     border-radius: 50%;
     border: 1px solid #555;
-    margin-left: 5px;
+    margin-left: 4px; 
     flex-shrink: 0;
 }
 
-/* End New LLM Info Section Styles */
+/* End LLM Info Section Styles */
+
 
 .drone-instructions {
     margin-bottom: 15px;
+    display: none; 
 }
 
 .drone-instructions p {
@@ -160,35 +157,36 @@
     color: #3cb371;
 }
 
-/* Old touch controls - hide by default, shown only if needed as fallback */
+/* --- Mobile Touch Controls Redesign --- */
 .drone-touch-controls {
-    display: none;
-    flex-direction: column;
+    display: none; 
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
+    gap: 15px;
+    margin-bottom: 10px;
+    padding: 0 10px; 
 }
 
-.touch-control-row {
+/* Container for vertical and rotation buttons */
+.drone-action-buttons {
     display: flex;
-    gap: 10px;
-    width: 100%;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    min-height: 130px; 
 }
 
-.touch-spacer {
-    width: 60px;
-    height: 60px;
-}
-
+/* Individual action buttons (Up/Down, Rotate) */
 .drone-touch-btn {
-    width: 60px;
-    height: 60px;
+    width: 55px; 
+    height: 55px;
     background-color: rgba(60, 179, 113, 0.4);
     border: 1px solid #3cb371;
-    border-radius: 15px;
+    border-radius: 50%; 
     color: white;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -201,27 +199,58 @@
     background-color: rgba(60, 179, 113, 0.8);
 }
 
-.drone-touch-btn[data-control="up"],
-.drone-touch-btn[data-control="down"] {
+.drone-touch-btn[data-control="rotateLeft"],
+.drone-touch-btn[data-control="rotateRight"] {
+    font-size: 1.4rem;
 }
 
-.drone-touch-btn[data-control="rotate-left"],
-.drone-touch-btn[data-control="rotate-right"] {
-    font-size: 1.5rem;
+/* Hide original direction buttons */
+.drone-touch-btn[data-control="forward"],
+.drone-touch-btn[data-control="backward"],
+.drone-touch-btn[data-control="left"],
+.drone-touch-btn[data-control="right"] {
+    display: none;
 }
+
+/* Joystick Styles */
+.drone-joystick-container {
+    width: 130px; 
+    height: 130px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.drone-joystick-thumb {
+    width: 60px; 
+    height: 60px;
+    background-color: rgba(60, 179, 113, 0.7);
+    border-radius: 50%;
+    position: absolute;
+    border: 2px solid #3cb371;
+    box-shadow: 0 0 10px rgba(60, 179, 113, 0.5);
+    transition: transform 0.05s linear; 
+}
+
+/* --- End Mobile Touch Controls Redesign --- */
 
 .drone-land-btn {
     display: block;
     width: 100%;
-    padding: 12px;
+    padding: 10px; 
     background-color: #3cb371;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1.0rem; 
     transition: background-color 0.2s, transform 0.1s;
+    margin-top: 5px; 
 }
 
 .drone-land-btn:hover {
@@ -233,140 +262,32 @@
     transform: translateY(0px);
 }
 
-/* NEW Mobile Layout Styles */
-.mobile-drone-controls {
-    display: none; /* Hidden by default */
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 150px; /* Adjust height as needed */
-    pointer-events: none; /* Allow clicking through */
-    z-index: 301; /* Above the info panel */
-}
-
-.drone-left-controls,
-.drone-right-controls {
-    position: absolute;
-    bottom: 20px; /* Adjust spacing from bottom */
-    display: flex;
-    gap: 10px;
-    pointer-events: auto; /* Enable clicking on controls */
-}
-
-.drone-left-controls {
-    left: 20px;
-    width: 130px; /* D-pad size */
-    height: 130px;
-}
-
-.drone-right-controls {
-    right: 20px;
-    flex-direction: column;
-    align-items: center;
-}
-
-/* D-pad styles */
-.d-pad {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    /* Optional: background for visual cue */
-    /* background: rgba(255, 255, 255, 0.1); */
-}
-
-.d-pad-btn {
-    position: absolute;
-    width: 40px; /* Button size */
-    height: 40px;
-    background-color: rgba(60, 179, 113, 0.5);
-    border: 1px solid #3cb371;
-    border-radius: 8px;
-    color: white;
-    font-size: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 0.1s linear;
-}
-
-.d-pad-btn.active-touch {
-    background-color: rgba(60, 179, 113, 0.9);
-}
-
-.d-pad-up { top: 0; left: 50%; transform: translateX(-50%); }
-.d-pad-down { bottom: 0; left: 50%; transform: translateX(-50%); }
-.d-pad-left { left: 0; top: 50%; transform: translateY(-50%); }
-.d-pad-right { right: 0; top: 50%; transform: translateY(-50%); }
-.d-pad-center {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-/* Right controls styles */
-.action-btn {
-    width: 50px;
-    height: 50px;
-    background-color: rgba(60, 179, 113, 0.5);
-    border: 1px solid #3cb371;
-    border-radius: 50%; /* Circular buttons */
-    color: white;
-    font-size: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 0.1s linear;
-    margin-bottom: 8px; /* Space between buttons */
-}
-
-.action-btn.active-touch {
-    background-color: rgba(60, 179, 113, 0.9);
-}
-
-/* Mobile adjustments */
+/* Media Query for Mobile */
 @media screen and (max-width: 768px) {
-    .drone-transport-ui.active {
-        display: block; /* Ensure container is visible */
+    .drone-instructions {
+        display: none;
     }
-
-    .drone-controls-info {
-        /* Make the info panel fixed at bottom center */
-        width: auto; /* Adjust width */
-        max-width: 280px; /* Limit max width */
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: 160px; /* Position above controls */
-    }
-
-    .mobile-drone-controls[data-mobile-only] {
+    .drone-touch-controls {
         display: flex;
     }
-
-    .drone-land-btn {
-        /* Position land button separately if needed, or keep in info panel */
-        margin-top: 10px; /* Add space if kept in info panel */
+    .drone-transport-ui {
+        bottom: 15px; 
     }
 }
 
-/* Optional: Styles for larger screens if needed */
+/* Media Query for Desktop */
 @media screen and (min-width: 769px) {
-    /* Hide mobile-specific elements on desktop */
-    [data-mobile-only] {
-        display: none !important;
+    .drone-touch-controls {
+        display: none;
     }
-    /* Show desktop-specific elements */
     .drone-instructions {
         display: block;
+    }
+    /* Reset position for desktop if needed */
+    .drone-transport-ui {
+        left: 20px;
+        bottom: 20px;
+        transform: none;
+        width: 250px; 
     }
 }
