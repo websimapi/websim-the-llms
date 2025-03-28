@@ -5,7 +5,7 @@
         margin-bottom: 10px;
         padding: 10px;
     }
-
+    
     .settings-group-title {
         font-size: 1rem;
         margin-bottom: 10px;
@@ -13,33 +13,33 @@
         justify-content: space-between;
         align-items: center;
     }
-
+    
     /* Smaller margins between setting items */
     .setting-item {
         margin-bottom: 8px;
     }
-
+    
     /* More compact form elements */
     .setting-input, .setting-select {
         padding: 6px;
     }
-
+    
     /* Compact attribute grid */
     .attribute-grid {
         gap: 8px;
         /* Removed fixed column count to allow dynamic resizing */
     }
-
+    
     .attribute-item {
         padding: 8px;
         position: relative;
     }
-
+    
     /* Add tooltip on hover */
     .attribute-item:hover .attribute-tooltip {
         display: block;
     }
-
+    
     .attribute-tooltip {
         display: none;
         position: absolute;
@@ -53,17 +53,17 @@
         font-size: 0.8rem;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
     }
-
+    
     /* Modified tooltip positioning classes */
     .attribute-tooltip.tooltip-right {
         left: 105%;
     }
-
+    
     .attribute-tooltip.tooltip-left {
         right: 105%;
         left: auto;
     }
-
+    
     .attribute-tooltip.tooltip-top {
         bottom: 105%;
         top: auto;
@@ -71,7 +71,7 @@
         transform: translateX(-50%);
         width: 150px;
     }
-
+    
     /* Tooltip arrows based on position */
     .attribute-tooltip.tooltip-right::after {
         content: "";
@@ -82,7 +82,7 @@
         border-style: solid;
         border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
     }
-
+    
     .attribute-tooltip.tooltip-left::after {
         content: "";
         position: absolute;
@@ -92,7 +92,7 @@
         border-style: solid;
         border-color: transparent transparent transparent rgba(0, 0, 0, 0.8);
     }
-
+    
     .attribute-tooltip.tooltip-top::after {
         content: "";
         position: absolute;
@@ -103,32 +103,32 @@
         border-style: solid;
         border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
     }
-
+    
     /* Compact attribute header */
     .attribute-header {
         margin-bottom: 3px;
     }
-
+    
     /* Hide attribute description to save space */
     .attribute-description {
         display: none;
     }
-
+    
     /* Compact textarea */
     textarea.setting-input {
         min-height: 60px;
     }
-
+    
     /* Make custom design section more compact */
     .settings-group:nth-child(2) {
         margin-bottom: 10px;
         padding: 10px 12px;
     }
-
+    
     .settings-group:nth-child(2) .setting-item:last-child {
         margin-bottom: 0;
     }
-
+    
     /* Optimize create LLM UI layout to reduce height */
     .create-llm-sidebar {
         display: flex;
@@ -136,72 +136,23 @@
         max-height: 100vh;
         overflow-y: auto;
     }
-
+    
     /* Adjust generate button to be more compact */
     #generate-character-btn {
         padding: 8px 12px;
         margin-top: 5px;
     }
-
+    
     /* Enlarge color picker */
     .color-input {
         width: 100px !important;
         height: 60px !important;
         border-radius: 5px;
     }
-
+    
     /* Make textarea smaller in compact mode */
     .compact-mode #llm-custom-prompt {
         min-height: 40px;
         max-height: 60px;
-    }
-}
-
-/* New styles for lighting cycle button */
-.lighting-cycle-button {
-    position: absolute;
-    bottom: 20px;
-    left: 20px; /* Position near bottom-left */
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(0,0,0,0.2);
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #333;
-    z-index: 100;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    transition: background-color 0.2s, transform 0.1s;
-    padding: 0;
-}
-
-.lighting-cycle-button:hover {
-    background-color: rgba(255, 255, 255, 1);
-    transform: scale(1.05);
-}
-
-.lighting-cycle-button:active {
-    transform: scale(0.95);
-}
-
-.lighting-cycle-button svg {
-    width: 20px;
-    height: 20px;
-    margin-right: 3px; /* Space between icon and letter */
-}
-
-.lighting-cycle-button span {
-    font-size: 0.8rem;
-    font-weight: bold;
-}
-
-/* Mobile adjustments for lighting button */
-@media screen and (max-width: 768px) {
-    .lighting-cycle-button {
-        bottom: 10px;
-        left: 10px;
     }
 }

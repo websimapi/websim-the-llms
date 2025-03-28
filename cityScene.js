@@ -18,6 +18,13 @@ window.cityScene = scene; // Quick global access (consider a getter pattern late
 window.camera = camera;
 window.controls = controls;
 
+// --- Touch/Click State Tracking for Plot Interaction ---
+let interactionStartX = 0;
+let interactionStartY = 0;
+let isDraggingInteraction = false;
+const interactionDragThreshold = 10; // Pixels to count as drag
+// --- End Touch/Click State Tracking ---
+
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
     const audio = document.querySelector('audio');
@@ -102,8 +109,23 @@ function initCityScene() {
     renderer.toneMappingExposure = 1.2; // Adjust exposure for better lighting
     cityViewElement.appendChild(renderer.domElement);
 
-    // Add click listener for drone auto-navigation
-    renderer.domElement.addEventListener('click', handleCityClick);
+    // --- Add Unified Interaction Listeners ---
+    const canvas = renderer.domElement;
+    canvas.removeEventListener('mousedown', handleInteractionStart); // Clean up just in case
+    canvas.removeEventListener('touchstart', handleInteractionStart);
+    canvas.removeEventListener('mousemove', handleInteractionMove);
+    canvas.removeEventListener('touchmove', handleInteractionMove);
+    canvas.removeEventListener('mouseup', handleInteractionEnd);
+    canvas.removeEventListener('touchend', handleInteractionEnd);
+
+    canvas.addEventListener('mousedown', handleInteractionStart, { passive: false });
+    canvas.addEventListener('touchstart', handleInteractionStart, { passive: false });
+    canvas.addEventListener('mousemove', handleInteractionMove, { passive: false });
+    canvas.addEventListener('touchmove', handleInteractionMove, { passive: false });
+    canvas.addEventListener('mouseup', handleInteractionEnd);
+    canvas.addEventListener('touchend', handleInteractionEnd);
+    // --- End Unified Interaction Listeners ---
+
 
     // Add orbit controls
     controls = new OrbitControls(camera, renderer.domElement); // Assign to global variable
@@ -212,18 +234,112 @@ function initCityScene() {
     animate(); // Start the main animation loop
 }
 
-function handleCityClick(event) {
-    // Only handle clicks if drone is active
-    if (!window.droneActive) return;
+// --- Unified Interaction Handling ---
+function handleInteractionStart(event) {
+    let clientX, clientY;
+    if (event.type === 'touchstart') {
+        if (event.touches.length === 0) return;
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+    } else { // mousedown
+        clientX = event.clientX;
+        clientY = event.clientY;
+    }
 
-    // Ignore clicks if auto-navigation is already active
-    if (window.isAutoNavigating) return;
+    interactionStartX = clientX;
+    interactionStartY = clientY;
+    isDraggingInteraction = false;
 
-    // Get mouse coordinates relative to the canvas
+    // Prevent default only if drone is active to avoid OrbitControls interference
+    if (window.droneActive && event.cancelable) {
+        // Check if the click is on a UI element outside the canvas
+        const uiOverlay = document.getElementById('ui-overlay');
+        const droneUI = document.getElementById('drone-transport-ui');
+        const musicControls = document.querySelector('.music-control-container');
+        if (
+            (uiOverlay && uiOverlay.contains(event.target) && event.target !== renderer.domElement) ||
+            (droneUI && droneUI.contains(event.target)) ||
+            (musicControls && musicControls.contains(event.target))
+        ) {
+             // Don't prevent default if clicking on UI
+        } else {
+            event.preventDefault(); // Prevent OrbitControls activation
+        }
+    }
+}
+
+function handleInteractionMove(event) {
+    if (isDraggingInteraction) return; // Already dragging, no need to check again
+
+    let clientX, clientY;
+    if (event.type === 'touchmove') {
+        if (event.touches.length === 0) return;
+        clientX = event.touches[0].clientX;
+        clientY = event.touches[0].clientY;
+    } else { // mousemove
+        // Only check drag if mouse button is pressed (mousedown started)
+        if (event.buttons !== 1) return;
+        clientX = event.clientX;
+        clientY = event.clientY;
+    }
+
+    const deltaX = Math.abs(clientX - interactionStartX);
+    const deltaY = Math.abs(clientY - interactionStartY);
+
+    if (deltaX > interactionDragThreshold || deltaY > interactionDragThreshold) {
+        isDraggingInteraction = true;
+    }
+}
+
+function handleInteractionEnd(event) {
+    if (isDraggingInteraction) {
+        // Reset drag flag for the next interaction
+        isDraggingInteraction = false;
+        return; // Do nothing if it was a drag
+    }
+
+    // Reset drag flag
+    isDraggingInteraction = false;
+
+    // Check if the interaction ended on a UI element outside the canvas
+    const uiOverlay = document.getElementById('ui-overlay');
+    const droneUI = document.getElementById('drone-transport-ui');
+    const musicControls = document.querySelector('.music-control-container');
+    if (
+        (uiOverlay && uiOverlay.contains(event.target) && event.target !== renderer.domElement) ||
+        (droneUI && droneUI.contains(event.target)) ||
+        (musicControls && musicControls.contains(event.target))
+    ) {
+         console.log("Interaction ended on UI element, ignoring plot click.");
+         return;
+    }
+
+    // If it wasn't a drag, proceed with plot click logic
+    let clientX, clientY;
+    if (event.type === 'touchend') {
+        // Use the final touch position if available, otherwise fallback to start
+        const touch = event.changedTouches[0];
+        clientX = touch ? touch.clientX : interactionStartX;
+        clientY = touch ? touch.clientY : interactionStartY;
+    } else { // mouseup
+        clientX = event.clientX;
+        clientY = event.clientY;
+    }
+    handleCityClickLogic(clientX, clientY);
+}
+// --- End Unified Interaction Handling ---
+
+
+// Renamed original function to handleCityClickLogic
+function handleCityClickLogic(clientX, clientY) {
+    // Only handle clicks if drone is active and not currently auto-navigating
+    if (!window.droneActive || window.isAutoNavigating) return;
+
+    // Get mouse/touch coordinates relative to the canvas
     const rect = renderer.domElement.getBoundingClientRect();
     const mouse = new THREE.Vector2();
-    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
     // Raycast from the main camera
     const raycaster = new THREE.Raycaster();
