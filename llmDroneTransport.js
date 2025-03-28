@@ -1061,9 +1061,9 @@ function startPlacementSequence() {
 
         // Interpolate Drone's Y position
         droneModel.position.y = THREE.MathUtils.lerp(startY, droneTargetY, progress);
-        // Also interpolate X and Z towards the plot center for precise landing
-        droneModel.position.x = THREE.MathUtils.lerp(droneModel.position.x, targetPlotData.x, progress * 0.1); // Slower horizontal adjustment
-        droneModel.position.z = THREE.MathUtils.lerp(droneModel.position.z, targetPlotData.z, progress * 0.1);
+        // Interpolate X and Z towards the plot center for precise landing
+        // droneModel.position.x = THREE.MathUtils.lerp(droneModel.position.x, targetPlotData.x, progress * 0.1); // Slower horizontal adjustment
+        // droneModel.position.z = THREE.MathUtils.lerp(droneModel.position.z, targetPlotData.z, progress * 0.1);
 
         // Update propeller speed during placement
         // Base speed + speed inversely proportional to progress (faster at start)
@@ -1084,13 +1084,13 @@ function startPlacementSequence() {
             console.log("Lowering animation complete. Placing LLM.");
             droneModel.position.y = droneTargetY;
             // Ensure final X/Z position is exactly at plot center
-            droneModel.position.x = targetPlotData.x;
-            droneModel.position.z = targetPlotData.z;
+            // droneModel.position.x = targetPlotData.x;
+            // droneModel.position.z = targetPlotData.z;
 
             // Final placement logic (use the known target plot data)
             if (targetPlotData) {
                 // Use the calculated groundY for the final placement point
-                const finalGroundPoint = new THREE.Vector3(targetPlotData.x, groundY, targetPlotData.z);
+                const finalGroundPoint = new THREE.Vector3(droneModel.position.x, groundY, droneModel.position.z);
                 placeLLMOnPlot(targetPlotData, finalGroundPoint);
             } else {
                 console.error("Placement failed: Target plot data became invalid during placement.");
@@ -1175,7 +1175,7 @@ function placeLLMOnPlot(plotData, placementGroundPoint) {
     // Final Y = Ground Y - Offset of lowest point from origin + small buffer
     placedLLMModel.position.y = placementGroundPoint.y - llmMinYLocal + PLACEMENT_GROUND_OFFSET;
 
-    console.log(`Final Placed LLM Pos - GroundY: ${placementGroundPoint.y.toFixed(3)}, MinYLocal: ${llmMinYLocal.toFixed(3)}, Final Y: ${placedLLMModel.position.y.toFixed(3)}`);
+    console.log(`Final Placed LLM Pos - X: ${placedLLMModel.position.x.toFixed(3)}, Z: ${placedLLMModel.position.z.toFixed(3)}, GroundY: ${placementGroundPoint.y.toFixed(3)}, MinYLocal: ${llmMinYLocal.toFixed(3)}, Final Y: ${placedLLMModel.position.y.toFixed(3)}`);
 
     // *** Set the placed model's rotation to match the drone's rotation ***
     if (droneModel) {
