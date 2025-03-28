@@ -192,6 +192,7 @@ function initCityScene() {
     // --- Main Animation Loop ---
     function animate() {
         requestAnimationFrame(animate);
+        const delta = clock.getDelta(); // Get delta time
 
         // Check global drone state directly
         const isDroneActive = window.droneActive === true;
@@ -214,25 +215,23 @@ function initCityScene() {
             }
         } else if (!isDroneActive) { // Only update OrbitControls/boundaries if intro done AND drone inactive
             if (controls.enabled) { // Check if controls are enabled before updating
-                controls.update();
+                controls.update(); // Update orbit controls
                 // Apply camera boundary restrictions
                 boundaryController.update();
             }
         } else { // If drone is active, ensure OrbitControls are disabled
-             // Camera is controlled by drone logic, but ensure OrbitControls internal state doesn't interfere
              controls.enabled = false;
-             // Explicitly call update() maybe needed if drone logic relies on OrbitControls state? Test first.
-             // controls.update(); // Might not be needed if drone directly manipulates camera/target
         }
 
         // Call animation functions for other components (like lighting)
         if (window.cityAnimateLightsFn) {
             window.cityAnimateLightsFn();
         }
-        
-        // Update dynamic shadows based on camera position
+
+        // Update dynamic shadows based on camera and CONTROLS position
+        // Pass controls to the update function
         if (window.updateDynamicShadows) {
-            window.updateDynamicShadows(camera, clock.getDelta());
+            window.updateDynamicShadows(camera, controls, delta);
         }
 
         // Render the scene

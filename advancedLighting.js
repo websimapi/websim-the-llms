@@ -149,96 +149,68 @@ function setupDynamicShadows(scene, sunLight, targetObject) {
         camera: null,
         sunLight: sunLight,
         targetObject: targetObject,
-        shadowCameraSize: 50, // Default size - will be adjusted based on camera
-        shadowFollowSpeed: 0.1, // Smoothing factor for shadow movement
+        // Use a larger, fixed shadow size for more stability
+        shadowCameraSize: 75, // Increased fixed size
+        shadowFollowSpeed: 0.08, // Slightly reduced speed for smoother lerp
         shadowResolution: 2048, // Default shadow resolution
         lastCameraPosition: new THREE.Vector3(), // Track camera movement
-        movementThreshold: 10, // Increased from 5 to 10 units of movement before shadow gets updated
-        updateInterval: 500, // Increased from 100 to 500 milliseconds between forced updates
-        lastUpdateTime: 0,
-        transitionInProgress: false
+        // Removed thresholds, update every frame for smoothness
+        // movementThreshold: 5,
+        // updateInterval: 100,
+        // lastUpdateTime: 0
     };
-    
+
     // Store the shadow helper on the scene for the animation loop to access
     scene.userData.shadowHelper = shadowHelper;
 
+    // Keep the sun high and relatively fixed direction relative to world, not camera
+    // Example: Always shining from roughly the same direction (e.g., south-east)
+    // We only update the *target* the shadow camera looks at.
+    // sunLight.position.set(50, 100, 50); // Set initial position
+
     // Define the shadow update function that will be called in the animation loop
-    window.updateDynamicShadows = function(camera, delta) {
-        if (!scene.userData.shadowHelper || !camera) return;
-        
+    window.updateDynamicShadows = function(camera, controls, delta) { // Add controls parameter
+        if (!scene.userData.shadowHelper || !camera || !controls) return;
+
         const helper = scene.userData.shadowHelper;
         helper.camera = camera; // Keep camera reference updated
-        
-        // Check if enough time has passed since last update or camera moved substantially
-        const now = performance.now();
-        const cameraMovement = camera.position.distanceTo(helper.lastCameraPosition);
-        const timeSinceUpdate = now - helper.lastUpdateTime;
-        
-        // Only update if movement threshold exceeded or time interval passed, and no transition in progress
-        if ((cameraMovement > helper.movementThreshold || timeSinceUpdate > helper.updateInterval) 
-            && !helper.transitionInProgress) {
-            
-            helper.transitionInProgress = true;
-            
-            // Calculate target point - average of camera position and look target
-            const cameraTarget = new THREE.Vector3();
-            camera.getWorldDirection(cameraTarget);
-            cameraTarget.multiplyScalar(30).add(camera.position); // Look 30 units ahead
-            
-            // Store initial values for smooth transition
-            const initialTarget = helper.targetObject.position.clone();
-            const initialSunPosition = helper.sunLight.position.clone();
-            
-            // Calculate final shadow camera values
-            const finalShadowTarget = new THREE.Vector3().copy(cameraTarget);
-            const height = Math.max(20, camera.position.y * 1.5);
-            const shadowSize = Math.max(40, height * 1.5);
-            
-            // Position the sun light relative to the camera but maintain height and angle
-            const finalSunPosition = new THREE.Vector3(
-                camera.position.x + 50, 
-                100, // Keep consistent height
-                camera.position.z + 50
-            );
-            
-            // Update shadow camera size immediately to prevent size flashing
-            helper.sunLight.shadow.camera.left = -shadowSize;
-            helper.sunLight.shadow.camera.right = shadowSize;
-            helper.sunLight.shadow.camera.top = shadowSize;
-            helper.sunLight.shadow.camera.bottom = -shadowSize;
-            helper.sunLight.shadow.camera.updateProjectionMatrix();
-            
-            // Perform smooth transition for position
-            const transitionDuration = 300; // 300ms transition
-            const startTime = now;
-            
-            function performTransition() {
-                const elapsedTime = performance.now() - startTime;
-                const progress = Math.min(elapsedTime / transitionDuration, 1);
-                
-                // Use cubic ease out for smooth transition
-                const easedProgress = 1 - Math.pow(1 - progress, 3);
-                
-                // Smoothly interpolate positions
-                helper.targetObject.position.lerpVectors(initialTarget, finalShadowTarget, easedProgress);
-                helper.sunLight.position.lerpVectors(initialSunPosition, finalSunPosition, easedProgress);
-                
-                // Update shadow camera
-                helper.sunLight.shadow.camera.updateProjectionMatrix();
-                
-                if (progress < 1) {
-                    // Continue transition
-                    requestAnimationFrame(performTransition);
-                } else {
-                    // Transition complete
-                    helper.lastCameraPosition.copy(camera.position);
-                    helper.lastUpdateTime = performance.now();
-                    helper.transitionInProgress = false;
-                }
-            }
-            
-            // Start transition
-            performTransition();
-        }
+
+        // --- Target Update ---
+        // Target the shadow camera towards the orbit controls target for stability
+        const targetPosition = controls.target;
+        // Smoothly move the shadow camera target towards the controls target
+        helper.targetObject.position.lerp(targetPosition, helper.shadowFollowSpeed);
+        // Also update the sun's target explicitly
+        helper.sunLight.target = helper.targetObject;
+
+
+        // --- Frustum Update (Fixed Size) ---
+        const shadowSize = helper.shadowCameraSize;
+        helper.sunLight.shadow.camera.left = -shadowSize;
+        helper.sunLight.shadow.camera.right = shadowSize;
+        helper.sunLight.shadow.camera.top = shadowSize;
+        helper.sunLight.shadow.camera.bottom = -shadowSize;
+
+        // Ensure the near/far planes are adequate
+        helper.sunLight.shadow.camera.near = 10;
+        helper.sunLight.shadow.camera.far = 200; // Adjust if needed based on scene scale
+
+        // Update shadow camera projection matrix
+        helper.sunLight.shadow.camera.updateProjectionMatrix();
+
+        // --- Sun Position (Optional: Keep it fixed or slightly adjust based on target) ---
+        // For stability, let's keep the sun's position relatively fixed,
+        // but ensure it stays 'behind' the shadow target to cast shadows correctly.
+        // You could lerp it slightly based on the targetObject's position if desired,
+        // but keeping it fixed often reduces flickering.
+        // Example: Maintain fixed offset from the world origin or the target
+        // const sunOffset = new THREE.Vector3(50, 100, 50);
+        // helper.sunLight.position.copy(helper.targetObject.position).add(sunOffset);
+
+
+        // Store last camera position (might not be needed if updating every frame)
+        helper.lastCameraPosition.copy(camera.position);
+        // helper.lastUpdateTime = performance.now(); // Might not be needed
+
     };
 }
