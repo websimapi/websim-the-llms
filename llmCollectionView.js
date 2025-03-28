@@ -8,6 +8,7 @@ import { setupLLMCarousel, cleanupCarousel, selectModel, getSelectedModelId } fr
 import { activateDroneTransport, deactivateDroneTransport } from './llmDroneTransport.js';
 import { hidePlotInfoPanel } from './plotHoverInfo.js';
 import { showConfirmationModal } from './confirmationModal.js';
+import { playTrack } from './musicPlayer.js'; 
 
 let collectionAnimationId;
 
@@ -41,8 +42,9 @@ export function getModelTypeIcon(modelType) {
 
 export function setupLLMCollectionView(selectLLMId = null) {
     llmDataManager.init();
-
     hidePlotInfoPanel();
+
+    playTrack('creation'); 
 
     const collectionUI = document.getElementById('llm-collection-ui');
     collectionUI.classList.add('active');
@@ -230,6 +232,7 @@ function closeCollectionView() {
     cleanupCarousel();
     window.createLLMOpenedFrom = 'plot'; 
     hidePlotInfoPanel();
+    playTrack('city'); 
 }
 
 function addTransportButton(headerElement) { 
@@ -281,6 +284,7 @@ function addTransportButton(headerElement) {
         if (selectedModelId) {
             document.getElementById('llm-collection-ui').classList.remove('active');
             cleanupCarousel();
+            playTrack('city'); 
             activateDroneTransport(selectedModelId);
         } else {
             alert('Please select an LLM to transport');
@@ -321,7 +325,7 @@ function handleEditLLM(id) {
 
 function handleViewportClick(event) {
     const renderer = document.querySelector('.collection-viewport canvas');
-    if (!renderer) return;
+    if (!renderer || !window.carouselCamera || !window.carouselScene) return;
     
     const rect = renderer.getBoundingClientRect();
     const mouse = {

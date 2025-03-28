@@ -4,7 +4,11 @@ import { config } from './config.js';
 let bgAudio;
 let musicVolume = 0; // 0-4 (OFF, 25%, 50%, 75%, 100%)
 let musicPlayerInitialized = false;
-let currentMusicTrack = 'LLMs Morning Oasis - Sonauto.wav';
+const CITY_MUSIC_TRACK = 'LLMs Morning Oasis - Sonauto.wav'; // Default city music
+const CREATION_MUSIC_TRACK = '/The LLMs - Creation Awaits.wav'; // Creation UI music (assuming path)
+let currentTrackType = 'city'; // 'city' or 'creation'
+let targetTrackType = 'city'; // Track the intended state
+let fadeInterval = null; // Track active fade interval
 let customMusicSelected = false;
 
 export function setupMusicPlayer() {
@@ -56,7 +60,8 @@ function createMusicPlayerUI() {
     musicMenu.innerHTML = `
         <div class="music-menu-header">Select Music</div>
         <div class="music-menu-options">
-            <button class="music-option default-track">Default Music</button>
+            <button class="music-option default-track" data-track-type="city">City Music</button>
+            <button class="music-option creation-track" data-track-type="creation">Creation Music</button>
             <label class="music-option custom-track">
                 Custom Music
                 <input type="file" accept="audio/*" class="custom-music-input">
@@ -76,6 +81,14 @@ function initializeAudio() {
         bgAudio = window.bgAudio;
         musicPlayerInitialized = true;
         
+        // Determine current track type based on src
+        if (bgAudio.src.includes(CREATION_MUSIC_TRACK)) {
+            currentTrackType = 'creation';
+        } else {
+            currentTrackType = 'city'; // Assume city or custom
+        }
+        targetTrackType = currentTrackType; // Initialize target
+
         // Set initial volume state based on audio element
         if (bgAudio.volume > 0) {
             if (bgAudio.volume <= 0.25) musicVolume = 1;
@@ -88,11 +101,13 @@ function initializeAudio() {
         return;
     }
     
-    // Initialize new audio element
-    bgAudio = new Audio(currentMusicTrack);
+    // Initialize new audio element with city music
+    bgAudio = new Audio(CITY_MUSIC_TRACK);
     bgAudio.loop = true;
     bgAudio.volume = 0; // Start with volume at 0
-    
+    currentTrackType = 'city';
+    targetTrackType = 'city';
+
     // Load saved volume from localStorage or use configured default
     const savedVolume = localStorage.getItem('musicVolume');
     if (savedVolume !== null) {
@@ -137,7 +152,16 @@ function setupEventListeners() {
     const defaultTrackBtn = document.querySelector('.default-track');
     if (defaultTrackBtn) {
         defaultTrackBtn.addEventListener('click', () => {
-            changeTrack('LLMs Morning Oasis - Sonauto.wav');
+            playTrack('city');
+            toggleMusicMenu();
+        });
+    }
+
+    // Creation track selection
+    const creationTrackBtn = document.querySelector('.creation-track');
+    if (creationTrackBtn) {
+        creationTrackBtn.addEventListener('click', () => {
+            playTrack('creation');
             toggleMusicMenu();
         });
     }
@@ -149,9 +173,8 @@ function setupEventListeners() {
             if (e.target.files.length > 0) {
                 const file = e.target.files[0];
                 const objectURL = URL.createObjectURL(file);
-                changeTrack(objectURL, true);
+                playTrack('custom', objectURL);
                 toggleMusicMenu();
-                // Clear the input value to allow selecting the same file again
                 e.target.value = '';
             }
         });
@@ -162,9 +185,9 @@ function setupEventListeners() {
         const musicMenu = document.querySelector('.music-menu');
         const toggleButton = document.querySelector('.music-toggle-button');
         
-        if (!musicMenu.classList.contains('hidden') && 
-            !musicMenu.contains(e.target) && 
-            !toggleButton.contains(e.target)) {
+        if (musicMenu && !musicMenu.classList.contains('hidden') &&
+            !musicMenu.contains(e.target) &&
+            toggleButton && !toggleButton.contains(e.target)) {
             musicMenu.classList.add('hidden');
         }
     });
@@ -175,32 +198,35 @@ function toggleMusicMenu() {
     musicMenu.classList.toggle('hidden');
 }
 
-function changeTrack(trackSrc, isCustom = false) {
-    // Remember current volume and playing state
-    const wasPlaying = !bgAudio.paused;
-    const currentVolume = bgAudio.volume;
-    
-    // Stop current audio
-    bgAudio.pause();
-    
-    // Update source
-    currentMusicTrack = trackSrc;
-    customMusicSelected = isCustom;
-    
+function changeTrack(trackSrc, trackType) {
+    // Stop current audio and clear fade interval
+    if (bgAudio) {
+        bgAudio.pause();
+    }
+    if (fadeInterval) {
+        clearInterval(fadeInterval);
+        fadeInterval = null;
+    }
+
     // Create new audio element
     bgAudio = new Audio(trackSrc);
     bgAudio.loop = true;
-    bgAudio.volume = currentVolume;
-    
-    // Update global reference
+    bgAudio.volume = [0, 0.25, 0.5, 0.75, 1.0][musicVolume];
+
+    // Update global reference and state
     window.bgAudio = bgAudio;
-    
-    // Resume playback if it was playing
-    if (wasPlaying) {
+    currentTrackType = trackType;
+    customMusicSelected = (trackType === 'custom');
+
+    console.log(`Switched track to: ${trackSrc}, type: ${trackType}, volume: ${bgAudio.volume}`);
+
+    // Start playback if volume is not 0
+    if (bgAudio.volume > 0) {
         bgAudio.play().catch(err => {
-            console.error("Error playing audio:", err);
+            console.error("Error playing new audio track:", err);
         });
     }
+    updateVolumeUI();
 }
 
 function changeVolumeState() {
@@ -211,22 +237,25 @@ function changeVolumeState() {
 
 function updateVolumeState() {
     // Set volume on audio element
-    let actualVolume = 0;
-    switch(musicVolume) {
-        case 1: actualVolume = 0.25; break;
-        case 2: actualVolume = 0.50; break;
-        case 3: actualVolume = 0.75; break;
-        case 4: actualVolume = 1.00; break;
-        default: actualVolume = 0; // OFF
-    }
+    let actualVolume = [0, 0.25, 0.5, 0.75, 1.0][musicVolume];
     
-    // Apply volume without starting/stopping playback
+    // Stop fading if user manually changes volume
+    if (fadeInterval) {
+        clearInterval(fadeInterval);
+        fadeInterval = null;
+    }
+
     bgAudio.volume = actualVolume;
     
-    // Save to localStorage
+    // Start/stop playback based on volume
+    if (actualVolume > 0 && bgAudio.paused) {
+        bgAudio.play().catch(err => console.error("Error playing audio on volume change:", err));
+    } else if (actualVolume === 0 && !bgAudio.paused) {
+        bgAudio.pause();
+    }
+
     localStorage.setItem('musicVolume', musicVolume);
     
-    // Update UI
     updateVolumeUI();
 }
 
@@ -234,7 +263,6 @@ function updateVolumeUI() {
     const toggleButton = document.querySelector('.music-toggle-button');
     const volumeDots = document.querySelectorAll('.volume-dot');
     
-    // Update button class based on volume level
     toggleButton.classList.remove('muted', 'volume-25', 'volume-50', 'volume-75', 'volume-100', 'playing');
     
     if (musicVolume === 0) {
@@ -243,13 +271,11 @@ function updateVolumeUI() {
         const volumeClass = ['muted', 'volume-25', 'volume-50', 'volume-75', 'volume-100'][musicVolume];
         toggleButton.classList.add(volumeClass);
         
-        // Add playing animation if music is on AND actually playing
         if (!bgAudio.paused) {
             toggleButton.classList.add('playing');
         }
     }
     
-    // Update volume dots
     volumeDots.forEach((dot, index) => {
         if (index < musicVolume) {
             dot.classList.add('active');
@@ -281,73 +307,156 @@ function createMusicToggle() {
     });
 }
 
-// New global functions for other modules to use
+/**
+ * Plays the specified track type, fading out the current track if necessary.
+ * @param {'city' | 'creation' | 'custom'} type - The type of track to play.
+ * @param {string} [customSrc] - The source URL if type is 'custom'.
+ */
+export async function playTrack(type, customSrc = '') {
+    targetTrackType = type;
+
+    if (type === currentTrackType && !bgAudio.paused) {
+        console.log(`Track type ${type} is already playing.`);
+        fadeInMusic(0);
+        return;
+    }
+
+    const newTrackSrc = type === 'creation' ? CREATION_MUSIC_TRACK :
+                       type === 'city' ? CITY_MUSIC_TRACK :
+                       type === 'custom' ? customSrc : CITY_MUSIC_TRACK;
+
+    if (!newTrackSrc) {
+        console.error("Invalid track type or missing custom source.");
+        return;
+    }
+
+    console.log(`Request to play track type: ${type}. Current: ${currentTrackType}`);
+
+    if (!bgAudio.paused && bgAudio.volume > 0) {
+        await fadeOutMusic(config.music.fadeOutDuration || 1500);
+    }
+
+    if (targetTrackType !== type) {
+         console.log(`Target track changed during fade-out. Aborting switch to ${type}.`);
+         return;
+     }
+
+    changeTrack(newTrackSrc, type);
+
+    fadeInMusic(config.music.fadeInDuration || 3000);
+}
+
 export function playMusic() {
-    if (bgAudio && musicVolume > 0) {
+    if (!bgAudio) initializeAudio();
+    if (musicVolume > 0) {
         bgAudio.play().catch(err => {
             console.error("Error playing audio:", err);
         });
-        updateVolumeUI(); // Add this line
+        updateVolumeUI();
     }
 }
 
 export function pauseMusic() {
     if (bgAudio) {
         bgAudio.pause();
-        updateVolumeUI(); // Add this line
+        updateVolumeUI();
     }
 }
 
 export function fadeInMusic(duration = 5000) {
-    if (!bgAudio || musicVolume === 0) return;
-    
+    if (!bgAudio || musicVolume === 0) {
+        console.log("Cannot fade in: No audio or volume is 0.");
+        return;
+    }
+
+    if (fadeInterval) {
+        clearInterval(fadeInterval);
+        fadeInterval = null;
+    }
+
     const targetVolume = [0, 0.25, 0.5, 0.75, 1.0][musicVolume];
-    bgAudio.volume = 0;
-    
-    const fadeSteps = 50; // More steps for smoother transition
-    const volumeStep = targetVolume / fadeSteps;
-    const intervalTime = duration / fadeSteps;
-    
+    let startVolume = bgAudio.volume > 0.01 ? bgAudio.volume : 0.01;
+    bgAudio.volume = startVolume;
+
+    if (targetVolume <= startVolume && duration > 0) {
+        console.log("Fade-in skipped: Target volume not higher than current volume.");
+        bgAudio.volume = targetVolume;
+        updateVolumeUI();
+        return;
+    }
+
     bgAudio.play().catch(err => {
-        console.error("Error playing audio:", err);
+        console.error("Error playing audio during fade-in:", err);
         return;
     });
-    
-    const fadeInterval = setInterval(() => {
-        if (bgAudio.volume < (targetVolume - volumeStep)) {
-            bgAudio.volume += volumeStep;
+    console.log(`Fading in to volume ${targetVolume} over ${duration}ms`);
+
+    if (duration === 0) {
+        bgAudio.volume = targetVolume;
+        updateVolumeUI();
+        return;
+    }
+
+    const fadeSteps = 50;
+    const volumeStep = (targetVolume - startVolume) / fadeSteps;
+    const intervalTime = duration / fadeSteps;
+
+    fadeInterval = setInterval(() => {
+        if (targetTrackType !== currentTrackType) {
+            console.log("Target track changed during fade-in. Stopping fade.");
+            clearInterval(fadeInterval);
+            fadeInterval = null;
+            return;
+        }
+
+        let newVolume = bgAudio.volume + volumeStep;
+        if ((volumeStep > 0 && newVolume < targetVolume) || (volumeStep < 0 && newVolume > targetVolume)) {
+            bgAudio.volume = newVolume;
         } else {
             bgAudio.volume = targetVolume;
             clearInterval(fadeInterval);
+            fadeInterval = null;
+            console.log("Fade-in complete.");
         }
+        updateVolumeUI();
     }, intervalTime);
-    
-    // Update music player UI
+
     updateVolumeUI();
 }
 
 export function fadeOutMusic(duration = 3000) {
-    console.log("Music continues playing - fade out disabled");
-    
-    /* 
-    if (!bgAudio || bgAudio.volume === 0) return;
-    
-    const startVolume = bgAudio.volume;
-    const fadeSteps = 50; 
-    const volumeStep = startVolume / fadeSteps;
-    const intervalTime = duration / fadeSteps;
-    
-    const fadeInterval = setInterval(() => {
-        if (bgAudio.volume > volumeStep) {
-            bgAudio.volume -= volumeStep;
-        } else {
-            bgAudio.volume = 0;
-            bgAudio.pause();
-            clearInterval(fadeInterval);
+    return new Promise(resolve => {
+        if (!bgAudio || bgAudio.volume === 0 || bgAudio.paused) {
+            console.log("Fade-out skipped: Audio not playing or volume is 0.");
+            resolve();
+            return;
         }
-    }, intervalTime);
-    
-    // Update music player UI
-    document.querySelector('.music-toggle-button').classList.remove('playing');
-    */
+
+        if (fadeInterval) {
+            clearInterval(fadeInterval);
+            fadeInterval = null;
+        }
+        console.log(`Fading out from volume ${bgAudio.volume} over ${duration}ms`);
+
+        const startVolume = bgAudio.volume;
+        const fadeSteps = 50;
+        const volumeStep = startVolume / fadeSteps;
+        const intervalTime = duration / fadeSteps;
+
+        fadeInterval = setInterval(() => {
+            let newVolume = bgAudio.volume - volumeStep;
+            if (newVolume > 0.01) {
+                bgAudio.volume = newVolume;
+            } else {
+                bgAudio.volume = 0;
+                bgAudio.pause();
+                clearInterval(fadeInterval);
+                fadeInterval = null;
+                console.log("Fade-out complete.");
+                resolve();
+            }
+            updateVolumeUI();
+        }, intervalTime);
+        updateVolumeUI();
+    });
 }

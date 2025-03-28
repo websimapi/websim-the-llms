@@ -18,6 +18,7 @@ import { optimizeUIHeight } from './llmAttributeTooltips.js'; // Keep this for r
 import { showConfirmationModal } from './confirmationModal.js'; // Import the custom modal function
 import { hidePlotInfoPanel } from './plotHoverInfo.js'; // Import hide function
 import { deactivateDroneTransport } from './llmDroneTransport.js'; // Import drone deactivation
+import { playTrack } from './musicPlayer.js'; // Import music player function
 
 // Removed global preview variables (humanoidScene, etc.) - managed within llmModelCreationRenderer.js now
 // Removed model variables (robotModel, customCharacter, materials) - managed within llmModelCreationRenderer.js
@@ -30,6 +31,11 @@ window.updatePointsDisplay = updatePointsDisplay;
 
 export function setupLLMCreationInterface(llmToEdit) {
     console.log("Setting up LLM Creation Interface. Editing:", !!llmToEdit);
+
+    // --- Music Change ---
+    playTrack('creation'); // Switch to creation music
+    // --- End Music Change ---
+
     // Clear previous generation state
     const statusElement = document.getElementById('generation-status');
     if (statusElement) {
@@ -232,9 +238,16 @@ function handleCreateLLMClose() {
     createLLMUI.classList.remove('active');
     hidePlotInfoPanel(); // Hide plot info when closing this UI too
 
+    // --- Music Change ---
+    // Only switch back to city music if not immediately opening collection view
+    if (window.createLLMOpenedFrom !== 'collection') {
+        playTrack('city');
+    }
+    // --- End Music Change ---
+
     // Determine where to go back to
     if (window.createLLMOpenedFrom === 'collection') {
-        // Go back to collection view
+        // Go back to collection view (which will handle its own music change)
         import('./llmCollectionView.js').then(module => {
             module.setupLLMCollectionView();
             document.getElementById('llm-collection-ui').classList.add('active');

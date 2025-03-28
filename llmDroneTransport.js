@@ -3,6 +3,7 @@ import { renderLLMCharacter } from './llmCharacterRenderer.js';
 import { llmDataManager } from './llmDataManager.js';
 import { getModelTypeIcon } from './llmCollectionView.js'; 
 import { config } from './config.js'; 
+import { playTrack } from './musicPlayer.js'; // Import music player function
 
 let droneActive = false;
 let droneModel, llmModel;
@@ -73,6 +74,10 @@ export function activateDroneTransport(llmId) {
 
     currentLLMTransporting = llm;
     console.log(`Activating drone transport for LLM: ${llm.name}`);
+
+    // --- Music Change ---
+    playTrack('city'); // Ensure city music is playing for drone
+    // --- End Music Change ---
 
     document.getElementById('llm-collection-ui').classList.remove('active');
 
@@ -291,6 +296,7 @@ function removeInputListeners() {
         joystickContainerElement.removeEventListener('touchstart', handleJoystickStart);
         joystickContainerElement.removeEventListener('touchmove', handleJoystickMove);
         joystickContainerElement.removeEventListener('touchend', handleJoystickEnd);
+        joystickContainerElement.removeEventListener('touchcancel', handleJoystickEnd);
         joystickContainerElement.removeEventListener('mousedown', handleJoystickStart); 
         window.removeEventListener('mousemove', handleJoystickMove); 
         window.removeEventListener('mouseup', handleJoystickEnd); 
@@ -688,6 +694,11 @@ export function deactivateDroneTransport(cancel = false) {
         llmModel = null;
     }
 
+    // --- Music Change ---
+    // Ensure city music is playing when drone deactivates (if not already)
+    playTrack('city');
+    // --- End Music Change ---
+
     if (mainCityControls) {
         mainCityControls.enabled = true; 
 
@@ -699,18 +710,19 @@ export function deactivateDroneTransport(cancel = false) {
             const startTarget = mainCityControls.target.clone();
 
             function transitionBack() {
-                if (!originalCameraPosition || !originalCameraTarget) {
-                    console.warn("Original camera position/target became null during transition. Stopping.");
-                    cameraTransitionId = null;
-                    if (mainCityControls) mainCityControls.enabled = true; 
-                    return;
-                }
-
-                if (window.droneActive) {
+                if (window.droneActive) { // Check if drone reactivated during transition
                     console.log("Drone reactivated, cancelling camera return transition.");
                     cameraTransitionId = null;
                     return;
                 }
+                 // Ensure originalCameraPosition and originalCameraTarget are still valid
+                if (!originalCameraPosition || !originalCameraTarget) {
+                     console.warn("Original camera state missing during transition. Stopping.");
+                     cameraTransitionId = null;
+                     if (mainCityControls) mainCityControls.enabled = true;
+                     return;
+                 }
+
 
                 const elapsed = performance.now() - startTime;
                 const progress = Math.min(elapsed / transitionDuration, 1);

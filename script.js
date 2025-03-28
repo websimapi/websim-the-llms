@@ -5,7 +5,7 @@ import { setupLLMCreationInterface } from './llmCreationInterface.js';
 import { attributeSystem } from './attributeSystem.js';
 import { llmDataManager } from './llmDataManager.js';
 import { setupLLMCollectionView } from './llmCollectionView.js';
-import { setupMusicPlayer } from './musicPlayer.js';
+import { setupMusicPlayer, playTrack, fadeInMusic } from './musicPlayer.js'; 
 import { marked } from 'marked'; 
 
 let bgAudio;
@@ -74,10 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
     startButton.addEventListener('click', () => {
         startOverlay.style.display = 'none';
         loadingScreen.style.display = 'flex';
-        // Use the new music player functions
-        import('./musicPlayer.js').then(module => {
-            module.fadeInMusic(config.music.fadeInDuration || 5000);
-        });
+        // Start playing city music on load
+        fadeInMusic(config.music.fadeInDuration || 5000);
         startLoading();
 
         // Start the tip fetching based on toggle state
@@ -93,10 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
     playButton.addEventListener('click', () => {
         startOverlay.style.display = 'none';
         loadingScreen.style.display = 'flex';
-        // Use the new music player functions
-        import('./musicPlayer.js').then(module => {
-            module.fadeInMusic(config.music.fadeInDuration || 5000);
-        });
+        // Start playing city music on load
+        fadeInMusic(config.music.fadeInDuration || 5000);
         startLoading();
 
         // Start the tip fetching based on toggle state
@@ -161,12 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tipFetchInterval) {
             clearInterval(tipFetchInterval);
         }
-
-        // Comment out the fade out to allow music to continue playing
-        // import('./musicPlayer.js').then(module => {
-        //     module.fadeOutMusic(config.music.fadeOutDuration || 3000);
-        // });
-
+        // Keep music playing when skipping
         completeLoading();
     });
 
@@ -176,14 +167,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tipFetchInterval) {
             clearInterval(tipFetchInterval);
         }
-
-        // Comment out the fade out to allow music to continue playing
-        // import('./musicPlayer.js').then(module => {
-        //     module.fadeOutMusic(config.music.fadeOutDuration || 3000);
-        // });
-
         loadingScreen.style.display = 'none';
         gameContainer.classList.remove('hidden');
+        // Ensure city music continues playing (or starts if skipped very fast)
+        playTrack('city');
     }
 
     // Randomly select a tip from config
@@ -282,23 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingPercentage.textContent = `${Math.round(progress)}%`;
         }, interval);
 
-        // Update music animation state when audio state changes
-        if (bgAudio) {
-            bgAudio.addEventListener('play', updateMusicAnimation);
-            bgAudio.addEventListener('pause', updateMusicAnimation);
-        }
-    }
-
-    // New function to update music animation based on play state
-    function updateMusicAnimation() {
-        const toggleButton = document.querySelector('.music-toggle-button');
-        if (toggleButton) {
-            if (bgAudio && !bgAudio.paused && musicVolume > 0) {
-                toggleButton.classList.add('playing');
-            } else {
-                toggleButton.classList.remove('playing');
-            }
-        }
+        // Removed audio event listeners here, handled by musicPlayer.js
     }
 
     // Setup console panel functionality
