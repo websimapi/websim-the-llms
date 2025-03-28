@@ -1090,7 +1090,7 @@ function placeLLMOnPlot(plotData, placementPoint) {
     console.log(`LLM ${currentLLMTransporting.name} placed on plot ${currentPlotData.name}.`);
 
     // Deactivate drone after successful placement
-    deactivateDroneTransport(false);
+    deactivateDroneTransport(false, placedLLMModel.position.clone());
 }
 
 function disposeHierarchy(object) {
@@ -1130,7 +1130,7 @@ function disposeHierarchy(object) {
     }
 }
 
-export function deactivateDroneTransport(cancel = false) {
+export function deactivateDroneTransport(cancel = false, focusTarget = null) {
     if (!droneActive) return;
 
     // Handle cancellation during placement
@@ -1187,67 +1187,98 @@ export function deactivateDroneTransport(cancel = false) {
     if (mainCityControls) {
         mainCityControls.enabled = true;
 
-        if (originalCameraPosition && originalCameraTarget) {
-            console.log("Starting camera transition back...");
-            const transitionDuration = 1000;
-            const startTime = performance.now();
-            const startCamPos = mainCityCamera.position.clone();
-            const startTarget = mainCityControls.target.clone();
+        if (cancel || !focusTarget) { // If cancelled or no focus target, transition back to original state
+            if (originalCameraPosition && originalCameraTarget) {
+                console.log("Starting camera transition back...");
+                const transitionDuration = 1000;
+                const startTime = performance.now();
+                const startCamPos = mainCityCamera.position.clone();
+                const startTarget = mainCityControls.target.clone();
 
-            function transitionBack() {
-                if (window.droneActive) { // Check if drone reactivated during transition
-                    console.log("Drone reactivated, cancelling camera return transition.");
-                    cameraTransitionId = null;
-                    return;
-                }
-                // Ensure originalCameraPosition and originalCameraTarget are still valid
-                if (!originalCameraPosition || !originalCameraTarget) {
-                    console.warn("Original camera state missing during transition. Stopping.");
-                    cameraTransitionId = null;
-                    if (mainCityControls) mainCityControls.enabled = true;
-                    return;
-                }
+                function transitionBack() {
+                    if (window.droneActive) { // Check if drone reactivated during transition
+                        console.log("Drone reactivated, cancelling camera return transition.");
+                        cameraTransitionId = null;
+                        return;
+                    }
+                    // Ensure originalCameraPosition and originalCameraTarget are still valid
+                    if (!originalCameraPosition || !originalCameraTarget) {
+                        console.warn("Original camera state missing during transition. Stopping.");
+                        cameraTransitionId = null;
+                        if (mainCityControls) mainCityControls.enabled = true;
+                        return;
+                    }
 
-                const elapsed = performance.now() - startTime;
-                const progress = Math.min(elapsed / transitionDuration, 1);
-                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    const elapsed = performance.now() - startTime;
+                    const progress = Math.min(elapsed / transitionDuration, 1);
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
 
-                mainCityCamera.position.lerpVectors(startCamPos, originalCameraPosition, easeProgress);
-                mainCityControls.target.lerpVectors(startTarget, originalCameraTarget, easeProgress);
+                    mainCityCamera.position.lerpVectors(startCamPos, originalCameraPosition, easeProgress);
+                    mainCityControls.target.lerpVectors(startTarget, originalCameraTarget, easeProgress);
 
-                mainCityCamera.lookAt(mainCityControls.target);
-                mainCityControls.update();
-
-                if (progress < 1) {
-                    cameraTransitionId = requestAnimationFrame(transitionBack);
-                } else {
-                    console.log("Camera transition back complete.");
-                    mainCityCamera.position.copy(originalCameraPosition);
-                    mainCityControls.target.copy(originalCameraTarget);
                     mainCityCamera.lookAt(mainCityControls.target);
                     mainCityControls.update();
 
-                    originalCameraPosition = null;
-                    originalCameraTarget = null;
-                    cameraTransitionId = null;
-                    mainCityControls.enabled = true;
+                    if (progress < 1) {
+                        cameraTransitionId = requestAnimationFrame(transitionBack);
+                    } else {
+                        console.log("Camera transition back complete.");
+                        mainCityCamera.position.copy(originalCameraPosition);
+                        mainCityControls.target.copy(originalCameraTarget);
+                        mainCityCamera.lookAt(mainCityControls.target);
+                        mainCityControls.update();
+
+                        originalCameraPosition = null;
+                        originalCameraTarget = null;
+                        cameraTransitionId = null;
+                        mainCityControls.enabled = true;
+                    }
                 }
+                if (cameraTransitionId) {
+                    cancelAnimationFrame(cameraTransitionId);
+                }
+                cameraTransitionId = requestAnimationFrame(transitionBack);
+            } else {
+                console.warn("No valid original camera state to transition back to.");
+                mainCityControls.target.set(0, 0, 0);
+                mainCityControls.update();
+                if (mainCityCamera) mainCityCamera.lookAt(mainCityControls.target);
+                mainCityControls.enabled = true;
+                originalCameraPosition = null;
+                originalCameraTarget = null;
             }
-            if (cameraTransitionId) {
-                cancelAnimationFrame(cameraTransitionId);
+        } else { // Placement successful, focus on the placed LLM
+            console.log("Placement successful. Focusing camera on placed LLM at:", focusTarget);
+
+            // Set controls target to the focus target
+            mainCityControls.target.copy(focusTarget);
+
+            // Keep the camera position where it is (it was following the drone)
+            // Optionally, pull back slightly or adjust height for a better view
+            const currentCamPos = mainCityCamera.position.clone();
+            const direction = new THREE.Vector3().subVectors(currentCamPos, focusTarget).normalize();
+            // Check if direction is valid before applying
+            if (direction.lengthSq() > 0.001) {
+                mainCityCamera.position.copy(focusTarget).add(direction.multiplyScalar(10)); // Move camera 10 units away from target
+            } else {
+                // Fallback if direction is zero (camera and target are too close)
+                mainCityCamera.position.copy(focusTarget).add(new THREE.Vector3(0, 5, 10));
             }
-            cameraTransitionId = requestAnimationFrame(transitionBack);
-        } else {
-            console.warn("No valid original camera state to transition back to.");
-            mainCityControls.target.set(0, 0, 0);
+            mainCityCamera.position.y = Math.max(mainCityCamera.position.y, 3); // Ensure minimum height
+
+            // Point camera at the target and update controls
+            mainCityCamera.lookAt(mainCityControls.target);
             mainCityControls.update();
-            if (mainCityCamera) mainCityCamera.lookAt(mainCityControls.target);
-            mainCityControls.enabled = true;
+
+            // Clear original state as we are not returning to it
             originalCameraPosition = null;
             originalCameraTarget = null;
+            if (cameraTransitionId) { // Cancel any lingering transition
+                cancelAnimationFrame(cameraTransitionId);
+                cameraTransitionId = null;
+            }
         }
     }
-
     if (cancel) console.log('Drone transport cancelled');
     currentLLMTransporting = null;
 }
