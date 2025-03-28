@@ -4,8 +4,9 @@ import { config } from './config.js';
 let bgAudio;
 let musicVolume = 0; // 0-4 (OFF, 25%, 50%, 75%, 100%)
 let musicPlayerInitialized = false;
-const CITY_MUSIC_TRACK = '/LLMs Morning Oasis - Sonauto.wav'; // Correct path for city music
-const CREATION_MUSIC_TRACK = '/The LLMs - Creation Awaits.wav'; // Correct path for creation UI music
+// Updated paths to use MP3 files
+const CITY_MUSIC_TRACK = '/LLMs Morning Oasis - Sonauto.mp3'; 
+const CREATION_MUSIC_TRACK = '/The LLMs - Creation Awaits.mp3'; 
 let currentTrackType = 'city'; // 'city' or 'creation' or 'custom'
 let targetTrackType = 'city'; // Track the intended state
 let fadeInterval = null; // Track active fade interval
