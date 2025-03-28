@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { cityData } from './cityData.js';
 import { safeSetEmissive } from './threeJSGlobals.js';
+import { llmDataManager } from './llmDataManager.js'; // Import LLM data manager
 
 let raycaster, mouse, camera, scene, renderer;
 let infoPanel, activePlotId;
@@ -207,11 +208,9 @@ function hideInfoPanel() {
     // Reset any highlighted plots
     if (activePlotId) {
         const activePlot = findPlotObject(activePlotId);
-        if (activePlot) {
-            resetPlotHighlight(activePlot);
-        }
-        activePlotId = null;
+        if (activePlot) resetPlotHighlight(activePlot);
     }
+    activePlotId = null;
 
     // Clear the touch end timeout if it's still pending
     if (touchTimeout) {
@@ -241,6 +240,26 @@ function showInfoPanel(plot, clientX, clientY) {
     const minTimeFormatted = formatTime(minSeconds);
     const maxTimeFormatted = formatTime(maxSeconds);
 
+    // Get occupant info
+    const occupants = plotData.occupants || [];
+    const occupantCount = occupants.length;
+    const maxCapacity = plotData.maxCapacity || 8;
+    const isFull = occupantCount >= maxCapacity;
+    const occupantLLMs = occupants.map(id => llmDataManager.getLLMById(id)).filter(llm => llm); // Get full LLM data for occupants
+
+    // Determine status text and class
+    let statusText = 'Available';
+    let statusClass = 'available';
+    if (!plotData.available || occupantCount > 0) {
+        if (isFull) {
+            statusText = `Full (${occupantCount}/${maxCapacity})`;
+            statusClass = 'full';
+        } else {
+            statusText = `Occupied (${occupantCount}/${maxCapacity})`;
+            statusClass = 'unavailable'; // Use 'unavailable' style (yellow) for occupied but not full
+        }
+    }
+
     // Build HTML content
     let htmlContent = `
         <div class="plot-info-header">${plotData.name}</div>
@@ -263,8 +282,8 @@ function showInfoPanel(plot, clientX, clientY) {
             </div>
             <div class="plot-info-row">
                 <span class="plot-info-label">Status:</span>
-                <span class="plot-info-value ${plotData.available ? 'available' : 'unavailable'}">
-                    ${plotData.available ? 'Available' : 'Occupied'}
+                <span class="plot-info-value ${statusClass}">
+                    ${statusText}
                 </span>
             </div>`;
 
@@ -275,9 +294,18 @@ function showInfoPanel(plot, clientX, clientY) {
                 <div class="requirements-title">Required Models:</div>
                 <div class="requirements-icons">`;
 
+        // Check which requirements are met by occupants
+        const metRequirements = new Set();
+        occupantLLMs.forEach(llm => {
+            if (plotData.requirements.includes(llm.model)) {
+                metRequirements.add(llm.model);
+            }
+        });
+
         // Add icons for each required model type
         plotData.requirements.forEach(modelType => {
-            htmlContent += `<div class="requirement-icon ${modelType}" title="${capitalizeFirstLetter(modelType)}">
+            const isMet = metRequirements.has(modelType);
+            htmlContent += `<div class="requirement-icon ${modelType} ${isMet ? 'requirement-met' : ''}" title="${capitalizeFirstLetter(modelType)}">
                 ${getModelTypeIcon(modelType)}
             </div>`;
         });
@@ -541,8 +569,9 @@ function getModelTypeIcon(modelType) {
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-.29.02-.58.05-.86 2.36-1.05 4.23-2.98 5.21-5.37C11.07 8.33 14.05 10 17.42 10c.78 0 1.53-.09 2.25-.26.21.71.33 1.47.33 2.26 0 4.41-3.59 8-8 8z"/>
             </svg>`;
         case 'humanoid':
+            // Updated Humanoid icon to be more distinct
             return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
+                <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
             </svg>`;
         default:
             return '';

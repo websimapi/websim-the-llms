@@ -15,7 +15,9 @@ export const cityData = {
             price: 50,
             available: true,
             type: "commercial",
-            requirements: ["assistant", "creator", "researcher"]
+            requirements: ["assistant", "creator", "researcher"],
+            maxCapacity: 8,
+            occupants: []
         },
         {
             id: 2,
@@ -28,7 +30,9 @@ export const cityData = {
             price: 30,
             available: true,
             type: "residential",
-            requirements: ["humanoid"]
+            requirements: ["humanoid"],
+            maxCapacity: 8,
+            occupants: []
         },
         {
             id: 3,
@@ -41,7 +45,9 @@ export const cityData = {
             price: 32,
             available: true,
             type: "residential",
-            requirements: ["humanoid"]
+            requirements: ["humanoid"],
+            maxCapacity: 8,
+            occupants: []
         },
         {
             id: 4,
@@ -54,7 +60,9 @@ export const cityData = {
             price: 28,
             available: true,
             type: "residential",
-            requirements: ["humanoid"]
+            requirements: ["humanoid"],
+            maxCapacity: 8,
+            occupants: []
         },
         {
             id: 5,
@@ -67,7 +75,9 @@ export const cityData = {
             price: 31,
             available: true,
             type: "residential",
-            requirements: ["humanoid"]
+            requirements: ["humanoid"],
+            maxCapacity: 8,
+            occupants: []
         },
         {
             id: 6,
@@ -80,7 +90,9 @@ export const cityData = {
             price: 45,
             available: true,
             type: "commercial",
-            requirements: ["creator", "researcher"]
+            requirements: ["creator", "researcher"],
+            maxCapacity: 8,
+            occupants: []
         },
         {
             id: 7,
@@ -93,7 +105,9 @@ export const cityData = {
             price: 42,
             available: true,
             type: "commercial",
-            requirements: ["assistant", "companion"]
+            requirements: ["assistant", "companion"],
+            maxCapacity: 8,
+            occupants: []
         }
     ]
 };

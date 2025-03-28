@@ -387,7 +387,9 @@ function handleCityClickLogic(clientX, clientY) {
 
 
     // If a plot was clicked and it's available
-    if (clickedPlotData && clickedPlotData.available) {
+    // Also check if plot is not full
+    const isFull = clickedPlotData && (clickedPlotData.occupants || []).length >= (clickedPlotData.maxCapacity || 8);
+    if (clickedPlotData && !isFull) {
         console.log(`Plot clicked: ${clickedPlotData.name} (ID: ${clickedPlotData.id})`);
 
         // Calculate target position (center of the plot, slightly above ground)
@@ -399,8 +401,8 @@ function handleCityClickLogic(clientX, clientY) {
 
         // Call the drone's auto-navigation function
         startAutoNavigation(targetPosition, clickedPlotData.id);
-    } else if (clickedPlotData && !clickedPlotData.available) {
-        console.log(`Plot ${clickedPlotData.name} is occupied.`);
+    } else if (clickedPlotData && isFull) {
+        console.log(`Plot ${clickedPlotData.name} is full.`);
         // Optionally provide user feedback (e.g., temporary message)
     }
 }
@@ -409,6 +411,9 @@ function createBuildingLots(scene) {
     const lots = cityData.lots;
 
     lots.forEach(lot => {
+        // Ensure occupants array exists and is initialized
+        if (!lot.occupants) lot.occupants = [];
+
         // Create plot outline with construction elements
         const plotOutline = createPlotOutline(lot, scene);
         plotOutline.userData = { type: 'lot', id: lot.id }; // Ensure userData is set here
@@ -428,6 +433,13 @@ function createBuildingLots(scene) {
 
         scene.add(clickTargetMesh);
 
+        // If plot is NOT available (has occupants), remove the click target initially
+        if (!lot.available) {
+             clickTargetMesh.visible = false; // Ensure it's invisible
+             // Optional: Consider removing it from the scene entirely if persistence isn't needed
+             // scene.remove(clickTargetMesh);
+             console.log(`Plot ${lot.name} is occupied, removing click target initially.`);
+        }
     });
 
     // Add city name text
