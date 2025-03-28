@@ -229,42 +229,67 @@ function handleCityClick(event) {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
 
-    // Find all plot objects in the scene
+    // Find all plot objects and the primary ground in the scene
     const plotObjects = [];
+    let primaryGround = null;
     scene.traverse(obj => {
         if (obj.userData && obj.userData.type === 'lot' && obj.name === 'plot_outline') {
             plotObjects.push(obj);
+        } else if (obj.name === 'primaryGround') { // Find the primary ground mesh
+            primaryGround = obj;
         }
     });
-
-    let intersects = raycaster.intersectObjects(plotObjects, true); // recursive check
 
     let clickedPlotData = null;
     let clickedPoint = null;
 
-    if (intersects.length > 0) {
-        // Find the actual plot parent object (plot_outline)
-        let plotGroup = intersects[0].object;
+    // 1. Raycast against plot construction elements first (for edge clicks)
+    let intersectsPlotElements = raycaster.intersectObjects(plotObjects, true); // recursive check
+    if (intersectsPlotElements.length > 0) {
+        let plotGroup = intersectsPlotElements[0].object;
         while (plotGroup && (!plotGroup.userData || plotGroup.userData.type !== 'lot')) {
             plotGroup = plotGroup.parent;
             if (!plotGroup) break;
         }
-
         if (plotGroup && plotGroup.userData && plotGroup.userData.id) {
-             // Find corresponding plot data in cityData
             clickedPlotData = cityData.lots.find(lot => lot.id === plotGroup.userData.id);
-            clickedPoint = intersects[0].point; // Store the intersection point
+            clickedPoint = intersectsPlotElements[0].point;
         }
     }
 
-    // If a plot was clicked and it's available
+    // 2. If no construction elements hit, raycast against the ground plane
+    if (!clickedPlotData && primaryGround) {
+        const intersectsGround = raycaster.intersectObject(primaryGround);
+        if (intersectsGround.length > 0) {
+            const groundIntersectPoint = intersectsGround[0].point;
+            clickedPoint = groundIntersectPoint; // Store the ground intersection point
+
+            // Find which plot contains the ground intersection point
+            for (const lot of cityData.lots) {
+                const halfWidth = lot.width / 2;
+                const halfHeight = lot.height / 2;
+
+                if (groundIntersectPoint.x >= lot.x - halfWidth &&
+                    groundIntersectPoint.x <= lot.x + halfWidth &&
+                    groundIntersectPoint.z >= lot.z - halfHeight &&
+                    groundIntersectPoint.z <= lot.z + halfHeight)
+                {
+                    clickedPlotData = lot;
+                    break; // Found the plot
+                }
+            }
+        }
+    }
+
+    // If a plot was clicked (either elements or ground inside) and it's available
     if (clickedPlotData && clickedPlotData.available) {
         console.log(`Plot clicked: ${clickedPlotData.name} (ID: ${clickedPlotData.id})`);
 
         // Calculate target position (center of the plot, slightly above ground)
         const targetX = clickedPlotData.x;
         const targetZ = clickedPlotData.z;
-        const targetY = 5; // Target altitude above the plot
+        // Use the AUTO_NAV_HOVER_ALTITUDE defined in droneTransport.js
+        const targetY = 5.0; // Or import/get this value
 
         const targetPosition = new THREE.Vector3(targetX, targetY, targetZ);
 
