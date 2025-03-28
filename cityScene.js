@@ -9,14 +9,12 @@ import { CameraBoundaryController } from './cameraBoundaryController.js';
 import { createDistanceMist } from './terrainUtils.js';
 import { setupUIInteractions, setupConsolePanel } from './citySceneUI.js';
 import { initPlotHoverInfo } from './plotHoverInfo.js';
-import { updateDroneMovementAndCamera } from './llmDroneTransport.js'; // Import drone update function
 
 // Expose main scene components globally or via getters for drone transport
 let scene, camera, controls, renderer;
 window.cityScene = scene; // Quick global access (consider a getter pattern later)
 window.camera = camera;
 window.controls = controls;
-window.droneActive = false; // Add global state for drone activity
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -107,16 +105,16 @@ function initCityScene() {
     window.controls = controls; // Update global reference
 
     // Create infinite terrain instead of just a ground plane
-    const terrain = createInfiniteTerrain(scene, config.primaryGroundSize || 500); // Use config size
+    const terrain = createInfiniteTerrain(scene, config.citySize || 500); // Use config size
 
     // Add distance mist for better horizon
-    const mistLayers = createDistanceMist(scene, (config.primaryGroundSize || 500) * 5, 60); // Adjust mist distance based on terrain
+    const mistLayers = createDistanceMist(scene, (config.citySize || 500) * 5, 60); // Adjust mist distance based on terrain
 
     // Create camera boundary controller using terrain bounds
     const boundaryController = new CameraBoundaryController(camera, controls, terrain.bounds);
 
     // Add grid for reference - 1m x 1m grid squares
-    const gridHelper = new THREE.GridHelper(config.primaryGroundSize || 500, (config.primaryGroundSize || 500) / 10, 0x000000, 0x555555); // Adjust grid size
+    const gridHelper = new THREE.GridHelper(config.citySize || 500, (config.citySize || 500) / 10, 0x000000, 0x555555); // Adjust grid size
     gridHelper.position.y = 0.01; // Place slightly above ground
     scene.add(gridHelper);
 
@@ -134,7 +132,7 @@ function initCityScene() {
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
     controls.minDistance = 5; // Adjusted min distance
-    controls.maxDistance = (config.primaryGroundSize || 500) * 0.7; // Limit max distance based on terrain size
+    controls.maxDistance = (config.citySize || 500) * 0.7; // Limit max distance based on terrain size
     controls.maxPolarAngle = Math.PI / 2.1; // Allow slightly lower angle
     controls.enabled = false; // Disable controls during intro animation
 
@@ -168,8 +166,9 @@ function initCityScene() {
     function animate() {
         requestAnimationFrame(animate);
 
-        // Check global drone state
-        const isDroneActive = window.droneActive === true;
+        // Only update controls and boundaries if drone is NOT active
+        const isDroneActive = window.droneActive === true; // Check global drone state if available
+
 
         // Handle intro camera animation
         if (!introComplete) {
@@ -197,8 +196,6 @@ function initCityScene() {
                  // Apply camera boundary restrictions
                  boundaryController.update();
              }
-        } else { // Drone IS active
-             updateDroneMovementAndCamera(); // Update drone position and camera in main loop
         }
 
 
