@@ -73,6 +73,14 @@ export function createConstructionTape(width, depth, position) {
     // Position the entire group
     group.position.set(position.x, position.y, position.z);
     
+    // Ensure tape elements cast shadows
+    group.traverse(child => {
+        if (child.isMesh && child.name === 'tape_segment') {
+            child.castShadow = true;
+            child.receiveShadow = true; // Tape might receive shadows from poles etc.
+        }
+    });
+
     return group;
 }
 
@@ -92,25 +100,29 @@ function createSideWithPoles(group, sideLength, zPos, xPos, rotation, width, tap
     const numPoles = Math.max(2, Math.floor(sideLength / poleSpacing) + 1);
     const actualSpacing = sideLength / (numPoles - 1);
     
+    // Create the pole - moved from loop to ensure shadow props are set
+    const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+    pole.castShadow = true;
+    pole.receiveShadow = true; // Poles should receive shadows
+
     for (let i = 0; i < numPoles; i++) {
         // Calculate pole position along the side
         const offset = (i * actualSpacing) - (sideLength / 2);
-        let poleX = xPos;
-        let poleZ = zPos;
+        let currentPoleX = xPos;
+        let currentPoleZ = zPos;
         
         // Adjust X or Z based on side orientation
-        if (Math.abs(rotation) === Math.PI/2) {
-            poleZ = offset;
+        if (Math.abs(rotation) === Math.PI / 2) {
+            currentPoleZ = offset;
         } else {
-            poleX = offset;
+            currentPoleX = offset;
         }
         
-        // Create the pole
-        const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-        pole.position.set(poleX, 0.6, poleZ); // Half height of pole
-        pole.castShadow = true;
-        pole.name = "pole_support";
-        group.add(pole);
+        // Clone the main pole mesh and position it
+        const poleInstance = pole.clone(); // Clone to avoid modifying the original
+        poleInstance.position.set(currentPoleX, 0.6, currentPoleZ); // Half height of pole
+        poleInstance.name = "pole_support"; // Assign name to the instance
+        group.add(poleInstance);
     }
 }
 
@@ -154,7 +166,8 @@ export function createConstructionCones(width, depth, position) {
         // Create cone body
         const cone = new THREE.Mesh(coneGeometry, orangeMaterial);
         cone.position.set(pos.x, coneHeight/2, pos.z);
-        cone.castShadow = true;
+        cone.castShadow = true; // Cones cast shadows
+        cone.receiveShadow = true; // Cones receive shadows
         cone.name = "cone_marker";
         group.add(cone);
         
@@ -179,8 +192,8 @@ export function createConstructionCones(width, depth, position) {
         });
         const base = new THREE.Mesh(baseGeometry, baseMaterial);
         base.position.set(pos.x, 0.025, pos.z); // Just above ground
-        base.castShadow = true;
-        base.receiveShadow = true;
+        base.castShadow = true; // Base casts shadows
+        base.receiveShadow = true; // Base receives shadows
         base.name = "cone_base";
         group.add(base);
     });
