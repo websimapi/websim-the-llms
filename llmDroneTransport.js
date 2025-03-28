@@ -406,8 +406,9 @@ function updateDronePhysics() {
     const rightVector = new THREE.Vector3().crossVectors(mainCityCamera.up, forwardVector).normalize(); // Cross up with forward for right
 
     let targetVelocity = new THREE.Vector3();
-    if (droneControls.forward) targetVelocity.add(forwardVector);
-    if (droneControls.backward) targetVelocity.sub(forwardVector);
+    // SWAPPED LOGIC: W moves backward, S moves forward
+    if (droneControls.forward) targetVelocity.sub(forwardVector); // W key = move backward relative to drone
+    if (droneControls.backward) targetVelocity.add(forwardVector); // S key = move forward relative to drone
     if (droneControls.left) targetVelocity.sub(rightVector);
     if (droneControls.right) targetVelocity.add(rightVector);
 
