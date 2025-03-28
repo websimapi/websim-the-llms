@@ -367,9 +367,17 @@ function createDroneWithLLM(llm) {
         droneModel.add(propeller);
     });
 
+    // Render the LLM model at its default (full) scale
     llmModel = renderLLMCharacter(THREE, llm);
-    llmModel.scale.set(0.4, 0.4, 0.4);
-    llmModel.position.set(0, -0.8, 0);
+
+    // Position the LLM model below the drone body.
+    // The Y position needs adjustment to hang below the full-size model.
+    // We can estimate based on a standard human height (~1.7 units)
+    // and place its origin slightly below the drone's center.
+    // Let's try positioning it so the top of the model is roughly under the drone.
+    const modelHeightEstimate = 1.7; // Approximate height of LLM model
+    llmModel.position.set(0, -(centralBodyHeight / 2 + modelHeightEstimate), 0); // Adjust Y based on estimated height
+
     llmModel.castShadow = true;
     llmModel.receiveShadow = true;
     droneModel.add(llmModel);
