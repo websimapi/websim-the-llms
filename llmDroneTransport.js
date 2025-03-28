@@ -13,7 +13,7 @@ let droneRotation = new THREE.Euler(0, 0, 0);
 let droneVelocity = new THREE.Vector3();
 let droneAngularVelocity = new THREE.Euler();
 let droneAnimationId = null;
-let cameraTransitionId = null;
+let cameraTransitionId = null; 
 let droneContainer;
 let currentLLMTransporting = null;
 let mainCityScene, mainCityCamera, mainCityControls;
@@ -1088,4 +1088,40 @@ function positionCameraForDroneView(instant = false) {
 
     // Don't call controls.update() here when controls are disabled for drone
     // mainCityControls.update();
+}
+
+// Additional code
+export function handlePlotClick(clickedPlotData) {
+    console.log(`Plot clicked: ${clickedPlotData.name} (ID: ${clickedPlotData.id})`);
+
+    // Calculate target position (center of the plot, slightly above ground)
+    const targetX = clickedPlotData.x;
+    const targetZ = clickedPlotData.z;
+    const targetY = 5; // Target altitude above the plot
+
+    const targetPosition = new THREE.Vector3(targetX, targetY, targetZ);
+
+    // Check if already auto-navigating
+    if (window.isAutoNavigating) {
+        // If navigating to a *different* plot, cancel the current navigation first
+        if (window.autoNavTargetPlotId !== clickedPlotData.id) {
+            console.log(`Switching auto-navigation target from ${window.autoNavTargetPlotId} to ${clickedPlotData.id}`);
+            cancelAutoNavigation(); // Cancel current flight
+            // Start new navigation after a tiny delay to ensure state updates
+            setTimeout(() => {
+                startAutoNavigation(targetPosition, clickedPlotData.id);
+            }, 50);
+        } else {
+             console.log(`Already auto-navigating to plot ${clickedPlotData.id}. Ignoring click.`);
+             // Optionally, could re-initiate the approach sequence if needed, but ignoring is simpler.
+        }
+
+    } else {
+        // If not already auto-navigating, start normally
+        startAutoNavigation(targetPosition, clickedPlotData.id);
+    }
+
+} else if (clickedPlotData && !clickedPlotData.available) {
+    console.log(`Plot ${clickedPlotData.name} is occupied.`);
+    // Optionally provide user feedback (e.g., temporary message)
 }
