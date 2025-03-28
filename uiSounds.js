@@ -1,86 +1,70 @@
-// New file for simple UI sound effects using Web Audio API
-
+// New file for UI sound effects
 let audioContext;
-let masterGain;
+let clickSoundBuffer;
 
-function getAudioContext() {
+// Initialize the AudioContext on first user interaction
+function initAudioContext() {
     if (!audioContext) {
-        try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            masterGain = audioContext.createGain();
-            masterGain.gain.setValueAtTime(0.6, audioContext.currentTime); // Set master volume
-            masterGain.connect(audioContext.destination);
-        } catch (e) {
-            console.error("Web Audio API is not supported in this browser", e);
-            // Return a dummy context to prevent errors, but sounds won't play
-            return {
-                createOscillator: () => ({ connect: () => {}, start: () => {}, stop: () => {}, type: '', frequency: { setValueAtTime: () => {} } }),
-                createGain: () => ({ connect: () => {}, gain: { setValueAtTime: () => {}, linearRampToValueAtTime: () => {} } }),
-                destination: null,
-                currentTime: 0
-            };
-        }
-    }
-    // Resume context if it's suspended (often required after user interaction)
-    if (audioContext.state === 'suspended') {
-        audioContext.resume();
-    }
-    return audioContext;
-}
-
-function playSound(frequency, type = 'sine', duration = 0.1, attack = 0.01, decay = 0.09) {
-    const context = getAudioContext();
-    if (!context.destination) return; // Sound disabled or not supported
-
-    try {
-        const oscillator = context.createOscillator();
-        const gainNode = context.createGain();
-
-        oscillator.type = type;
-        oscillator.frequency.setValueAtTime(frequency, context.currentTime);
-
-        // Envelope
-        gainNode.gain.setValueAtTime(0, context.currentTime);
-        gainNode.gain.linearRampToValueAtTime(1, context.currentTime + attack); // Attack
-        gainNode.gain.linearRampToValueAtTime(0, context.currentTime + attack + decay); // Decay
-
-        oscillator.connect(gainNode);
-        gainNode.connect(masterGain); // Connect to master gain
-
-        oscillator.start(context.currentTime);
-        oscillator.stop(context.currentTime + duration);
-
-        // Clean up nodes after sound finishes
-        setTimeout(() => {
-            oscillator.disconnect();
-            gainNode.disconnect();
-        }, duration * 1000 + 100);
-
-    } catch (error) {
-        console.error("Error playing sound:", error);
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        generateClickSound();
     }
 }
 
-// Sound for opening the "Create New LLM" menu
-export function playMenuOpenSound() {
-    // Slightly higher pitched 'confirm' sound
-    playSound(880, 'triangle', 0.15, 0.01, 0.14); // A5
-    playSound(1318.51, 'sine', 0.1, 0.02, 0.08); // E6 (add sparkle)
+// Generate a simple click sound buffer
+function generateClickSound() {
+    if (!audioContext || clickSoundBuffer) return;
+
+    const duration = 0.05; // Short duration
+    const sampleRate = audioContext.sampleRate;
+    const frameCount = sampleRate * duration;
+    clickSoundBuffer = audioContext.createBuffer(1, frameCount, sampleRate);
+    const channelData = clickSoundBuffer.getChannelData(0);
+
+    // Simple decaying sine wave for a 'tick' or 'pop' sound
+    const frequency = 880; // A5 note
+    for (let i = 0; i < frameCount; i++) {
+        const time = i / sampleRate;
+        const decay = Math.exp(-time * 50); // Faster decay
+        channelData[i] = Math.sin(2 * Math.PI * frequency * time) * decay * 0.4; // Lower volume
+    }
 }
 
-// Sound for opening the "My LLMs" (move) menu
-export function playMenuNavigateSound() {
-    // Slightly lower pitched 'navigation' sound
-    playSound(659.25, 'square', 0.12, 0.01, 0.11); // E5
+// Play the generated click sound
+export function playClickSound() {
+    if (!audioContext || !clickSoundBuffer) {
+        // Try initializing if not ready (e.g., user hasn't interacted yet)
+        initAudioContext();
+        // If still not ready after init attempt, exit
+        if (!audioContext || !clickSoundBuffer) {
+             console.warn("Audio context or click sound not ready.");
+             return;
+         }
+    }
+
+    const source = audioContext.createBufferSource();
+    source.buffer = clickSoundBuffer;
+
+    // Add a gain node for volume control if needed in the future
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = 0.6; // Adjust click volume if needed
+
+    source.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    source.start();
 }
 
-// Optional: Add a click sound for general UI elements
-export function playUIClickSound() {
-    playSound(1100, 'sine', 0.08, 0.005, 0.075);
-}
+// Function to initialize audio context on first interaction
+export function setupAudioInteractionListener() {
+     const initAudio = () => {
+         initAudioContext();
+         // Remove listeners once initialized
+         document.removeEventListener('click', initAudio);
+         document.removeEventListener('keydown', initAudio);
+         document.removeEventListener('touchstart', initAudio);
+     };
 
-// Initialize context on first user interaction with relevant buttons
-export function initAudioContextOnInteraction(buttonElement) {
-    if (!buttonElement) return;
-    buttonElement.addEventListener('click', getAudioContext, { once: true });
+     // Add listeners for various interaction types
+     document.addEventListener('click', initAudio, { once: true });
+     document.addEventListener('keydown', initAudio, { once: true });
+     document.addEventListener('touchstart', initAudio, { once: true });
 }

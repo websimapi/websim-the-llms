@@ -3,7 +3,6 @@ import { toggleConsolePanel } from './cityScene.js';
 import { hidePlotInfoPanel } from './plotHoverInfo.js'; // Import the hide function
 import { showConfirmationModal } from './confirmationModal.js';
 import { deactivateDroneTransport } from './llmDroneTransport.js'; // Import drone deactivation
-import { playMenuOpenSound, playMenuNavigateSound, initAudioContextOnInteraction } from './uiSounds.js'; // Import sounds
 
 // Setup UI interactions for the city scene
 export function setupUIInteractions() {
@@ -17,11 +16,7 @@ function setupMenuButtons() {
     const moveLLMButton = document.querySelector('.move-llm-btn');
 
     if (createLLMButton) {
-        // Initialize audio context on first click
-        initAudioContextOnInteraction(createLLMButton);
-
         createLLMButton.addEventListener('click', () => {
-            playMenuOpenSound(); // Play sound on click
             if (window.droneActive) {
                 showConfirmationModal(
                     "Cancel drone transport to create a new LLM?",
@@ -40,11 +35,7 @@ function setupMenuButtons() {
     }
 
     if (moveLLMButton) {
-        // Initialize audio context on first click
-        initAudioContextOnInteraction(moveLLMButton);
-
         moveLLMButton.addEventListener('click', () => {
-            playMenuNavigateSound(); // Play sound on click
              if (window.droneActive) {
                 showConfirmationModal(
                     "Cancel drone transport to manage LLMs?",
