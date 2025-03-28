@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="confirmationModalStyles.css">
     <link rel="stylesheet" href="droneTransportStyles.css">
     <link rel="stylesheet" href="plotCoinStyles.css">
+    <link rel="stylesheet" href="llmTtsStyles.css">
     <script type="importmap">
     {
       "imports": {
@@ -246,7 +247,6 @@
                              </div>
                          </div>
                      </div>
-                     <!-- Removed style select -->
                      <!-- TTS Voice Selector inserted here by JS -->
                 </div>
 
@@ -405,6 +405,18 @@
         </div>
         <a target="_blank" href="https://jam.pieter.com" style="font-family: 'system-ui', sans-serif; position: fixed; bottom: -1px; right: -1px; padding: 7px; font-size: 14px; font-weight: bold; background: #fff; color: #000; text-decoration: none; z-index: 10; border-top-left-radius: 12px; z-index: 10000; border: 1px solid #fff;">🕹️ Vibe Jam 2025</a>
     </div>
+    
+    <!-- Confirmation Modal Structure -->
+    <div id="confirmation-modal" class="confirmation-modal">
+        <div class="confirmation-modal-content">
+            <h3 class="confirmation-modal-title">Confirm Action</h3>
+            <p id="confirmation-message" class="confirmation-modal-message">Are you sure?</p>
+            <div class="confirmation-modal-actions">
+                <button id="cancel-action-btn" class="confirmation-modal-button cancel">Cancel</button>
+                <button id="confirm-action-btn" class="confirmation-modal-button confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
 
     <script type="importmap">
     {
@@ -432,6 +444,28 @@
     <script type="module" src="musicPlayer.js"></script>
     <script type="module" src="confirmationModal.js"></script>
     <script type="module" src="llmDroneTransport.js"></script>
+    <script type="module" src="advancedLighting.js"></script>
+    <script type="module" src="attributeSystem.js"></script>
+    <script type="module" src="cameraBoundaryController.js"></script>
+    <script type="module" src="cityData.js"></script>
+    <script type="module" src="citySceneUI.js"></script>
+    <script type="module" src="infiniteTerrain.js"></script>
+    <script type="module" src="llmAttributeTooltips.js"></script>
+    <script type="module" src="llmCharacterRendererUtils.js"></script>
+    <script type="module" src="llmCollectionCarousel.js"></script>
+    <script type="module" src="llmCollectionViewUtils.js"></script>
+    <script type="module" src="llmCreationInterfaceCompact.js"></script>
+    <script type="module" src="llmDataManager.js"></script>
+    <script type="module" src="llmModelStorage.js"></script>
+    <script type="module" src="llmProfileImageDisplay.js"></script>
+    <script type="module" src="llmProfileImageGenerator.js"></script>
+    <script type="module" src="llmProfileImageUI.js"></script>
+    <script type="module" src="llmSetupHelpers.js"></script>
+    <script type="module" src="llmTtsVoiceSelector.js"></script>
+    <script type="module" src="modelAttributeDefaults.js"></script>
+    <script type="module" src="modelBadgeSelector.js"></script>
+    <script type="module" src="plotHoverInfo.js"></script>
+    <script type="module" src="terrainUtils.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

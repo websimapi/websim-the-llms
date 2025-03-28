@@ -4,9 +4,9 @@ import { config } from './config.js';
 let bgAudio;
 let musicVolume = 0; // 0-4 (OFF, 25%, 50%, 75%, 100%)
 let musicPlayerInitialized = false;
-const CITY_MUSIC_TRACK = 'LLMs Morning Oasis - Sonauto.wav'; // Default city music
-const CREATION_MUSIC_TRACK = '/The LLMs - Creation Awaits.wav'; // Creation UI music (assuming path)
-let currentTrackType = 'city'; // 'city' or 'creation'
+const CITY_MUSIC_TRACK = '/LLMs Morning Oasis - Sonauto.wav'; // Correct path for city music
+const CREATION_MUSIC_TRACK = '/The LLMs - Creation Awaits.wav'; // Correct path for creation UI music
+let currentTrackType = 'city'; // 'city' or 'creation' or 'custom'
 let targetTrackType = 'city'; // Track the intended state
 let fadeInterval = null; // Track active fade interval
 let customMusicSelected = false;
@@ -202,6 +202,8 @@ function changeTrack(trackSrc, trackType) {
     // Stop current audio and clear fade interval
     if (bgAudio) {
         bgAudio.pause();
+        bgAudio.removeAttribute('src'); // Remove source to help garbage collection
+        bgAudio.load(); // Reset the audio element
     }
     if (fadeInterval) {
         clearInterval(fadeInterval);
@@ -262,6 +264,7 @@ function updateVolumeState() {
 function updateVolumeUI() {
     const toggleButton = document.querySelector('.music-toggle-button');
     const volumeDots = document.querySelectorAll('.volume-dot');
+    if (!toggleButton || !volumeDots) return; // Add guard clause
     
     toggleButton.classList.remove('muted', 'volume-25', 'volume-50', 'volume-75', 'volume-100', 'playing');
     
@@ -315,9 +318,17 @@ function createMusicToggle() {
 export async function playTrack(type, customSrc = '') {
     targetTrackType = type;
 
-    if (type === currentTrackType && !bgAudio.paused) {
+    if (type === currentTrackType && !bgAudio.paused && bgAudio.volume > 0) {
         console.log(`Track type ${type} is already playing.`);
-        fadeInMusic(0);
+        // Ensure it's fully faded in if needed
+        fadeInMusic(config.music.fadeInDuration / 2 || 1000); // Quick fade in if not already at target
+        return;
+    }
+    
+    // If the target is the same but the audio is paused or silent, just fade in
+    if (type === currentTrackType && (bgAudio.paused || bgAudio.volume === 0)) {
+        console.log(`Track type ${type} was selected but paused/silent. Fading in.`);
+        fadeInMusic(config.music.fadeInDuration || 3000);
         return;
     }
 
@@ -334,10 +345,15 @@ export async function playTrack(type, customSrc = '') {
 
     if (!bgAudio.paused && bgAudio.volume > 0) {
         await fadeOutMusic(config.music.fadeOutDuration || 1500);
+    } else {
+        // Ensure volume is 0 if paused or already silent
+        bgAudio.volume = 0;
+        updateVolumeUI();
     }
 
     if (targetTrackType !== type) {
          console.log(`Target track changed during fade-out. Aborting switch to ${type}.`);
+         // Potentially start fading in the NEW target track here if needed
          return;
      }
 
@@ -380,7 +396,8 @@ export function fadeInMusic(duration = 5000) {
 
     if (targetVolume <= startVolume && duration > 0) {
         console.log("Fade-in skipped: Target volume not higher than current volume.");
-        bgAudio.volume = targetVolume;
+        // Ensure it's exactly at target volume if already playing
+        if(!bgAudio.paused) bgAudio.volume = targetVolume;
         updateVolumeUI();
         return;
     }
@@ -402,8 +419,9 @@ export function fadeInMusic(duration = 5000) {
     const intervalTime = duration / fadeSteps;
 
     fadeInterval = setInterval(() => {
-        if (targetTrackType !== currentTrackType) {
-            console.log("Target track changed during fade-in. Stopping fade.");
+        // Check if the track *type* has changed, not just the target
+        if (currentTrackType !== targetTrackType && type !== 'custom') { // Allow custom tracks to override
+            console.log("Track type changed during fade-in. Stopping fade.");
             clearInterval(fadeInterval);
             fadeInterval = null;
             return;
@@ -426,8 +444,14 @@ export function fadeInMusic(duration = 5000) {
 
 export function fadeOutMusic(duration = 3000) {
     return new Promise(resolve => {
-        if (!bgAudio || bgAudio.volume === 0 || bgAudio.paused) {
-            console.log("Fade-out skipped: Audio not playing or volume is 0.");
+        if (!bgAudio || bgAudio.volume <= 0.01 || bgAudio.paused) {
+            console.log("Fade-out skipped: Audio not playing or volume is near 0.");
+            // Ensure audio is paused and volume is 0 if skipping
+            if(bgAudio) {
+                bgAudio.pause();
+                bgAudio.volume = 0;
+                updateVolumeUI();
+            }
             resolve();
             return;
         }
