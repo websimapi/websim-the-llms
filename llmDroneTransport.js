@@ -1008,11 +1008,13 @@ function startPlacementSequence() {
     const llmMinYLocal = getModelMinYLocal(llmModel);
 
     // 3. Get the vertical offset at which the LLM is attached to the drone
-    const attachmentOffsetY = Math.abs(llmModel.position.y); 
+    // This is the Y position of the llmModel relative to the droneModel's origin.
+    const attachmentOffsetY = llmModel.position.y;
 
     // 4. Calculate the final target Y position for the DRONE's origin
-    // This is where the drone needs to stop so the LLM's lowest point touches the ground.
-    const droneTargetY = groundY - llmMinYLocal + attachmentOffsetY + PLACEMENT_GROUND_OFFSET;
+    // Drone Target Y = Ground Y - LLM Min Y (relative to LLM origin) - LLM Attachment Offset (relative to Drone origin) + Buffer
+    const droneTargetY = groundY - llmMinYLocal - attachmentOffsetY + PLACEMENT_GROUND_OFFSET;
+
 
     // --- End Calculation ---
 
@@ -1038,11 +1040,13 @@ function startPlacementSequence() {
         droneModel.position.y = THREE.MathUtils.lerp(startY, droneTargetY, progress);
 
         // Update propeller speed during placement
-        const propellerSpeed = (1.0 - progress) * 2.0 + 0.5; 
+        // Base speed + speed inversely proportional to progress (faster at start)
+        const propellerSpeed = 0.5 + (1.0 - progress) * 2.0;
         droneModel.traverse(child => {
              if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
                  const parentPosition = child.parent.position;
-                 const direction = (parentPosition.x > 0) ? 1 : -1;
+                 // Alternate rotation direction based on propeller position for realism
+                 const direction = (parentPosition.x * parentPosition.z < 0) ? 1 : -1; // Simple alternating direction
                  child.rotation.y += propellerSpeed * direction * 0.25;
              }
          });
@@ -1094,9 +1098,26 @@ function startPlacementSequence() {
                 placeLLMOnPlot(targetPlot, finalGroundPoint); 
             } else {
                 console.error("Placement failed: Could not find valid plot beneath final position.");
-                isPlacing = false;
-                enableManualControls();
-                updatePlacementButtonState();
+                // Fly back up slightly if placement fails
+                const failStartY = droneModel.position.y;
+                const failTargetY = failStartY + 2.0; // Fly up 2 units
+                const failDuration = 500;
+                const failStartTime = performance.now();
+                function animateFailLift() {
+                     const failElapsed = performance.now() - failStartTime;
+                     const failProgress = Math.min(failElapsed / failDuration, 1);
+                     if (droneModel) { // Check if drone still exists
+                        droneModel.position.y = THREE.MathUtils.lerp(failStartY, failTargetY, failProgress);
+                     }
+                     if (failProgress < 1) {
+                         requestAnimationFrame(animateFailLift);
+                     } else {
+                         isPlacing = false;
+                         enableManualControls();
+                         updatePlacementButtonState();
+                     }
+                }
+                animateFailLift();
             }
         }
     }
@@ -1382,17 +1403,21 @@ function animateDrone() {
     if (!droneActive) return;
     droneAnimationId = requestAnimationFrame(animateDrone);
 
-    // Only update drone state/camera if not in placement animation
+    // Update drone physics state ONLY if not placing
     if (!isPlacing) {
-        updateDroneState(); 
-        positionCameraForDroneView();
+        updateDroneState(); // Handles movement, rotation, hover check etc.
+        // Note: Propeller animation is handled inside updateDroneState
     } else {
-         // During placement, only animate propellers (handled inside startPlacementSequence)
-         // Camera positioning is handled by the main city scene loop's OrbitControls (if re-enabled) or stays fixed
-         // Check if placement finished
-         if (performance.now() > placementStartTime + PLACEMENT_DURATION) {
-              // Placement animation should have finished, but check just in case
-         }
+        // Propeller animation needs to run even during placement,
+        // let's call a simplified version or extract it.
+        // For now, let's ensure propellers keep spinning based on descent.
+        // This is already handled inside `animatePlacement` via requestAnimationFrame.
+    }
+
+    // Position the camera based on the current drone position,
+    // regardless of placement state, as long as the drone model exists.
+    if (droneModel) {
+        positionCameraForDroneView();
     }
 
     // Rendering is handled by the main cityScene loop
