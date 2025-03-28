@@ -15,6 +15,8 @@ let scene, camera, controls, renderer;
 window.cityScene = scene; // Quick global access (consider a getter pattern later)
 window.camera = camera;
 window.controls = controls;
+window.renderer = renderer; // Also expose renderer if needed by other modules
+window.droneActive = false; // Global flag for drone state
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -99,6 +101,7 @@ function initCityScene() {
     renderer.toneMapping = THREE.ACESFilmicToneMapping; // Improved tone mapping
     renderer.toneMappingExposure = 1.2; // Adjust exposure for better lighting
     cityViewElement.appendChild(renderer.domElement);
+    window.renderer = renderer; // Update global reference
 
     // Add orbit controls
     controls = new OrbitControls(camera, renderer.domElement); // Assign to global variable
@@ -167,8 +170,7 @@ function initCityScene() {
         requestAnimationFrame(animate);
 
         // Only update controls and boundaries if drone is NOT active
-        const isDroneActive = window.droneActive === true; // Check global drone state if available
-
+        const isDroneActive = window.droneActive === true; // Check global drone state
 
         // Handle intro camera animation
         if (!introComplete) {
@@ -188,13 +190,21 @@ function initCityScene() {
 
             } else {
                 introComplete = true;
-                 if (!isDroneActive) controls.enabled = true; // Enable controls only if drone isn't active
+                // Enable controls only AFTER intro completes and ONLY if drone is NOT active
+                 if (!isDroneActive) controls.enabled = true;
+                 console.log("Intro complete. Controls enabled:", controls.enabled); // Debug log
             }
         } else if (!isDroneActive) { // Only update controls/boundaries if intro done AND drone inactive
              if (controls.enabled) { // Check if controls are enabled before updating
                  controls.update();
                  // Apply camera boundary restrictions
                  boundaryController.update();
+             }
+        } else {
+             // If drone is active, ensure orbit controls remain disabled
+             if (controls.enabled) {
+                 console.log("Drone active, disabling controls."); // Debug log
+                 controls.enabled = false;
              }
         }
 
