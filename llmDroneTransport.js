@@ -6,20 +6,18 @@ import { config } from './config.js'; // Import config for potential map size
 
 // --- State Variables ---
 let droneActive = false;
-let droneCutsceneActive = false; // NEW: Cutscene state
-let droneCutsceneStartTime = 0; // NEW: Cutscene timer
 let droneModel, llmModel;
 let dronePosition = new THREE.Vector3(0, 15, 0); // Current position
 let droneRotation = new THREE.Euler(0, 0, 0); // Current rotation
 let droneVelocity = new THREE.Vector3(); // Current velocity
 let droneAngularVelocity = new THREE.Euler(); // Current angular velocity
 let droneAnimationId = null;
+let droneIntroAnimationId = null; // ID for the intro animation
+let droneIntroComplete = false; // Flag for intro completion
 let droneContainer;
 let currentLLMTransporting = null;
 let mainCityScene, mainCityCamera, mainCityControls;
 let originalCameraPosition, originalCameraTarget;
-let gameplayStartPosition; // Keep track of the gameplay start position for smooth transition
-const gameplayStartRotation = new THREE.Euler(0, 0, 0); // Define gameplay start rotation
 
 // --- Constants ---
 const MAX_SPEED = 0.25;
@@ -36,7 +34,7 @@ const CAMERA_LERP_FACTOR = 0.05;
 const DRONE_BASE_COLOR = 0xffffff; // White
 const DRONE_ACCENT_COLOR = 0xcccccc; // Light Grey
 const DRONE_DARK_ACCENT_COLOR = 0x888888; // Darker Grey
-const CUTSCENE_DURATION = 5000; // NEW: 5 seconds for cutscene
+const DRONE_INTRO_DURATION = 3000; // 3 seconds for intro animation
 
 // --- Control State ---
 let droneControls = {
@@ -67,6 +65,9 @@ export function activateDroneTransport(llmId) {
         return;
     }
 
+    // Disable orbit controls immediately
+    mainCityControls.enabled = false;
+
     currentLLMTransporting = llm;
     console.log(`Activating drone transport for LLM: ${llm.name}`);
 
@@ -74,57 +75,38 @@ export function activateDroneTransport(llmId) {
 
     createDroneUI(llm);
     droneContainer.classList.add('active');
-    // NEW: Initially hide controls during cutscene
-    const controlsElement = droneContainer.querySelector('.drone-controls-info');
-    if (controlsElement) controlsElement.style.opacity = '0';
 
     originalCameraPosition = mainCityCamera.position.clone();
     originalCameraTarget = mainCityControls.target.clone();
 
     const mapSize = config.citySize || 500;
-
-    // --- NEW: Define Cutscene Start/End ---
-    const cutsceneStartPosition = new THREE.Vector3(0, 100, (mapSize / 2) + 150); // Start further back and higher
-    //FIX: Face the city (0 radians Y)
-    const cutsceneStartRotation = new THREE.Euler(0, 0, 0);
-    // Gameplay Start Position (end of cutscene)
-    gameplayStartPosition = new THREE.Vector3(0, 50, (mapSize / 2) + 50);
-    //FIX: Face the city (0 radians Y)
-    const gameplayStartRotation = new THREE.Euler(0, 0, 0);
-
-    // Set initial state to cutscene start
-    dronePosition.copy(cutsceneStartPosition);
-    droneRotation.copy(cutsceneStartRotation);
+    // Start slightly behind the map center, higher up
+    dronePosition.set(0, 70, mapSize / 2 + 50); // Start higher
+    // Ensure rotation is facing towards the center (negative Z axis)
+    droneRotation.set(0, Math.PI, 0);
     droneVelocity.set(0, 0, 0);
     droneAngularVelocity.set(0, 0, 0);
     resetControlState();
+    droneIntroComplete = false; // Reset intro flag
 
-    initDroneScene(llm); // Creates droneModel
+    initDroneScene(llm); // Create the drone model
 
-    // Position drone at cutscene start
+    // Position drone model immediately at start position
     if (droneModel) {
-        droneModel.position.copy(cutsceneStartPosition);
-        droneModel.rotation.copy(cutsceneStartRotation);
+        droneModel.position.copy(dronePosition);
+        droneModel.rotation.copy(droneRotation);
     }
 
-    // Position camera for cutscene START (instantly)
-    positionCameraForCutscene(0); // Progress 0
+    // Start the intro camera animation
+    startDroneIntroAnimation();
 
-    // Activate cutscene state
     droneActive = true;
     window.droneActive = true; // Set global flag
-    droneCutsceneActive = true; // NEW
-    droneCutsceneStartTime = performance.now(); // NEW
 
-    // Disable OrbitControls immediately
-    if (mainCityControls) mainCityControls.enabled = false;
-
-    animateDrone(); // Start the dedicated drone animation loop
 }
 
 // --- Initialization Functions ---
 function createDroneUI(llm) {
-    // ... (UI creation code remains the same) ...
     const existingContainer = document.getElementById('drone-transport-ui');
     if (existingContainer) existingContainer.remove();
 
@@ -162,7 +144,7 @@ function createDroneUI(llm) {
                 <p>Press <strong>Esc</strong> to cancel</p>
             </div>
             <div class="drone-touch-controls">
-                 <div class="touch-control-row">
+                <div class="touch-control-row">
                     <button class="drone-touch-btn" data-control="up">▲</button> <!-- E -->
                      <button class="drone-touch-btn" data-control="forward">↑</button> <!-- W -->
                      <button class="drone-touch-btn" data-control="down">▼</button> <!-- Q -->
@@ -184,12 +166,17 @@ function createDroneUI(llm) {
 }
 
 function initDroneScene(llm) {
-    // ... (drone model creation remains the same) ...
+    // Clear previous drone if exists
+    if (droneModel && droneModel.parent) {
+        droneModel.parent.remove(droneModel);
+    }
+    droneModel = null;
+    llmModel = null;
+
     createDroneWithLLM(llm);
 }
 
 function createDroneWithLLM(llm) {
-    // ... (drone 3D model creation remains the same) ...
     droneModel = new THREE.Group();
     droneModel.name = "DroneWithLLM";
 
@@ -197,7 +184,7 @@ function createDroneWithLLM(llm) {
     const bodyMaterial = new THREE.MeshStandardMaterial({ color: DRONE_BASE_COLOR, metalness: 0.6, roughness: 0.4 });
     const armMaterial = new THREE.MeshStandardMaterial({ color: DRONE_ACCENT_COLOR, metalness: 0.5, roughness: 0.5 });
     const propellerHubMaterial = new THREE.MeshStandardMaterial({ color: DRONE_DARK_ACCENT_COLOR, metalness: 0.8, roughness: 0.2 });
-    const propellerBladeMaterial = new THREE.MeshStandardMaterial({ color: DRONE_ACCENT_COLOR, metalness: 0.4, roughness: 0.6, side: THREE.DoubleSide, transparent: true, opacity: 0.7 }); // Added transparency
+    const propellerBladeMaterial = new THREE.MeshStandardMaterial({ color: DRONE_ACCENT_COLOR, metalness: 0.4, roughness: 0.6, side: THREE.DoubleSide });
 
 
     // Central Body (Smaller Cylinder)
@@ -273,7 +260,7 @@ function createDroneWithLLM(llm) {
     }
 }
 
-function createPropeller(hubMaterial, bladeMaterial) {
+function createPropeller(hubMaterial, bladeMaterial) { // Pass materials
     const propellerGroup = new THREE.Group();
     propellerGroup.name = "Propeller";
 
@@ -297,17 +284,12 @@ function createPropeller(hubMaterial, bladeMaterial) {
     const bladeThickness = 0.01;
     const bladeGeometry = new THREE.BoxGeometry(bladeLength, bladeThickness, bladeWidth);
 
-    // --- Apply slight pitch to blades ---
-    const pitchAngle = Math.PI / 12; // ~15 degrees pitch
-
     const blade1 = new THREE.Mesh(bladeGeometry, bladeMaterial); // Use passed material
-    blade1.rotation.z = pitchAngle; // Pitch one way
     blade1.castShadow = true;
     blades.add(blade1);
 
     const blade2 = new THREE.Mesh(bladeGeometry, bladeMaterial); // Use passed material
     blade2.rotation.y = Math.PI / 2;
-    blade2.rotation.z = -pitchAngle; // Pitch the other way
     blade2.castShadow = true;
     blades.add(blade2);
 
@@ -326,17 +308,13 @@ function setupInputListeners() {
     // Touch (via UI buttons)
     setupTouchButtonListeners();
     // Place button
-    const placeBtn = droneContainer.querySelector('.drone-land-btn');
-    if (placeBtn) placeBtn.addEventListener('click', handlePlaceAttempt);
+    droneContainer.querySelector('.drone-land-btn').addEventListener('click', handlePlaceAttempt);
 }
 
-// ... (removeInputListeners, resetControlState, handleKeyDown, handleKeyUp, setupTouchButtonListeners, handleTouchStart, handleTouchEnd remain the same) ...
 function removeInputListeners() {
     window.removeEventListener('keydown', handleKeyDown);
     window.removeEventListener('keyup', handleKeyUp);
     // Touch listeners are implicitly removed when the UI is destroyed
-    const placeBtn = droneContainer?.querySelector('.drone-land-btn'); // Use optional chaining
-    if (placeBtn) placeBtn.removeEventListener('click', handlePlaceAttempt);
 }
 
 function resetControlState() {
@@ -347,8 +325,7 @@ function resetControlState() {
 }
 
 function handleKeyDown(event) {
-    // NEW: Ignore controls during cutscene
-    if (!droneActive || droneCutsceneActive) return;
+    if (!droneActive) return;
     // Ignore inputs if an input field is focused
     if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT')) {
         return;
@@ -374,9 +351,7 @@ function handleKeyDown(event) {
 }
 
 function handleKeyUp(event) {
-    // NEW: Ignore controls during cutscene (though unlikely to press during it)
-    if (!droneActive || droneCutsceneActive) return;
-
+    if (!droneActive) return;
     const key = event.key.toLowerCase();
     switch (key) {
         case 'w': droneControls.forward = false; break;
@@ -391,36 +366,27 @@ function handleKeyUp(event) {
 }
 
 function setupTouchButtonListeners() {
-    if (!droneContainer) return; // Check if container exists
     droneContainer.querySelectorAll('.drone-touch-btn').forEach(btn => {
         const control = btn.getAttribute('data-control');
-        if (control) { // Ensure control exists
-            btn.addEventListener('touchstart', (e) => handleTouchStart(e, control), { passive: false }); // Need passive: false for preventDefault
-            btn.addEventListener('touchend', (e) => handleTouchEnd(e, control));
-            btn.addEventListener('touchcancel', (e) => handleTouchEnd(e, control)); // Handle cancellation
-            // Mouse fallback for testing
-            btn.addEventListener('mousedown', (e) => handleTouchStart(e, control));
-            btn.addEventListener('mouseup', (e) => handleTouchEnd(e, control));
-            btn.addEventListener('mouseleave', (e) => handleTouchEnd(e, control)); // Handle leaving button
-        }
+        btn.addEventListener('touchstart', (e) => handleTouchStart(e, control), { passive: false }); // Need passive: false for preventDefault
+        btn.addEventListener('touchend', (e) => handleTouchEnd(e, control));
+        btn.addEventListener('touchcancel', (e) => handleTouchEnd(e, control)); // Handle cancellation
+        // Mouse fallback for testing
+        btn.addEventListener('mousedown', (e) => handleTouchStart(e, control));
+        btn.addEventListener('mouseup', (e) => handleTouchEnd(e, control));
+        btn.addEventListener('mouseleave', (e) => handleTouchEnd(e, control)); // Handle leaving button
     });
 }
 
 function handleTouchStart(event, control) {
-    // NEW: Ignore controls during cutscene
-    if (droneCutsceneActive) return;
     event.preventDefault();
     droneControls[control] = true;
     touchActiveControls[control] = true; // Mark as active by touch
     // Visual feedback
-    if (event.target instanceof HTMLElement) {
-        event.target.style.backgroundColor = 'rgba(60, 179, 113, 0.8)';
-    }
+    event.target.style.backgroundColor = 'rgba(60, 179, 113, 0.8)';
 }
 
 function handleTouchEnd(event, control) {
-     // NEW: Ignore controls during cutscene
-     if (droneCutsceneActive) return;
     event.preventDefault();
     // Only deactivate if it was activated by touch (prevents interference with keyboard)
     // Check if the control exists in touchActiveControls before deleting
@@ -429,18 +395,15 @@ function handleTouchEnd(event, control) {
         delete touchActiveControls[control];
     }
     // Reset visual feedback - Need to find the button again if event.target isn't reliable
-    if (droneContainer) {
-        const btn = droneContainer.querySelector(`.drone-touch-btn[data-control="${control}"]`);
-        if (btn instanceof HTMLElement) {
-            btn.style.backgroundColor = 'rgba(60, 179, 113, 0.4)';
-        }
+    const btn = droneContainer.querySelector(`.drone-touch-btn[data-control="${control}"]`);
+    if (btn) {
+        btn.style.backgroundColor = 'rgba(60, 179, 113, 0.4)';
     }
 }
 
-
 // --- Movement & Update Logic ---
 function updateDronePhysics() {
-    if (!droneModel) return;
+    if (!droneModel || droneIntroComplete === false) return; // Don't move drone during intro
 
     // --- Rotation ---
     let targetRotationY = 0;
@@ -457,11 +420,10 @@ function updateDronePhysics() {
     // --- Translation ---
     // Get drone's current forward and right vectors based on its rotation
     const forwardVector = new THREE.Vector3();
-    droneModel.getWorldDirection(forwardVector); // Gets the direction the local negative Z-axis is pointing
-    // forwardVector.negate(); // Negate if model faces +Z locally for forward movement
-    // Assuming model faces -Z locally for forward, do not negate
+    droneModel.getWorldDirection(forwardVector); // Gets the Z- direction
+    forwardVector.negate(); // We want the positive Z direction for forward
 
-    const rightVector = new THREE.Vector3().crossVectors(droneModel.up, forwardVector).normalize(); // Cross drone's up with its forward for right
+    const rightVector = new THREE.Vector3().crossVectors(mainCityCamera.up, forwardVector).normalize(); // Cross up with forward for right
 
     let targetVelocity = new THREE.Vector3();
     if (droneControls.forward) targetVelocity.add(forwardVector);
@@ -524,101 +486,88 @@ function updateDronePhysics() {
     const horizontalSpeed = Math.sqrt(currentSpeedSq);
     // Increase base speed, make vertical thrust effect stronger
     const propellerSpeed = 1.0 + Math.abs(droneVelocity.y) * 8 + verticalThrust * 2 + horizontalSpeed * 5;
-    animatePropellers(propellerSpeed);
-}
-
-// NEW: Helper to animate propellers
-function animatePropellers(speed) {
-    if (!droneModel) return;
     droneModel.traverse(child => {
         if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
             // Alternate rotation direction for stability effect
             const parentPosition = child.parent.position;
             // Simple check based on x position relative to center (approximate)
-            const direction = (parentPosition.x * parentPosition.z >= 0) ? 1 : -1; // Alternate based on quadrant
-            child.rotation.y += speed * direction * 0.25; // Increased speed multiplier
+            const direction = (parentPosition.x > 0) ? 1 : -1;
+            child.rotation.y += propellerSpeed * direction * 0.25; // Increased speed multiplier
         }
     });
 }
 
-// --- Cutscene Logic ---
-function updateDroneCutscene(elapsedTime) {
-    if (!droneModel || !gameplayStartPosition) return; // Ensure gameplayStartPosition is defined
+// --- Animation Loop ---
+// New function for drone intro animation
+function startDroneIntroAnimation() {
+    const startTime = performance.now();
 
-    const progress = Math.min(elapsedTime / CUTSCENE_DURATION, 1);
-    const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+    // Define start and end camera parameters for the intro
+    const startCamPos = dronePosition.clone().add(new THREE.Vector3(0, 50, 60)); // Start high and behind
+    const endCamPosOffset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, CAMERA_FOLLOW_DISTANCE);
+    endCamPosOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), droneModel.rotation.y); // Apply initial drone rotation
+    const endCamPos = dronePosition.clone().add(endCamPosOffset);
 
-    const mapSize = config.citySize || 500;
-    const cutsceneStartPosition = new THREE.Vector3(0, 100, (mapSize / 2) + 150);
-    // const gameplayStartPosition = new THREE.Vector3(0, 50, (mapSize / 2) + 50); // Now a global variable
+    const startLookAt = dronePosition.clone().add(new THREE.Vector3(0, 20, 0)); // Look down initially
+    const endLookAt = dronePosition.clone().add(new THREE.Vector3(0, 0.5, 0)); // End looking at drone center
 
-    // Interpolate drone position
-    droneModel.position.lerpVectors(cutsceneStartPosition, gameplayStartPosition, easeProgress);
+    function animateIntro() {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(elapsed / DRONE_INTRO_DURATION, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
 
-    // Interpolate drone rotation (from facing back to facing forward)
-    // Keep rotation fixed during cutscene (facing city - Y=0)
-    droneModel.rotation.set(0, 0, 0);
+        // Interpolate camera position and target
+        mainCityCamera.position.lerpVectors(startCamPos, endCamPos, easeProgress);
+        mainCityControls.target.lerpVectors(startLookAt, endLookAt, easeProgress);
 
-    // Animate propellers faster during cutscene
-    animatePropellers(15); // Fixed high speed for cutscene
+        mainCityCamera.lookAt(mainCityControls.target);
+        mainCityControls.update();
 
-    // Update camera position for cutscene
-    positionCameraForCutscene(easeProgress);
+        // Update propeller spin during intro
+        droneModel.traverse(child => {
+            if (child.name === "Blades" && child.parent && child.parent.name === "Propeller") {
+                const parentPosition = child.parent.position;
+                const direction = (parentPosition.x > 0) ? 1 : -1;
+                child.rotation.y += 1.5 * direction * 0.25; // Base spinning speed
+            }
+        });
 
-    // Check if cutscene is finished
-    if (progress >= 1) {
-        // Set final gameplay position and rotation accurately from gameplayStartPosition
-        droneModel.position.copy(gameplayStartPosition);
-        // Ensure final rotation is set correctly (Y=0 to face city)
-        droneModel.rotation.copy(gameplayStartRotation); // Use the defined start rotation
 
-        // Copy the final drone state to the global state variables
-        dronePosition.copy(droneModel.position);
-        droneRotation.copy(droneModel.rotation);
-        droneVelocity.set(0,0,0); // Reset velocity
-        droneAngularVelocity.set(0,0,0); // Reset angular velocity
-
-        // Mark cutscene as finished BEFORE enabling controls or fading UI
-        droneCutsceneActive = false;
-
-        // Fade in UI controls
-        const controlsElement = droneContainer?.querySelector('.drone-controls-info');
-        if (controlsElement) {
-            controlsElement.style.transition = 'opacity 0.5s ease-in';
-            controlsElement.style.opacity = '1';
+        if (progress < 1 && droneActive) { // Continue only if active and not finished
+            droneIntroAnimationId = requestAnimationFrame(animateIntro);
+        } else if (droneActive) { // Check if still active when finishing
+            console.log("Drone intro animation complete.");
+            droneIntroComplete = true;
+            droneIntroAnimationId = null;
+            setupInputListeners(); // Setup keyboard/touch controls AFTER intro
+            animateDrone(); // Start the main drone physics/camera loop
         }
-        // Setup input listeners *after* cutscene finishes
-        setupInputListeners();
-        console.log("Drone cutscene finished. Player control enabled.");
     }
+    droneIntroAnimationId = requestAnimationFrame(animateIntro);
 }
 
-// --- Animation Loop ---
 function animateDrone() {
-    if (!droneActive) return;
+    if (!droneActive || !droneIntroComplete) { // Only run if active AND intro is complete
+         if (droneIntroAnimationId && droneIntroComplete && !droneActive) {
+             // If intro finished but drone was deactivated during it, cancel
+             cancelAnimationFrame(droneIntroAnimationId);
+             droneIntroAnimationId = null;
+         }
+         return;
+     }
     droneAnimationId = requestAnimationFrame(animateDrone);
 
-    const currentTime = performance.now();
-
-    if (droneCutsceneActive) {
-        const cutsceneElapsedTime = currentTime - droneCutsceneStartTime;
-        updateDroneCutscene(cutsceneElapsedTime);
-    } else {
-        // Only update physics and camera for gameplay view *after* cutscene is done
-        updateDronePhysics();
-        positionCameraForDroneView(); // Update camera smoothly
-    }
+    updateDronePhysics();
+    positionCameraForDroneView(); // Update camera smoothly
 
     // Rendering is handled by the main cityScene loop
 }
 
 // --- Placement & Deactivation ---
 function handlePlaceAttempt() {
-    // NEW: Ignore place attempt during cutscene
-    if (!droneActive || droneCutsceneActive || !droneModel) return;
+    if (!droneActive || !droneModel || !droneIntroComplete) return; // Don't place during intro
 
-    // ... (rest of placement logic remains the same) ...
-     // Raycast downwards from drone position
+    // Raycast downwards from drone position
     const raycaster = new THREE.Raycaster(droneModel.position, new THREE.Vector3(0, -1, 0));
     const intersects = raycaster.intersectObjects(mainCityScene.children, true); // Check all scene children recursively
 
@@ -654,24 +603,13 @@ function handlePlaceAttempt() {
         } else {
             console.log(`Plot ${targetPlot.name} is already occupied.`);
             // Optionally provide user feedback (e.g., flash UI red)
-            const landBtn = droneContainer?.querySelector('.drone-land-btn');
-            if(landBtn) {
-                landBtn.style.backgroundColor = '#ff4444'; // Flash red
-                setTimeout(() => { if(landBtn) landBtn.style.backgroundColor = '#3cb371'; }, 500);
-            }
         }
     } else {
         console.log("Not hovering over a valid plot.");
         // Optionally provide user feedback
-         const landBtn = droneContainer?.querySelector('.drone-land-btn');
-         if(landBtn) {
-             landBtn.style.backgroundColor = '#ffaa44'; // Flash orange
-             setTimeout(() => { if(landBtn) landBtn.style.backgroundColor = '#3cb371'; }, 500);
-         }
     }
 }
 
-// ... (placeLLMOnPlot remains the same) ...
 function placeLLMOnPlot(plotData, placementPoint) {
     if (!currentLLMTransporting || !mainCityScene) return;
 
@@ -711,7 +649,6 @@ function placeLLMOnPlot(plotData, placementPoint) {
         import('./plotHoverInfo.js').then(module => {
             if (typeof module.hideInfoPanel === 'function') {
                 // module.hideInfoPanel(); // Or a more specific update function if available
-                 module.checkPlotHovers(); // Trigger a refresh
             }
         });
     }
@@ -726,19 +663,23 @@ function placeLLMOnPlot(plotData, placementPoint) {
     }
 }
 
-
 function deactivateDroneTransport(cancel = false) {
     if (!droneActive) return;
     droneActive = false;
-    droneCutsceneActive = false; // Ensure cutscene state is also reset
     window.droneActive = false; // Clear global flag
 
     removeInputListeners();
 
+    // Cancel both potential animation loops
     if (droneAnimationId) {
         cancelAnimationFrame(droneAnimationId);
         droneAnimationId = null;
     }
+     if (droneIntroAnimationId) {
+         cancelAnimationFrame(droneIntroAnimationId);
+         droneIntroAnimationId = null;
+     }
+
 
     if (droneContainer) {
         droneContainer.classList.remove('active');
@@ -827,43 +768,11 @@ function deactivateDroneTransport(cancel = false) {
     // Reset original camera/target refs
     originalCameraPosition = null;
     originalCameraTarget = null;
+    droneIntroComplete = false; // Reset intro flag
 }
 
-// --- Camera Positioning ---
-// NEW: Camera positioning specifically for the cutscene
-function positionCameraForCutscene(progress) {
-    if (!droneModel || !mainCityCamera || !mainCityControls) return;
-
-    // Define camera start and end relative positions/targets for the cutscene
-    const startOffset = new THREE.Vector3(0, 15, 30); // Start further back and higher
-    const endOffset = new THREE.Vector3(0, CAMERA_FOLLOW_HEIGHT, CAMERA_FOLLOW_DISTANCE); // End at normal follow distance
-
-    const startLookAtOffset = new THREE.Vector3(0, 10, 0); // Look higher initially
-    const endLookAtOffset = new THREE.Vector3(0, 0.5, 0); // End looking slightly above drone
-
-    // Interpolate offset and lookAt based on progress
-    const currentOffset = new THREE.Vector3().lerpVectors(startOffset, endOffset, progress);
-    const currentLookAtOffset = new THREE.Vector3().lerpVectors(startLookAtOffset, endLookAtOffset, progress);
-
-    // Apply drone's rotation to the camera offset (keep camera behind drone)
-    // Since drone rotation is 0 during cutscene, this won't change offset direction
-    currentOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), droneModel.rotation.y);
-
-    // Calculate target camera position and look-at point
-    const targetCamPos = droneModel.position.clone().add(currentOffset);
-    const targetLookAt = droneModel.position.clone().add(currentLookAtOffset);
-
-    // Apply position and target instantly during cutscene
-    mainCityCamera.position.copy(targetCamPos);
-    mainCityControls.target.copy(targetLookAt);
-    mainCityCamera.lookAt(targetLookAt);
-    mainCityControls.update(); // Update controls state
-}
-
-// Modified: Normal gameplay camera positioning
 function positionCameraForDroneView(instant = false) {
-    // NEW: Don't run if cutscene is active
-    if (droneCutsceneActive || !droneModel || !mainCityCamera || !mainCityControls) return;
+    if (!droneModel || !mainCityCamera || !mainCityControls || droneIntroComplete === false) return; // Don't move camera during intro
 
     // Ensure orbit controls are disabled while drone is active
     mainCityControls.enabled = false;

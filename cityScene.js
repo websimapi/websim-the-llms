@@ -15,6 +15,7 @@ let scene, camera, controls, renderer;
 window.cityScene = scene; // Quick global access (consider a getter pattern later)
 window.camera = camera;
 window.controls = controls;
+let mainAnimationId = null; // Store the main animation loop ID
 
 // Add fadeOutAudio function at global level
 function fadeOutAudio(duration = 3000) {
@@ -161,13 +162,15 @@ function initCityScene() {
 
     // --- Main Animation Loop ---
     function animate() {
-        requestAnimationFrame(animate);
+        // Always request the next frame
+        mainAnimationId = requestAnimationFrame(animate);
 
         // Check global drone state directly
+        // Use window.droneActive to check if drone mode is on
         const isDroneActive = window.droneActive === true;
 
-        // Handle intro camera animation
-        if (!introComplete) {
+        // Handle intro camera animation (only if drone is not active)
+        if (!introComplete && !isDroneActive) {
             const elapsed = Date.now() - introStartTime;
             const progress = Math.min(elapsed / introDuration, 1);
             const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
@@ -178,29 +181,37 @@ function initCityScene() {
                 const endPos = new THREE.Vector3(15, 25, 30);
                 camera.position.lerpVectors(startPos, endPos, easeProgress);
                 camera.lookAt(0, 0, 0);
+                // Ensure controls target is updated during intro
+                controls.target.set(0, 0, 0);
+                controls.update();
             } else {
                 introComplete = true;
-                if (!isDroneActive) controls.enabled = true; // Enable controls only if intro done AND drone inactive
+                controls.enabled = true; // Enable controls only when intro done AND drone inactive
             }
-        } else if (!isDroneActive) { // Only update OrbitControls/boundaries if intro done AND drone inactive
+        } else if (!isDroneActive) { // If intro done OR skipped, AND drone inactive
             if (controls.enabled) { // Check if controls are enabled before updating
                 controls.update();
                 // Apply camera boundary restrictions
                 boundaryController.update();
             }
-        } else { // If drone is active, ensure OrbitControls are disabled
-            controls.enabled = false;
         }
+        // Note: Camera movement during drone mode is handled by llmDroneTransport.js
 
         // Call animation functions for other components (like lighting)
         if (window.cityAnimateLightsFn) {
             window.cityAnimateLightsFn();
         }
 
-        // Render the scene
-        renderer.render(scene, camera);
+        // Render the scene only if the renderer exists
+        if (renderer) {
+             renderer.render(scene, camera);
+        }
     }
 
+    // Cancel previous animation frame if exists
+    if (mainAnimationId) {
+        cancelAnimationFrame(mainAnimationId);
+    }
     animate(); // Start the main animation loop
 }
 
@@ -329,4 +340,14 @@ export function toggleConsolePanel() {
     } else {
         consolePanel.classList.add('hidden');
     }
+}
+
+// Function to cleanup the scene if needed (e.g., on full reload/reset)
+export function cleanupCityScene() {
+    if (mainAnimationId) {
+        cancelAnimationFrame(mainAnimationId);
+        mainAnimationId = null;
+    }
+    // TODO: Add disposal of scene objects, renderer, controls if needed
+    console.log("City scene animation stopped.");
 }
