@@ -232,6 +232,11 @@ function getIconForCategory(category) {
     }
 }
 
+// Get a placeholder image URL based on category
+function getPlaceholderImageForCategory(category) {
+    return '';
+}
+
 // Set up event listeners for the Assets UI
 function setupAssetsEventListeners() {
     // Close button
