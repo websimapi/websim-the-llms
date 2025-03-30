@@ -3,6 +3,7 @@ import { hidePlotInfoPanel } from './plotHoverInfo.js';
 import { playTrack } from './musicPlayer.js';
 import { showConfirmationModal } from './confirmationModal.js';
 import { deactivateDroneTransport } from './llmDroneTransport.js';
+import * as THREE from 'three'; // Add import for THREE.js
 
 // Sample asset categories and data
 const assetCategories = [
