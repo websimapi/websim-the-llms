@@ -109,5 +109,35 @@ export const cityData = {
             maxCapacity: 8,
             occupants: []
         }
-    ]
+    ],
+    updatePlotOccupancy(plotId, llmId, addOccupant = true) {
+        const plot = this.lots.find(lot => lot.id === plotId);
+        if (!plot) return false;
+        
+        // Initialize occupants array if it doesn't exist
+        if (!plot.occupants) {
+            plot.occupants = [];
+        }
+        
+        if (addOccupant) {
+            // Add occupant if not already in the plot
+            if (!plot.occupants.includes(llmId)) {
+                plot.occupants.push(llmId);
+                // Also call llmDataManager to update the LLM's status
+                if (typeof llmDataManager !== 'undefined') {
+                    llmDataManager.placeLLMInPlot(llmId, plotId);
+                }
+                return true;
+            }
+        } else {
+            // Remove occupant
+            const index = plot.occupants.indexOf(llmId);
+            if (index !== -1) {
+                plot.occupants.splice(index, 1);
+                return true;
+            }
+        }
+        
+        return false;
+    }
 };

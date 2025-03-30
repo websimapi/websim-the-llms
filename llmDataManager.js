@@ -21,6 +21,7 @@ export const llmDataManager = {
         // Add a unique ID and creation timestamp
         llmData.id = Date.now() + Math.random().toString(36).substr(2, 9);
         llmData.createdAt = new Date().toISOString();
+        llmData.placedInPlot = false; // Initialize placement status
         
         // Add to array
         this.createdLLMs.push(llmData);
@@ -67,6 +68,18 @@ export const llmDataManager = {
             }
             
             this.createdLLMs[index] = llmData;
+            this.saveToLocalStorage();
+            return true;
+        }
+        return false;
+    },
+    
+    // Place an LLM in a plot
+    placeLLMInPlot(llmId, plotId) {
+        const llm = this.getLLMById(llmId);
+        if (llm) {
+            llm.placedInPlot = true;
+            llm.plotId = plotId;
             this.saveToLocalStorage();
             return true;
         }
