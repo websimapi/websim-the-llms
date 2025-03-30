@@ -14,6 +14,7 @@ export function setupUIInteractions() {
 function setupMenuButtons() {
     const createLLMButton = document.querySelector('.create-llm-btn');
     const moveLLMButton = document.querySelector('.move-llm-btn');
+    const assetsUIButton = document.querySelector('.assets-ui-btn'); // New button
 
     if (createLLMButton) {
         createLLMButton.addEventListener('click', () => {
@@ -52,6 +53,26 @@ function setupMenuButtons() {
             }
         });
     }
+
+    // Add listener for the new Assets UI button
+    if (assetsUIButton) {
+        assetsUIButton.addEventListener('click', () => {
+            if (window.droneActive) {
+                showConfirmationModal(
+                    "Cancel drone transport to open the Assets UI?",
+                    () => { // onConfirm
+                        deactivateDroneTransport(true);
+                        openAssetsUI();
+                    },
+                    () => { // onCancel
+                        console.log("Assets UI action cancelled due to active drone transport.");
+                    }
+                );
+            } else {
+                openAssetsUI();
+            }
+        });
+    }
 }
 
 // Helper function to open Create LLM UI
@@ -78,6 +99,27 @@ function openCollectionViewUI() {
         module.setupLLMCollectionView();
         document.getElementById('llm-collection-ui').classList.add('active');
     }).catch(err => console.error("Error loading collection view:", err));
+}
+
+// Placeholder function to open Assets UI
+function openAssetsUI() {
+    console.log('Opening Assets UI');
+    hidePlotInfoPanel(); // Hide plot info when opening any menu
+
+    // --- Music Change ---
+    // Decide what music should play here, maybe keep city music?
+    // playTrack('assets_ui_music'); // Example
+    // --- End Music Change ---
+
+    // TODO: Implement the actual Assets UI panel opening logic
+    // For now, just log a message
+    alert('Assets UI Panel - Not Implemented Yet');
+
+    // Example: Load Assets UI module and initialize
+    // import('./assetsUIManager.js').then(module => {
+    //     module.setupAssetsUI();
+    //     document.getElementById('assets-ui-panel').classList.add('active');
+    // }).catch(err => console.error("Error loading assets UI:", err));
 }
 
 // Setup console toggle key listener
