@@ -162,7 +162,7 @@ body {
     justify-content: flex-start;
     align-items: center;
     padding: 15px;
-    background-color: rgba(144, 238, 144, 0.5);
+    background-color: rgba(60, 179, 113, 0.5);
     pointer-events: auto;
     border-bottom: 1px solid rgba(60, 179, 113, 0.3);
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -971,7 +971,7 @@ input:checked + .llm-toggle-slider:before {
 .empty-collection {
     color: #aaa;
     text-align: center;
-    padding: 50px 0;
+    padding: 50px;
 }
 
 .collection-footer {
