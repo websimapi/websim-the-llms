@@ -561,7 +561,7 @@ input:checked + .llm-toggle-slider:before {
 .assets-ui-btn {
     background: none;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     border-radius: 50%;
     width: 80px;
     height: 80px;
@@ -575,13 +575,17 @@ input:checked + .llm-toggle-slider:before {
     transform: scale(1.05);
 }
 
+.assets-ui-btn .asset-icon {
+     overflow: visible;
+}
+
 .assets-ui-btn .asset-icon .lid {
     transform-origin: bottom left;
     transition: transform 0.3s ease-out;
 }
 
 .assets-ui-btn:hover .asset-icon .lid {
-    transform: rotate(-45deg) translate(-2px, -2px); /* Lid opening effect */
+    transform: rotate(-45deg) translate(-2px, -2px);
 }
 
 /* Create LLM UI Styles */
