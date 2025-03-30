@@ -1270,9 +1270,8 @@ input:checked + .llm-toggle-slider:before {
 /* Styles for the SVG elements */
 .assets-icon .box {
     fill: none;
- 
     stroke: currentColor;
-    stroke-width: 2;
+    stroke-width: 1.5; 
     stroke-linecap: round;
     stroke-linejoin: round;
     transition: all 0.3s ease;
@@ -1280,41 +1279,48 @@ input:checked + .llm-toggle-slider:before {
 
 .assets-icon .flap {
     fill: none;
- 
     stroke: currentColor;
-    stroke-width: 2;
+    stroke-width: 1.5; 
     stroke-linecap: round;
     stroke-linejoin: round;
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* Initially hide the closed flaps and the open flaps for medium/small boxes */
 .assets-icon .flap-medium,
 .assets-icon .flap-small {
     opacity: 0;
-    transform-origin: 50% 100%; 
-    transform: rotateX(90deg) translateY(-2px); 
+    transform-origin: bottom; 
+    transform: rotateX(80deg) translateY(2px) translateZ(-1px); 
+    transition: opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); 
 }
 
-/* Initially show the closed lines for medium/small boxes */
 .assets-icon .flap-medium-closed,
 .assets-icon .flap-small-closed {
     opacity: 1;
     stroke: currentColor;
-    stroke-width: 2;
-    transition: opacity 0.3s ease;
+    stroke-width: 1.5; 
+    transition: opacity 0.2s ease-in; 
 }
 
-/* On hover: show the open flaps, hide the closed lines */
 .assets-btn:hover .assets-icon .flap-medium,
 .assets-btn:hover .assets-icon .flap-small {
     opacity: 1;
-    transform: rotateX(0deg) translateY(0);
+    transform: rotateX(0deg) translateY(0) translateZ(0); 
 }
 
 .assets-btn:hover .assets-icon .flap-medium-closed,
 .assets-btn:hover .assets-icon .flap-small-closed {
     opacity: 0;
+    transition-delay: 0s; 
+}
+
+.assets-btn:hover .assets-icon .box {
+     stroke-width: 1.8;
+     filter: drop-shadow(0 0 1px rgba(255,255,255,0.3));
+}
+
+.assets-icon .flap-large {
+    opacity: 1;
 }
 
 @keyframes fireworks {

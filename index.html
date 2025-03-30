@@ -84,40 +84,34 @@
                 <!-- New Assets Button -->
                 <button class="menu-button assets-btn" id="assets-btn">
                      <svg class="assets-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="56" height="56">
-                        <defs>
-                            <style>
-                                .box { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: all 0.3s ease; }
-                                .flap { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: opacity 0.3s ease, transform 0.3s ease; }
-                                .flap-medium, .flap-small { opacity: 0; transform-origin: bottom; transform: rotateX(90deg); } /* Initially closed */
-                                .assets-btn:hover .flap-medium, .assets-btn:hover .flap-small { opacity: 1; transform: rotateX(0deg); }
-                                .assets-btn:hover .box-medium, .assets-btn:hover .box-small { /* Optional: slight visual change on hover */ }
-                            </style>
-                        </defs>
-                        <!-- Large Box (Open) -->
-                        <g class="box-large-group">
-                            <rect class="box box-large" x="5" y="20" width="30" height="25" />
-                            <polyline class="flap flap-large" points="5 20 10 15 30 15 35 20" />
-                            <line class="flap flap-large" x1="10" y1="15" x2="10" y2="25" />
-                            <line class="flap flap-large" x1="30" y1="15" x2="30" y2="25" />
-                        </g>
-                        <!-- Medium Box (Initially Closed) -->
-                        <g class="box-medium-group" transform="translate(25, 5)">
-                            <rect class="box box-medium" x="5" y="20" width="20" height="18" />
-                            <polyline class="flap flap-medium" points="5 20 8 17 22 17 25 20" />
-                             <line class="flap flap-medium" x1="8" y1="17" x2="8" y2="24" />
-                             <line class="flap flap-medium" x1="22" y1="17" x2="22" y2="24" />
-                            <line class="flap flap-medium-closed" x1="5" y1="20" x2="25" y2="20" />
-                        </g>
-                        <!-- Small Box (Initially Closed) -->
-                        <g class="box-small-group" transform="translate(35, 18)">
-                            <rect class="box box-small" x="5" y="20" width="15" height="12" />
-                            <polyline class="flap flap-small" points="5 20 7 18 18 18 20 20" />
-                             <line class="flap flap-small" x1="7" y1="18" x2="7" y2="23" />
-                             <line class="flap flap-small" x1="18" y1="18" x2="18" y2="23" />
-                            <line class="flap flap-small-closed" x1="5" y1="20" x2="20" y2="20" />
-                        </g>
-                    </svg>
-                </button>
+                         <!-- Large Box (Always Open) -->
+                         <g class="box-large-group">
+                             <path class="box" d="M5 45 V20 H35 V45 Z M5 20 L20 10 H50 L35 20 M50 10 V35 L35 45" stroke-linejoin="round" />
+                             <path class="flap flap-large" d="M5 20 L20 10 M50 10 L35 20" />
+                             <path class="flap flap-large" d="M20 10 L20 30 L35 45" /> <!-- Back corner line -->
+                         </g>
+                         <!-- Medium Box -->
+                         <g class="box-medium-group" transform="translate(22, 8)">
+                             <path class="box box-medium" d="M5 40 V22 H25 V40 Z M5 22 L15 15 H35 L25 22 M35 15 V33 L25 40" stroke-linejoin="round" />
+                             <!-- Closed Lines -->
+                             <line class="flap flap-medium-closed" x1="5" y1="22" x2="25" y2="22" />
+                             <line class="flap flap-medium-closed" x1="15" y1="22" x2="30" y2="18.5" />
+                             <!-- Open Flaps -->
+                             <path class="flap flap-medium" d="M5 22 L15 15 M35 15 L25 22" />
+                             <line class="flap flap-medium" x1="15" y1="15" x2="15" y2="28" />
+                         </g>
+                         <!-- Small Box -->
+                         <g class="box-small-group" transform="translate(38, 22)">
+                             <path class="box box-small" d="M5 35 V20 H20 V35 Z M5 20 L12.5 15 H27.5 L20 20 M27.5 15 V30 L20 35" stroke-linejoin="round" />
+                              <!-- Closed Lines -->
+                             <line class="flap flap-small-closed" x1="5" y1="20" x2="20" y2="20" />
+                             <line class="flap flap-small-closed" x1="12.5" y1="20" x2="23.75" y2="17.5" />
+                             <!-- Open Flaps -->
+                             <path class="flap flap-small" d="M5 20 L12.5 15 M27.5 15 L20 20" />
+                             <line class="flap flap-small" x1="12.5" y1="15" x2="12.5" y2="25" />
+                         </g>
+                     </svg>
+                 </button>
             </div>
             
             <div id="console-panel" class="hidden">
