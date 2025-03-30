@@ -21,7 +21,7 @@ const sampleAssets = [
     { id: 1, name: 'Modern House', category: 'buildings', image: '' },
     { id: 2, name: 'Office Building', category: 'buildings', image: '' },
     { id: 3, name: 'Robot Character', category: 'characters', image: '', isDefaultRobot: true },
-    { id: 4, name: 'Transport Drone', category: 'vehicles', image: '', isDroneModel: true },
+    { id: 4, name: 'Transport Drone', category: 'vehicles', image: '', isDrone: true }, // Added Drone asset
     { id: 5, name: 'Car', category: 'vehicles', image: '' },
     { id: 6, name: 'Office Chair', category: 'furniture', image: '' },
     { id: 7, name: 'Desk', category: 'furniture', image: '' },
@@ -151,26 +151,24 @@ function createAssetItemElement(asset) {
     const assetItem = document.createElement('div');
     assetItem.className = 'asset-item';
     assetItem.dataset.id = asset.id;
-    
-    // For default robot character or drone, render a snapshot
+
+    // Determine content based on asset type
     let imageContent = '';
     if (asset.isDefaultRobot) {
-        // Add a canvas for rendering the default robot
         imageContent = `<canvas class="robot-preview-canvas" width="180" height="180"></canvas>`;
         // Schedule rendering after the element is added to DOM
         setTimeout(() => renderDefaultRobotPreview(assetItem.querySelector('.robot-preview-canvas')), 50);
-    } else if (asset.isDroneModel) {
-        // Add a canvas for rendering the drone
+    } else if (asset.isDrone) { // Check for the drone flag
         imageContent = `<canvas class="drone-preview-canvas" width="180" height="180"></canvas>`;
-        // Schedule rendering after the element is added to DOM
+        // Schedule rendering for the drone
         setTimeout(() => renderDronePreview(assetItem.querySelector('.drone-preview-canvas')), 50);
     } else {
         // Use icon for other assets
-        imageContent = `<div style="background-color: #444; display: flex; justify-content: center; align-items: center;">
+        imageContent = `<div style="background-color: #444; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
             ${getIconForCategory(asset.category)}
         </div>`;
     }
-    
+
     assetItem.innerHTML = `
         <div class="asset-image-container">
             <div class="asset-header">
@@ -191,7 +189,7 @@ function createAssetItemElement(asset) {
             </button>
         </div>
     `;
-    
+
     // Add click event
     assetItem.addEventListener('click', () => {
         // Select the asset
@@ -200,7 +198,7 @@ function createAssetItemElement(asset) {
         });
         assetItem.classList.add('selected');
     });
-    
+
     return assetItem;
 }
 
@@ -248,132 +246,128 @@ function renderDefaultRobotPreview(canvas) {
     });
 }
 
-// Function to render a drone preview
-function renderDronePreview(canvas) {
-    if (!canvas) return;
-    
-    // Create a temporary scene, camera, and renderer
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x333333);
-    
-    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-    camera.position.set(0, 0.5, 2.5);
-    camera.lookAt(0, 0.5, 0);
-    
-    const renderer = new THREE.WebGLRenderer({ 
-        canvas: canvas,
-        antialias: true 
-    });
-    renderer.setSize(canvas.width, canvas.height);
-    
-    // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(1, 2, 2);
-    scene.add(directionalLight);
-    
-    // Create drone model
-    const droneGroup = createDroneModel();
-    scene.add(droneGroup);
-    
-    // Add slight rotation for better viewing angle
-    droneGroup.rotation.y = Math.PI / 4;
-    
-    // Render the scene
-    renderer.render(scene, camera);
-    
-    // Cleanup
-    setTimeout(() => {
-        scene.remove(droneGroup);
-        renderer.dispose();
-    }, 200);
-}
+// New function to create just the drone model for preview
+function createDronePreviewModel(THREE) {
+    const droneModel = new THREE.Group();
+    droneModel.name = "DronePreviewModel";
 
-// Function to create the drone model
-function createDroneModel() {
-    const group = new THREE.Group();
-    
-    // Drone body colors - matching the drone transport UI
-    const bodyColor = 0xffffff;  // White
-    const accentColor = 0xcccccc;  // Light gray
-    const darkAccentColor = 0x888888;  // Dark gray
-    
-    // Create body materials
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: bodyColor, metalness: 0.6, roughness: 0.4 });
-    const armMaterial = new THREE.MeshStandardMaterial({ color: accentColor, metalness: 0.5, roughness: 0.5 });
-    const hubMaterial = new THREE.MeshStandardMaterial({ color: darkAccentColor, metalness: 0.8, roughness: 0.2 });
-    const bladeMaterial = new THREE.MeshStandardMaterial({ 
-        color: accentColor, 
-        metalness: 0.4, 
-        roughness: 0.6, 
-        side: THREE.DoubleSide
-    });
-    
-    // Create drone body
-    const bodyRadius = 0.3;
-    const bodyHeight = 0.2;
-    const body = new THREE.Mesh(
-        new THREE.CylinderGeometry(bodyRadius * 0.8, bodyRadius, bodyHeight, 12),
+    const DRONE_BASE_COLOR = 0xffffff;
+    const DRONE_ACCENT_COLOR = 0xcccccc;
+    const DRONE_DARK_ACCENT_COLOR = 0x888888;
+
+    const bodyMaterial = new THREE.MeshStandardMaterial({ color: DRONE_BASE_COLOR, metalness: 0.6, roughness: 0.4 });
+    const armMaterial = new THREE.MeshStandardMaterial({ color: DRONE_ACCENT_COLOR, metalness: 0.5, roughness: 0.5 });
+    const propellerHubMaterial = new THREE.MeshStandardMaterial({ color: DRONE_DARK_ACCENT_COLOR, metalness: 0.8, roughness: 0.2 });
+    const propellerBladeMaterial = new THREE.MeshStandardMaterial({ color: DRONE_ACCENT_COLOR, metalness: 0.4, roughness: 0.6, side: THREE.DoubleSide });
+
+    const centralBodyRadius = 0.3;
+    const centralBodyHeight = 0.2;
+    const centralBody = new THREE.Mesh(
+        new THREE.CylinderGeometry(centralBodyRadius * 0.8, centralBodyRadius, centralBodyHeight, 12),
         bodyMaterial
     );
-    body.castShadow = true;
-    group.add(body);
-    
-    // Add arms and propellers
+    droneModel.add(centralBody);
+
     const propDistance = 1.0;
+    const armWidth = 0.08;
+    const armHeight = 0.08;
+    const armLength = propDistance;
     const angleRad = Math.PI / 4;
+
     const propellerPositions = [
         { x: propDistance * Math.sin(angleRad), z: -propDistance * Math.cos(angleRad) },
         { x: -propDistance * Math.sin(angleRad), z: -propDistance * Math.cos(angleRad) },
         { x: -propDistance * Math.sin(angleRad), z: propDistance * Math.cos(angleRad) },
         { x: propDistance * Math.sin(angleRad), z: propDistance * Math.cos(angleRad) }
     ];
-    
-    // Add arms and propellers
-    propellerPositions.forEach(pos => {
-        // Create arm
-        const armRotation = Math.atan2(pos.x, pos.z);
-        const arm = new THREE.Mesh(
-            new THREE.BoxGeometry(0.08, 0.08, propDistance),
-            armMaterial
-        );
-        arm.position.set(pos.x / 2, 0, pos.z / 2);
-        arm.rotation.y = armRotation;
-        group.add(arm);
-        
-        // Create propeller hub
-        const hub = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.1, 0.1, 0.08, 8),
-            hubMaterial
-        );
-        hub.position.set(pos.x, 0.08, pos.z);
-        group.add(hub);
-        
-        // Create propeller blades as crossed planes
-        const blades = new THREE.Group();
-        const blade1 = new THREE.Mesh(
-            new THREE.BoxGeometry(0.6, 0.01, 0.1),
-            bladeMaterial
-        );
-        blades.add(blade1);
-        
-        const blade2 = new THREE.Mesh(
-            new THREE.BoxGeometry(0.6, 0.01, 0.1),
-            bladeMaterial
-        );
-        blade2.rotation.y = Math.PI / 2;
-        blades.add(blade2);
-        
-        blades.position.set(pos.x, 0.13, pos.z);
-        group.add(blades);
+
+    propellerPositions.forEach((propPos) => {
+        const armRotationY = Math.atan2(propPos.x, propPos.z);
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(armWidth, armHeight, armLength), armMaterial);
+        arm.position.set(propPos.x / 2, 0, propPos.z / 2);
+        arm.rotation.y = armRotationY;
+        droneModel.add(arm);
+
+        const propeller = createPreviewPropeller(THREE, propellerHubMaterial, propellerBladeMaterial);
+        propeller.position.set(propPos.x, armHeight / 2 + 0.05, propPos.z);
+        droneModel.add(propeller);
     });
-    
-    // Lower the entire model to fit in frame
-    group.position.y = -0.3;
-    
-    return group;
+
+    return droneModel;
+}
+
+// Helper to create propeller for preview drone
+function createPreviewPropeller(THREE, hubMaterial, bladeMaterial) {
+    const propellerGroup = new THREE.Group();
+    propellerGroup.name = "Propeller";
+
+    const hubRadius = 0.1;
+    const hubHeight = 0.08;
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(hubRadius, hubRadius, hubHeight, 8), hubMaterial);
+    propellerGroup.add(hub);
+
+    const blades = new THREE.Group();
+    blades.name = "Blades";
+    propellerGroup.add(blades);
+
+    const bladeLength = 0.6;
+    const bladeWidth = 0.1;
+    const bladeThickness = 0.01;
+    const bladeGeometry = new THREE.BoxGeometry(bladeLength, bladeThickness, bladeWidth);
+
+    const blade1 = new THREE.Mesh(bladeGeometry, bladeMaterial);
+    blades.add(blade1);
+    const blade2 = new THREE.Mesh(bladeGeometry, bladeMaterial);
+    blade2.rotation.y = Math.PI / 2;
+    blades.add(blade2);
+
+    blades.position.y = hubHeight / 2 + bladeThickness / 2;
+
+    return propellerGroup;
+}
+
+// New function to render the drone preview
+function renderDronePreview(canvas) {
+    if (!canvas) return;
+
+    // Create a temporary scene, camera, and renderer
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x333333);
+
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    camera.position.set(0, 1.5, 4.5); // Slightly different angle/distance for drone
+    camera.lookAt(0, 0.2, 0); // Look slightly lower
+
+    const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true
+    });
+    renderer.setSize(canvas.width, canvas.height);
+
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    directionalLight.position.set(2, 3, 3);
+    scene.add(directionalLight);
+
+    // Create the drone model
+    const droneModel = createDronePreviewModel(THREE);
+
+    // Position the drone slightly higher
+    droneModel.position.y = 0.3;
+    droneModel.rotation.y = -Math.PI / 6; // Slight rotation for better view
+
+    scene.add(droneModel);
+
+    // Render the scene
+    renderer.render(scene, camera);
+
+    // Cleanup
+    setTimeout(() => {
+        scene.remove(droneModel);
+        renderer.dispose();
+    }, 200);
 }
 
 // Populate the asset grid based on selected category
@@ -399,67 +393,36 @@ function populateAssetGrid(categoryId) {
     });
 }
 
-// Get a placeholder image URL based on category
-function getPlaceholderImageForCategory(category) {
-    return '';
-}
-
-// Get a placeholder icon based on asset category
+// Get a placeholder icon based on asset category - updated character icon
 function getIconForCategory(category) {
     switch(category) {
         case 'buildings':
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
-                <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm0-4H5V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm0-4H5V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
             </svg>`;
-        case 'characters':
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
-                <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
+        case 'characters': // Updated icon
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
             </svg>`;
         case 'vehicles':
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
-                <g transform="translate(0,1)">
-                    <path d="M12,12c-1.7,0-3,1.3-3,3s1.3,3,3,3s3-1.3,3-3S13.7,12,12,12z M12,16c-0.6,0-1-0.4-1-1s0.4-1,1-1s1,0.4,1,1S12.6,16,12,16z"/>
-                    <circle cx="12" cy="13.5" r="0.5"/>
-                    <rect x="6.5" y="11.5" width="11" height="1" rx="0.5"/>
-                    <rect x="11.5" y="7" width="1" height="11" rx="0.5"/>
-                    <g class="propeller" style="transform-origin: 6.5px 11.5px;">
-                        <circle cx="6.5" cy="11.5" r="1"/>
-                        <ellipse cx="6.5" cy="11.5" rx="3" ry="0.5"/>
-                        <ellipse cx="6.5" cy="11.5" rx="0.5" ry="3"/>
-                    </g>
-                    <g class="propeller" style="transform-origin: 17.5px 11.5px;">
-                        <circle cx="17.5" cy="11.5" r="1"/>
-                        <ellipse cx="17.5" cy="11.5" rx="3" ry="0.5"/>
-                        <ellipse cx="17.5" cy="11.5" rx="0.5" ry="3"/>
-                    </g>
-                    <g class="propeller" style="transform-origin: 12px 7.5px;">
-                        <circle cx="12" cy="7.5" r="1"/>
-                        <ellipse cx="12" cy="7.5" rx="3" ry="0.5"/>
-                        <ellipse cx="12" cy="7.5" rx="0.5" ry="3"/>
-                    </g>
-                    <g class="propeller" style="transform-origin: 12px 17.5px;">
-                        <circle cx="12" cy="17.5" r="1"/>
-                        <ellipse cx="12" cy="17.5" rx="3" ry="0.5"/>
-                        <ellipse cx="12" cy="17.5" rx="0.5" ry="3"/>
-                    </g>
-                    <rect x="9" y="20" width="6" height="3" rx="1"/>
-                </g>
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
             </svg>`;
         case 'furniture':
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20 8V6c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v2c-1.1 0-2 .9-2 2v10h20V10c0-1.1-.9-2-2-2zM6 6h12v2H6V6zm14 12H4v-3h2v1h12v-1h2v3z"/>
             </svg>`;
         case 'decorations':
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z"/>
                 <path d="M12 17l5-5h-3V8h-4v4H7z"/>
             </svg>`;
         case 'nature':
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17 12h2L12 3 5 12h2v4H4v2h16v-2h-3v-4z"/>
             </svg>`;
         default:
-            return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
                 <path d="M18 9l-1.4-1.4-5.6 5.6-2.6-2.6L7 12l4 4z"/>
             </svg>`;
