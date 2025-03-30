@@ -9,7 +9,6 @@ export function setupUIInteractions() {
     setupMenuButtons();
     setupConsoleToggle();
     setupCameraControls();
-    setupTopMenuToggle(); // Add this line
 }
 
 function setupMenuButtons() {
@@ -190,30 +189,4 @@ function setupDataExportImport(exportButton, importButton) {
              if(consoleContent) consoleContent.innerHTML += `<p>Import requested...</p>`;
          });
      }
-}
-
-// Setup the top menu toggle button
-function setupTopMenuToggle() {
-    const toggleButton = document.querySelector('.top-menu-toggle');
-    const topMenu = document.querySelector('.top-menu');
-    const arrowSpan = toggleButton.querySelector('span'); // Get the span containing the arrow
-
-    if (toggleButton && topMenu && arrowSpan) {
-        toggleButton.addEventListener('click', () => {
-            const isCollapsed = topMenu.classList.toggle('collapsed');
-
-            // Update arrow direction
-            if (isCollapsed) {
-                arrowSpan.className = 'arrow-down';
-                toggleButton.title = "Show Menu";
-            } else {
-                arrowSpan.className = 'arrow-up';
-                toggleButton.title = "Hide Menu";
-            }
-        });
-
-        // Set initial state (assuming it starts expanded)
-        arrowSpan.className = 'arrow-up';
-        toggleButton.title = "Hide Menu";
-    }
 }
