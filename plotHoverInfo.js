@@ -260,6 +260,14 @@ function showInfoPanel(plot, clientX, clientY) {
         }
     }
 
+    // Check which requirements are met by occupants
+    const metRequirements = new Set();
+    occupantLLMs.forEach(llm => {
+        if (plotData.requirements && plotData.requirements.includes(llm.model)) {
+            metRequirements.add(llm.model);
+        }
+    });
+
     // Build HTML content
     let htmlContent = `
         <div class="plot-info-header">${plotData.name}</div>
@@ -285,6 +293,10 @@ function showInfoPanel(plot, clientX, clientY) {
                 <span class="plot-info-value ${statusClass}">
                     ${statusText}
                 </span>
+            </div>
+            <div class="plot-info-row">
+                <span class="plot-info-label">Occupancy:</span>
+                <span class="plot-info-value">${occupantCount}/${maxCapacity}</span>
             </div>`;
 
     // Add requirements section for commercial plots
