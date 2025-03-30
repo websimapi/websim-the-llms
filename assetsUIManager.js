@@ -19,7 +19,7 @@ const assetCategories = [
 const sampleAssets = [
     { id: 1, name: 'Modern House', category: 'buildings', image: '' },
     { id: 2, name: 'Office Building', category: 'buildings', image: '' },
-    { id: 3, name: 'Robot Character', category: 'characters', image: '' },
+    { id: 3, name: 'Robot Character', category: 'characters', image: '', isDefaultRobot: true },
     { id: 4, name: 'Drone', category: 'vehicles', image: '' },
     { id: 5, name: 'Car', category: 'vehicles', image: '' },
     { id: 6, name: 'Office Chair', category: 'furniture', image: '' },
@@ -140,6 +140,100 @@ function populateCategorySidebar() {
     });
 }
 
+// Update the function to render a single asset item for the asset grid
+function createAssetItemElement(asset) {
+    const assetItem = document.createElement('div');
+    assetItem.className = 'asset-item';
+    assetItem.dataset.id = asset.id;
+    
+    // For default robot character, render a snapshot
+    let imageContent = '';
+    if (asset.isDefaultRobot) {
+        // Add a canvas for rendering the default robot
+        imageContent = `<canvas class="robot-preview-canvas" width="180" height="180"></canvas>`;
+        // Schedule rendering after the element is added to DOM
+        setTimeout(() => renderDefaultRobotPreview(assetItem.querySelector('.robot-preview-canvas')), 50);
+    } else {
+        // Use icon for other assets
+        imageContent = `<div style="background-color: #444; display: flex; justify-content: center; align-items: center;">
+            ${getIconForCategory(asset.category)}
+        </div>`;
+    }
+    
+    assetItem.innerHTML = `
+        <div class="asset-image-container">
+            <div class="asset-image">
+                ${imageContent}
+            </div>
+        </div>
+        <div class="asset-info">
+            <h3 class="asset-name">${asset.name}</h3>
+        </div>
+        <div class="asset-actions">
+            <button class="asset-action-btn" title="Place in world">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+            </button>
+        </div>
+    `;
+    
+    // Add click event
+    assetItem.addEventListener('click', () => {
+        // Select the asset
+        document.querySelectorAll('.asset-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        assetItem.classList.add('selected');
+    });
+    
+    return assetItem;
+}
+
+// Function to render a default robot preview
+function renderDefaultRobotPreview(canvas) {
+    if (!canvas) return;
+    
+    // Create a temporary scene, camera, and renderer
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x333333);
+    
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+    camera.position.set(0, 1.5, 3.5);
+    camera.lookAt(0, 1, 0);
+    
+    const renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas,
+        antialias: true 
+    });
+    renderer.setSize(canvas.width, canvas.height);
+    
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(1, 2, 2);
+    scene.add(directionalLight);
+    
+    // Import and create the default robot model
+    import('./llmModelCreationRenderer.js').then(module => {
+        const robotModel = module.createRobotModel(scene, '#3cb371', 'modern').model;
+        
+        // Position the robot
+        robotModel.position.y = 0;
+        
+        // Render the scene
+        renderer.render(scene, camera);
+        
+        // Cleanup
+        setTimeout(() => {
+            scene.remove(robotModel);
+            renderer.dispose();
+        }, 200);
+    });
+}
+
 // Populate the asset grid based on selected category
 function populateAssetGrid(categoryId) {
     const assetsGrid = document.getElementById('assets-grid');
@@ -158,47 +252,7 @@ function populateAssetGrid(categoryId) {
     }
     
     filteredAssets.forEach(asset => {
-        const assetItem = document.createElement('div');
-        assetItem.className = 'asset-item';
-        assetItem.dataset.id = asset.id;
-        
-        // Use a placeholder for image
-        const imageUrl = asset.image || getPlaceholderImageForCategory(asset.category);
-        
-        // Special handling for Robot Character
-        let iconContent = getIconForCategory(asset.category);
-        if (asset.name === 'Robot Character') {
-            iconContent = getRobotCharacterSVG();
-            assetItem.classList.add('robot-character');
-        }
-        
-        assetItem.innerHTML = `
-            <div class="asset-image-container">
-                <div class="asset-image" style="background-color: #444; display: flex; justify-content: center; align-items: center;">
-                    ${iconContent}
-                </div>
-            </div>
-            <div class="asset-info">
-                <h3 class="asset-name">${asset.name}</h3>
-            </div>
-            <div class="asset-actions">
-                <button class="asset-action-btn" title="Place in world">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                    </svg>
-                </button>
-            </div>
-        `;
-        
-        // Add click event
-        assetItem.addEventListener('click', () => {
-            // Select the asset
-            document.querySelectorAll('.asset-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            assetItem.classList.add('selected');
-        });
-        
+        const assetItem = createAssetItemElement(asset);
         assetsGrid.appendChild(assetItem);
     });
 }
@@ -208,21 +262,12 @@ function getPlaceholderImageForCategory(category) {
     return '';
 }
 
-// Add robot character icon specifically when needed
-function getRobotCharacterSVG() {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50" height="50" fill="#3cb371">
-        <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
-        <circle cx="10.5" cy="11.5" r="0.8" fill="#00ccff"/>
-        <circle cx="15.5" cy="11.5" r="0.8" fill="#00ccff"/>
-    </svg>`;
-}
-
 // Get a placeholder icon based on asset category
 function getIconForCategory(category) {
     switch(category) {
         case 'buildings':
             return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
-                <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
+                <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm0-4H5V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
             </svg>`;
         case 'characters':
             return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
@@ -310,38 +355,7 @@ function filterAssetsBySearch(searchTerm) {
     
     // Repopulate with filtered assets
     filteredAssets.forEach(asset => {
-        // Asset creation code (same as in populateAssetGrid)
-        const assetItem = document.createElement('div');
-        assetItem.className = 'asset-item';
-        assetItem.dataset.id = asset.id;
-        
-        const imageUrl = asset.image || getPlaceholderImageForCategory(asset.category);
-        
-        // Special handling for Robot Character
-        let iconContent = getIconForCategory(asset.category);
-        if (asset.name === 'Robot Character') {
-            iconContent = getRobotCharacterSVG();
-            assetItem.classList.add('robot-character');
-        }
-        
-        assetItem.innerHTML = `
-            <div class="asset-image-container">
-                <div class="asset-image" style="background-color: #444; display: flex; justify-content: center; align-items: center;">
-                    ${iconContent}
-                </div>
-            </div>
-            <div class="asset-info">
-                <h3 class="asset-name">${asset.name}</h3>
-            </div>
-            <div class="asset-actions">
-                <button class="asset-action-btn" title="Place in world">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                    </svg>
-                </button>
-            </div>
-        `;
-        
+        const assetItem = createAssetItemElement(asset);
         assetsGrid.appendChild(assetItem);
     });
 }
