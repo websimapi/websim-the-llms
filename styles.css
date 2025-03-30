@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Comic+Sans+MS&family=Arial:wght@400;700&display=swap');
-
 * {
     margin: 0;
     padding: 0;
@@ -164,7 +162,7 @@ body {
     justify-content: flex-start;
     align-items: center;
     padding: 15px;
-    background-color: rgba(60, 179, 113, 0.8);
+    background-color: transparent;
     pointer-events: auto;
 }
 
@@ -181,10 +179,11 @@ body {
     align-items: center;
     gap: 8px;
     transition: all 0.3s ease;
+    filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.4)); 
 }
 
 .menu-button:hover {
-    background-color: #555;
+    filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.6)); 
 }
 
 .resources {
@@ -430,10 +429,16 @@ input:checked + .llm-toggle-slider:before {
     margin: 0 10px;
     padding: 0;
     transform: translateY(0);
+    filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.4));
 }
 
 .circle-button svg {
     display: block;
+}
+
+.circle-button:hover {
+    transform: translateY(-5px) scale(1.05);
+    filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.6));
 }
 
 .main-button {
@@ -467,9 +472,9 @@ input:checked + .llm-toggle-slider:before {
 /* Rainbow hover effect for Create LLM button */
 .create-llm-btn,
 .move-llm-btn {
-    background: none;
+    background: transparent; 
     position: relative;
-    overflow: hidden;
+    overflow: visible; 
     border-radius: 50%; 
     width: 80px;       
     height: 80px;      
@@ -480,8 +485,9 @@ input:checked + .llm-toggle-slider:before {
 
 .create-llm-btn:hover,
 .move-llm-btn:hover {
-    background: none;
+    background: transparent; 
     transform: scale(1.05);
+    filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.6)); 
 }
 
 .create-llm-btn:hover .llm-icon,
@@ -490,37 +496,11 @@ input:checked + .llm-toggle-slider:before {
     animation: rainbow-icon 8s ease infinite;
     transform: perspective(500px) rotateY(10deg) rotateX(5deg); 
     transition: transform 0.3s ease;
-    filter: drop-shadow(0 0 5px rgba(255,255,255,0.7)); 
 }
 
 .create-llm-btn::before,
 .move-llm-btn::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), 
-                transparent 0%, 
-                rgba(255, 0, 0, 0.4) 10%,
-                rgba(255, 165, 0, 0.4) 20%,
-                rgba(255, 255, 0, 0.4) 30%,
-                rgba(0, 128, 0, 0.4) 40%,
-                rgba(0, 0, 255, 0.4) 50%,
-                rgba(75, 0, 130, 0.4) 60%,
-                rgba(128, 0, 128, 0.4) 70%,
-                transparent 100%);
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    z-index: -1;
-    border-radius: 50%; 
-}
-
-.create-llm-btn:hover::before,
-.move-llm-btn:hover::before {
-    opacity: 1;
+    display: none;
 }
 
 .move-llm-btn:hover .propeller {
@@ -559,20 +539,22 @@ input:checked + .llm-toggle-slider:before {
 
 /* Style the new Assets UI button */
 .assets-ui-btn {
-    background: none;
+    background: transparent; 
     position: relative;
-    overflow: visible;
+    overflow: visible; 
     border-radius: 50%;
     width: 80px;
     height: 80px;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, filter 0.3s ease; 
+    filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.4)); 
 }
 
 .assets-ui-btn:hover {
     transform: scale(1.05);
+    filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.6)); 
 }
 
 .assets-ui-btn .asset-icon {
