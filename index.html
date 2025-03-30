@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="droneTransportStyles.css">
     <link rel="stylesheet" href="plotCoinStyles.css">
     <link rel="stylesheet" href="llmTtsStyles.css">
+    <link rel="stylesheet" href="assetsUIStyles.css">
     <script type="importmap">
     {
       "imports": {
@@ -116,12 +117,13 @@
                     <button class="console-close">&times;</button>
                 </div>
                 <div class="console-buttons">
-                    <button class="console-button" id="export-data">Export City Data</button>
-                    <button class="console-button" id="import-data">Import City Data</button>
+                    <button class="console-button" id="toggle-grid">Toggle Grid</button> 
+                    <button class="console-button" id="export-data">Export Data</button> 
+                    <button class="console-button" id="import-data">Import Data</button>
                 </div>
                 <div class="console-content">
-                    <p>Press ~ to toggle this console</p>
-                    <p>Use the buttons above to import or export city data</p>
+                    <p>Press ~ to toggle this console (if not typing in an input field).</p>
+                    <p>Use the buttons above to import or export city data.</p>
                 </div>
             </div>
             
@@ -493,6 +495,7 @@
     <script type="module" src="modelBadgeSelector.js"></script>
     <script type="module" src="plotHoverInfo.js"></script>
     <script type="module" src="terrainUtils.js"></script>
+    <script type="module" src="assetsUIManager.js"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
