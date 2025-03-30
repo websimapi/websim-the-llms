@@ -210,6 +210,15 @@
     color: white;
 }
 
+.asset-item.robot-character .asset-image {
+    background-color: #222 !important;
+}
+
+.asset-item.robot-character .asset-name {
+    color: #3cb371;
+    font-weight: bold;
+}
+
 /* Mobile responsiveness */
 @media screen and (max-width: 768px) {
     .assets-container {
@@ -226,4 +235,3 @@
         gap: 15px;
     }
 }
-

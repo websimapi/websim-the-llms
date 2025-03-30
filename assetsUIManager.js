@@ -165,10 +165,17 @@ function populateAssetGrid(categoryId) {
         // Use a placeholder for image
         const imageUrl = asset.image || getPlaceholderImageForCategory(asset.category);
         
+        // Special handling for Robot Character
+        let iconContent = getIconForCategory(asset.category);
+        if (asset.name === 'Robot Character') {
+            iconContent = getRobotCharacterSVG();
+            assetItem.classList.add('robot-character');
+        }
+        
         assetItem.innerHTML = `
             <div class="asset-image-container">
                 <div class="asset-image" style="background-color: #444; display: flex; justify-content: center; align-items: center;">
-                    ${getIconForCategory(asset.category)}
+                    ${iconContent}
                 </div>
             </div>
             <div class="asset-info">
@@ -196,12 +203,26 @@ function populateAssetGrid(categoryId) {
     });
 }
 
+// Get a placeholder image URL based on category
+function getPlaceholderImageForCategory(category) {
+    return '';
+}
+
+// Add robot character icon specifically when needed
+function getRobotCharacterSVG() {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="50" height="50" fill="#3cb371">
+        <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
+        <circle cx="10.5" cy="11.5" r="0.8" fill="#00ccff"/>
+        <circle cx="15.5" cy="11.5" r="0.8" fill="#00ccff"/>
+    </svg>`;
+}
+
 // Get a placeholder icon based on asset category
 function getIconForCategory(category) {
     switch(category) {
         case 'buildings':
             return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
-                <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm6 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
+                <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
             </svg>`;
         case 'characters':
             return `<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="#888">
@@ -230,11 +251,6 @@ function getIconForCategory(category) {
                 <path d="M18 9l-1.4-1.4-5.6 5.6-2.6-2.6L7 12l4 4z"/>
             </svg>`;
     }
-}
-
-// Get a placeholder image URL based on category
-function getPlaceholderImageForCategory(category) {
-    return '';
 }
 
 // Set up event listeners for the Assets UI
@@ -301,10 +317,17 @@ function filterAssetsBySearch(searchTerm) {
         
         const imageUrl = asset.image || getPlaceholderImageForCategory(asset.category);
         
+        // Special handling for Robot Character
+        let iconContent = getIconForCategory(asset.category);
+        if (asset.name === 'Robot Character') {
+            iconContent = getRobotCharacterSVG();
+            assetItem.classList.add('robot-character');
+        }
+        
         assetItem.innerHTML = `
             <div class="asset-image-container">
                 <div class="asset-image" style="background-color: #444; display: flex; justify-content: center; align-items: center;">
-                    ${getIconForCategory(asset.category)}
+                    ${iconContent}
                 </div>
             </div>
             <div class="asset-info">
