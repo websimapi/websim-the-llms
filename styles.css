@@ -204,6 +204,7 @@ body {
 .llm-icon {
     width: 56px;   
     height: 56px;  
+    fill: currentColor; /* Added for SVG fill */
 }
 
 /* Console Panel Styles */
@@ -555,6 +556,84 @@ input:checked + .llm-toggle-slider:before {
     100% {
         transform: scale(1.05);
     }
+}
+
+/* New Assets Button Styles */
+.assets-btn {
+    background: none;
+    position: relative;
+    overflow: hidden;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    margin-right: 0; /* Adjust spacing if needed */
+}
+
+.assets-btn:hover {
+    background: none;
+    transform: scale(1.05);
+}
+
+.assets-btn .llm-icon {
+    transition: transform 0.3s ease;
+}
+
+.assets-btn:hover .llm-icon {
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.7));
+}
+
+/* Box SVG Styles */
+.assets-btn .box .box-lid {
+    transition: transform 0.3s ease-out;
+}
+
+.assets-btn .box.box-1 .box-lid {
+    /* Already open */
+}
+
+/* Lid animation on hover */
+.assets-btn:hover .box-2 .box-lid {
+    transform: rotateX(-70deg);
+}
+
+.assets-btn:hover .box-3 .box-lid {
+    transform: rotateX(-70deg);
+}
+
+/* Positioning adjustments within the SVG if needed */
+.assets-btn .box-group {
+    transform: scale(0.9); /* Scale down slightly to fit */
+}
+
+/* Hover effect for assets button (similar radial gradient) */
+.assets-btn::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%),
+                transparent 0%,
+                rgba(100, 100, 255, 0.4) 10%, /* Blue/Purple tones */
+                rgba(150, 100, 255, 0.4) 30%,
+                rgba(200, 150, 255, 0.4) 50%,
+                rgba(150, 100, 255, 0.4) 70%,
+                rgba(100, 100, 255, 0.4) 90%,
+                transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: -1;
+    border-radius: 50%;
+}
+
+.assets-btn:hover::before {
+    opacity: 1;
 }
 
 /* Create LLM UI Styles */
@@ -956,7 +1035,7 @@ input:checked + .llm-toggle-slider:before {
 .empty-collection {
     color: #aaa;
     text-align: center;
-    padding: 50px 0;
+    padding: 50px;
 }
 
 .collection-footer {

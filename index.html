@@ -81,6 +81,36 @@
                         <path d="M12.5,20.75h1v1.5h-1V20.75z" fill="#333"/>
                     </svg>
                 </button>
+                <!-- New Assets Button -->
+                <button class="menu-button assets-btn" title="Assets (Not implemented)">
+                    <svg class="llm-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="56" height="56">
+                        <g class="box-group">
+                            <!-- Box 3 (Smallest, Top-Left) -->
+                            <g class="box box-3">
+                                <rect class="box-base" x="10" y="14" width="16" height="12" rx="1" fill="#a0522d"/>
+                                <rect class="box-lid" x="10" y="14" width="16" height="3" fill="#8b4513" style="transform-origin: 10px 14px;"/>
+                            </g>
+                            <!-- Box 2 (Medium, Top-Right) -->
+                            <g class="box box-2">
+                                <rect class="box-base" x="34" y="10" width="20" height="16" rx="1" fill="#a0522d"/>
+                                <rect class="box-lid" x="34" y="10" width="20" height="4" fill="#8b4513" style="transform-origin: 34px 10px;"/>
+                            </g>
+                            <!-- Box 1 (Largest, Bottom, Open) -->
+                            <g class="box box-1 open">
+                                <!-- Base -->
+                                <path d="M8 56 L8 32 L32 24 L56 32 L56 56 Z" fill="#a0522d"/>
+                                <!-- Left Side -->
+                                <path d="M8 56 L8 32 L32 24 L32 48 Z" fill="#8b4513"/>
+                                <!-- Right Side -->
+                                <path d="M56 56 L56 32 L32 24 L32 48 Z" fill="#8b4513"/>
+                                <!-- Front Flap (Open) -->
+                                <path d="M8 56 L32 48 L56 56 L32 64 Z" fill="#8b4513" />
+                                <!-- Back Flap (Open) -->
+                                <path d="M8 32 L32 24 L56 32 L32 40 Z" fill="#8B4513" />
+                            </g>
+                        </g>
+                    </svg>
+                </button>
             </div>
             
             <div id="console-panel" class="hidden">
@@ -369,7 +399,7 @@
             <div class="button-arc">
                 <button id="credits-button" class="circle-button arc-button-2">
                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
-                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6z"/>
                     </svg>
                 </button>
                 <button class="circle-button arc-button-1"></button>

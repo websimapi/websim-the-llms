@@ -1166,9 +1166,6 @@ function placeLLMOnPlot(plotData, placementGroundPoint) {
 
     const placedLLMModel = renderLLMCharacter(THREE, currentLLMTransporting);
 
-    // Set placed flag so renderer will add brain icon
-    currentLLMTransporting.placedInPlot = true;
-
     // Calculate the model's lowest point relative to its origin
     const llmMinYLocal = getModelMinYLocal(placedLLMModel);
 
@@ -1205,10 +1202,6 @@ function placeLLMOnPlot(plotData, placementGroundPoint) {
         currentPlotData.occupants = [];
     }
     currentPlotData.occupants.push(currentLLMTransporting.id); // Add LLM to occupants array
-    
-    // Update city data and LLM data
-    cityData.updatePlotOccupancy(currentPlotData.id, currentLLMTransporting.id, true);
-    
     currentPlotData.available = false; // Mark as unavailable (occupied)
 
     // Remove plot's click target mesh if plot is now full
