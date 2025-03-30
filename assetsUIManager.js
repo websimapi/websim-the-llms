@@ -118,7 +118,12 @@ function populateCategorySidebar() {
         const categoryItem = document.createElement('div');
         categoryItem.className = 'category-item';
         categoryItem.dataset.id = category.id;
-        categoryItem.textContent = category.name;
+        categoryItem.innerHTML = `
+            <div class="asset-category-icon">
+                ${getIconForCategory(category.id)}
+            </div>
+            ${category.name}
+        `;
         
         if (category.id === 'all') {
             categoryItem.classList.add('active');
