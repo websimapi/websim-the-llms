@@ -163,6 +163,9 @@ function createAssetItemElement(asset) {
     
     assetItem.innerHTML = `
         <div class="asset-image-container">
+            <div class="asset-header">
+                <div class="asset-category-icon">${getIconForCategory(asset.category)}</div>
+            </div>
             <div class="asset-image">
                 ${imageContent}
             </div>
