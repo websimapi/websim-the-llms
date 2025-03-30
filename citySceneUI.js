@@ -101,25 +101,15 @@ function openCollectionViewUI() {
     }).catch(err => console.error("Error loading collection view:", err));
 }
 
-// Placeholder function to open Assets UI
+// Helper function to open Assets UI
 function openAssetsUI() {
     console.log('Opening Assets UI');
-    hidePlotInfoPanel(); // Hide plot info when opening any menu
+    hidePlotInfoPanel(); // Hide plot info when opening menu
 
-    // --- Music Change ---
-    // Decide what music should play here, maybe keep city music?
-    // playTrack('assets_ui_music'); // Example
-    // --- End Music Change ---
-
-    // TODO: Implement the actual Assets UI panel opening logic
-    // For now, just log a message
-    alert('Assets UI Panel - Not Implemented Yet');
-
-    // Example: Load Assets UI module and initialize
-    // import('./assetsUIManager.js').then(module => {
-    //     module.setupAssetsUI();
-    //     document.getElementById('assets-ui-panel').classList.add('active');
-    // }).catch(err => console.error("Error loading assets UI:", err));
+    // Import and setup Assets UI
+    import('./assetsUIManager.js').then(module => {
+        module.openAssetsUI();
+    }).catch(err => console.error("Error loading assets UI:", err));
 }
 
 // Setup console toggle key listener
