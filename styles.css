@@ -204,7 +204,6 @@ body {
 .llm-icon {
     width: 56px;   
     height: 56px;  
-    fill: currentColor; /* Added for SVG fill */
 }
 
 /* Console Panel Styles */
@@ -556,84 +555,6 @@ input:checked + .llm-toggle-slider:before {
     100% {
         transform: scale(1.05);
     }
-}
-
-/* New Assets Button Styles */
-.assets-btn {
-    background: none;
-    position: relative;
-    overflow: hidden;
-    border-radius: 50%;
-    width: 80px;
-    height: 80px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0;
-    margin-right: 0; /* Adjust spacing if needed */
-}
-
-.assets-btn:hover {
-    background: none;
-    transform: scale(1.05);
-}
-
-.assets-btn .llm-icon {
-    transition: transform 0.3s ease;
-}
-
-.assets-btn:hover .llm-icon {
-    filter: drop-shadow(0 0 5px rgba(255,255,255,0.7));
-}
-
-/* Box SVG Styles */
-.assets-btn .box .box-lid {
-    transition: transform 0.3s ease-out;
-}
-
-.assets-btn .box.box-1 .box-lid {
-    /* Already open */
-}
-
-/* Lid animation on hover */
-.assets-btn:hover .box-2 .box-lid {
-    transform: rotateX(-70deg);
-}
-
-.assets-btn:hover .box-3 .box-lid {
-    transform: rotateX(-70deg);
-}
-
-/* Positioning adjustments within the SVG if needed */
-.assets-btn .box-group {
-    transform: scale(0.9); /* Scale down slightly to fit */
-}
-
-/* Hover effect for assets button (similar radial gradient) */
-.assets-btn::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%),
-                transparent 0%,
-                rgba(100, 100, 255, 0.4) 10%, /* Blue/Purple tones */
-                rgba(150, 100, 255, 0.4) 30%,
-                rgba(200, 150, 255, 0.4) 50%,
-                rgba(150, 100, 255, 0.4) 70%,
-                rgba(100, 100, 255, 0.4) 90%,
-                transparent 100%);
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    z-index: -1;
-    border-radius: 50%;
-}
-
-.assets-btn:hover::before {
-    opacity: 1;
 }
 
 /* Create LLM UI Styles */
@@ -1315,4 +1236,89 @@ input:checked + .llm-toggle-slider:before {
         padding: 15px;
         font-size: 0.95rem;
     }
+}
+
+/* Style the new assets button and icon */
+.assets-btn {
+    background: none;
+    position: relative;
+    overflow: hidden;
+    border-radius: 50%; 
+    width: 80px;       
+    height: 80px;      
+    display: flex;     
+    justify-content: center;
+    align-items: center;
+    color: white; 
+}
+
+.assets-btn:hover {
+    background: none;
+    transform: scale(1.05);
+}
+
+.assets-icon {
+    width: 56px;   
+    height: 56px;  
+    transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.assets-btn:hover .assets-icon {
+    filter: drop-shadow(0 0 3px rgba(255,255,255,0.5)); 
+}
+
+/* Styles for the SVG elements */
+.assets-icon .box {
+    fill: none;
+ 
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: all 0.3s ease;
+}
+
+.assets-icon .flap {
+    fill: none;
+ 
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Initially hide the closed flaps and the open flaps for medium/small boxes */
+.assets-icon .flap-medium,
+.assets-icon .flap-small {
+    opacity: 0;
+    transform-origin: 50% 100%; 
+    transform: rotateX(90deg) translateY(-2px); 
+}
+
+/* Initially show the closed lines for medium/small boxes */
+.assets-icon .flap-medium-closed,
+.assets-icon .flap-small-closed {
+    opacity: 1;
+    stroke: currentColor;
+    stroke-width: 2;
+    transition: opacity 0.3s ease;
+}
+
+/* On hover: show the open flaps, hide the closed lines */
+.assets-btn:hover .assets-icon .flap-medium,
+.assets-btn:hover .assets-icon .flap-small {
+    opacity: 1;
+    transform: rotateX(0deg) translateY(0);
+}
+
+.assets-btn:hover .assets-icon .flap-medium-closed,
+.assets-btn:hover .assets-icon .flap-small-closed {
+    opacity: 0;
+}
+
+@keyframes fireworks {
+    0% { transform: scale(0.5); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(0.5); }
 }
