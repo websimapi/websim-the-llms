@@ -273,104 +273,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Removed audio event listeners here, handled by musicPlayer.js
     }
 
-    // Setup console panel functionality
-    function setupConsolePanel() {
-        const consolePanel = document.getElementById('console-panel');
-        const closeButton = consolePanel.querySelector('.console-close');
-        const exportButton = document.getElementById('export-data');
-        const importButton = document.getElementById('import-data');
-        const consoleContent = consolePanel.querySelector('.console-content');
-        const consoleIndicator = document.querySelector('.console-indicator');
-
-        // Show console indicator briefly
-        setTimeout(() => {
-            consoleIndicator.classList.add('visible');
-            setTimeout(() => {
-                consoleIndicator.classList.remove('visible');
-            }, 3000);
-        }, 5000);
-
-        closeButton.addEventListener('click', () => {
-            consolePanel.classList.add('hidden');
-        });
-
-        // Add grid toggle button if it doesn't exist
-        let gridToggleButton = document.getElementById('toggle-grid');
-        if (!gridToggleButton) {
-             gridToggleButton = document.createElement('button');
-             gridToggleButton.className = 'console-button';
-             gridToggleButton.id = 'toggle-grid';
-             gridToggleButton.textContent = 'Toggle Grid';
-             // Insert grid toggle before existing buttons
-             const buttonsContainer = consolePanel.querySelector('.console-buttons');
-             if (buttonsContainer) {
-                 buttonsContainer.insertBefore(gridToggleButton, exportButton);
-             }
-        }
-         gridToggleButton.removeEventListener('click', toggleGridHandler); 
-         gridToggleButton.addEventListener('click', toggleGridHandler);
-
-
-        exportButton.addEventListener('click', () => {
-            const gameData = cityData.saveGame();
-
-            // Create a downloadable file
-            const blob = new Blob([gameData], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-
-            a.href = url;
-            a.download = `promptopia_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-
-            // Clean up
-            setTimeout(() => {
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            }, 0);
-
-            consoleContent.innerHTML += `<p>Exported city data: ${new Date().toLocaleTimeString()}</p>`;
-        });
-
-        importButton.addEventListener('click', () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-
-            input.onchange = e => {
-                const file = e.target.files[0];
-                const reader = new FileReader();
-
-                reader.onload = event => {
-                    const result = cityData.loadGame(event.target.result);
-                    if (result) {
-                        consoleContent.innerHTML += `<p>Successfully imported city data</p>`;
-                        // Reload the scene to reflect changes
-                        location.reload();
-                    } else {
-                        consoleContent.innerHTML += `<p>Error importing city data</p>`;
-                    }
-                };
-
-                reader.readAsText(file);
-            };
-
-            input.click();
-        });
-    }
-
-    function toggleGridHandler() {
-         if (window.cityGrid) {
-             window.cityGrid.visible = !window.cityGrid.visible;
-             const consoleContent = document.querySelector('#console-panel .console-content');
-             consoleContent.innerHTML += `<p>Grid ${window.cityGrid.visible ? 'shown' : 'hidden'}</p>`;
-         } else {
-             const consoleContent = document.querySelector('#console-panel .console-content');
-             consoleContent.innerHTML += `<p>Grid not available</p>`;
-         }
-     }
-
     function handleViewportResize() {
         const humanoidViewport = document.querySelector('.humanoid-viewport');
         if (humanoidViewport && window.humanoidCamera && window.humanoidRenderer) {
@@ -389,6 +291,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('resize', handleViewportResize);
-
-    setupConsolePanel();
 });
