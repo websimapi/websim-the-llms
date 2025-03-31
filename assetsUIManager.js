@@ -1,9 +1,10 @@
 // Assets UI Management
 import { hidePlotInfoPanel } from './plotHoverInfo.js';
-import { playTrack } from './musicPlayer.js'; 
+import { playTrack } from './musicPlayer.js';
 import { showConfirmationModal } from './confirmationModal.js';
 import { deactivateDroneTransport } from './llmDroneTransport.js';
-import * as THREE from 'three'; 
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'; // Import GLTFLoader
 
 // Sample asset categories and data
 const assetCategories = [
@@ -14,7 +15,7 @@ const assetCategories = [
     { id: 'furniture', name: 'Furniture' },
     { id: 'decorations', name: 'Decorations' },
     { id: 'nature', name: 'Nature' },
-    { id: 'textures', name: 'Textures' } 
+    { id: 'textures', name: 'Textures' }
 ];
 
 // Sample assets with mock data
@@ -22,38 +23,44 @@ const sampleAssets = [
     { id: 1, name: 'Modern House', category: 'buildings', image: '' },
     { id: 2, name: 'Office Building', category: 'buildings', image: '' },
     { id: 3, name: 'Robot Character', category: 'characters', image: '', isDefaultRobot: true },
-    { id: 4, name: 'Transport Drone', category: 'vehicles', image: '', isDrone: true }, 
+    { id: 4, name: 'Transport Drone', category: 'vehicles', image: '', isDrone: true },
     { id: 5, name: 'Car', category: 'vehicles', image: '' },
     { id: 6, name: 'Office Chair', category: 'furniture', image: '' },
     { id: 7, name: 'Desk', category: 'furniture', image: '' },
     { id: 8, name: 'Lamp', category: 'furniture', image: '' },
     { id: 9, name: 'Painting', category: 'decorations', image: '' },
     { id: 10, name: 'Plant', category: 'nature', image: '' },
-    { id: 11, name: 'Tree', category: 'nature', image: '' },
+    // Updated Tree asset
+    { id: 11, name: 'Pine Tree', category: 'nature', image: '', modelPath: '/models/pine_tree_high.glb' }, 
     { id: 12, name: 'Brick Wall', category: 'textures', image: '' },
     { id: 13, name: 'Wood Floor', category: 'textures', image: '' },
     { id: 14, name: 'Metal Panel', category: 'textures', image: '' },
     { id: 15, name: 'Fabric Pattern', category: 'textures', image: '' }
 ];
 
+// GLTF Loader instance
+const loader = new GLTFLoader();
+
 // Setup the Assets UI
 export function setupAssetsUI() {
     console.log('Setting up Assets UI');
     hidePlotInfoPanel();
-    
+
     const assetsPanel = document.getElementById('assets-ui-panel');
     if (!assetsPanel) {
         createAssetsUIElements();
-        return; 
+        // After creating elements, call setup again
+        setupAssetsUI();
+        return;
     }
-    
+
     // Show the panel
     assetsPanel.classList.add('active');
-    
+
     // Populate the UI
     populateCategorySidebar();
     populateAssetGrid('all');
-    
+
     // Set up event listeners
     setupAssetsEventListeners();
 }
@@ -63,13 +70,13 @@ function createAssetsUIElements() {
     const assetsPanel = document.createElement('div');
     assetsPanel.id = 'assets-ui-panel';
     assetsPanel.className = 'assets-ui-panel';
-    
+
     assetsPanel.innerHTML = `
         <div class="assets-header">
             <div class="assets-title">Asset Library</div>
             <button class="assets-close">&times;</button>
         </div>
-        
+
         <div class="assets-container">
             <div class="assets-sidebar">
                 <div class="asset-category">
@@ -79,7 +86,7 @@ function createAssetsUIElements() {
                     </div>
                 </div>
             </div>
-            
+
             <div class="assets-main">
                 <div class="assets-filter">
                     <div class="search-container">
@@ -90,7 +97,7 @@ function createAssetsUIElements() {
                         </div>
                         <input type="text" class="search-input" placeholder="Search assets...">
                     </div>
-                    
+
                     <select class="sort-select">
                         <option value="name-asc">Name (A-Z)</option>
                         <option value="name-desc">Name (Z-A)</option>
@@ -98,27 +105,24 @@ function createAssetsUIElements() {
                         <option value="oldest">Oldest First</option>
                     </select>
                 </div>
-                
+
                 <div class="assets-grid" id="assets-grid">
                     <!-- Assets will be added here -->
                 </div>
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(assetsPanel);
-    
-    // Now the panel exists, set it up
-    setupAssetsUI();
 }
 
 // Populate the category sidebar
 function populateCategorySidebar() {
     const categoryList = document.getElementById('category-list');
     if (!categoryList) return;
-    
+
     categoryList.innerHTML = '';
-    
+
     assetCategories.forEach(category => {
         const categoryItem = document.createElement('div');
         categoryItem.className = 'category-item';
@@ -129,24 +133,24 @@ function populateCategorySidebar() {
             </div>
             ${category.name}
         `;
-        
+
         if (category.id === 'all') {
             categoryItem.classList.add('active');
         }
-        
+
         categoryItem.addEventListener('click', () => {
             // Remove active class from all categories
             document.querySelectorAll('.category-item').forEach(item => {
                 item.classList.remove('active');
             });
-            
+
             // Add active class to clicked category
             categoryItem.classList.add('active');
-            
+
             // Filter assets by category
             populateAssetGrid(category.id);
         });
-        
+
         categoryList.appendChild(categoryItem);
     });
 }
@@ -159,14 +163,23 @@ function createAssetItemElement(asset) {
 
     // Determine content based on asset type
     let imageContent = '';
+    let canvasClass = '';
+
     if (asset.isDefaultRobot) {
-        imageContent = `<canvas class="robot-preview-canvas" width="180" height="180"></canvas>`;
+        canvasClass = 'robot-preview-canvas';
+        imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
         // Schedule rendering after the element is added to DOM
-        setTimeout(() => renderDefaultRobotPreview(assetItem.querySelector('.robot-preview-canvas')), 50);
+        setTimeout(() => renderDefaultRobotPreview(assetItem.querySelector(`.${canvasClass}`)), 50);
     } else if (asset.isDrone) { // Check for the drone flag
-        imageContent = `<canvas class="drone-preview-canvas" width="180" height="180"></canvas>`;
+        canvasClass = 'drone-preview-canvas';
+        imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
         // Schedule rendering for the drone
-        setTimeout(() => renderDronePreview(assetItem.querySelector('.drone-preview-canvas')), 50);
+        setTimeout(() => renderDronePreview(assetItem.querySelector(`.${canvasClass}`)), 50);
+    } else if (asset.modelPath) { // Check for modelPath
+        canvasClass = `model-preview-canvas-${asset.id}`; // Unique class for each model canvas
+        imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
+        // Schedule GLTF rendering
+        setTimeout(() => renderGLTFPreview(assetItem.querySelector(`.${canvasClass}`), asset.modelPath), 50);
     } else if (asset.category === 'textures') { // Handle textures
         // Simple placeholder for textures
         imageContent = `<div style="background-color: #555; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; font-size: 0.8em; color: #ccc;">
@@ -215,45 +228,45 @@ function createAssetItemElement(asset) {
 // Function to render a default robot preview
 function renderDefaultRobotPreview(canvas) {
     if (!canvas) return;
-    
+
     // Create a temporary scene, camera, and renderer
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x333333);
-    
+
     const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
     camera.position.set(0, 1.5, 3.5);
     camera.lookAt(0, 1, 0);
-    
-    const renderer = new THREE.WebGLRenderer({ 
+
+    const renderer = new THREE.WebGLRenderer({
         canvas: canvas,
-        antialias: true 
+        antialias: true
     });
     renderer.setSize(canvas.width, canvas.height);
-    
+
     // Add lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
-    
+
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(1, 2, 2);
     scene.add(directionalLight);
-    
+
     // Import and create the default robot model
     import('./llmModelCreationRenderer.js').then(module => {
         const robotModel = module.createRobotModel(scene, '#3cb371', 'modern').model;
-        
+
         // Position the robot
         robotModel.position.y = 0;
-        
+
         // Render the scene
         renderer.render(scene, camera);
-        
+
         // Cleanup
         setTimeout(() => {
             scene.remove(robotModel);
             renderer.dispose();
         }, 200);
-    });
+    }).catch(err => console.error("Error loading robot model for preview:", err));
 }
 
 // New function to create just the drone model for preview
@@ -380,23 +393,124 @@ function renderDronePreview(canvas) {
     }, 200);
 }
 
+// Function to render a GLTF model preview
+function renderGLTFPreview(canvas, modelPath) {
+    if (!canvas || !modelPath) {
+        console.error("Canvas or model path missing for GLTF preview.");
+        return;
+    }
+
+    // Create a temporary scene, camera, and renderer
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x333333); // Background for previews
+
+    const camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.1, 100);
+    camera.position.set(0, 1, 3); // Adjust camera position based on expected model size
+    camera.lookAt(0, 0.5, 0); // Adjust lookAt point
+
+    const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true // Ensure background is transparent if needed
+    });
+    renderer.setSize(canvas.width, canvas.height);
+
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(2, 3, 2);
+    scene.add(directionalLight);
+
+    // Load the GLTF model
+    loader.load(
+        modelPath,
+        (gltf) => {
+            const model = gltf.scene;
+
+            // --- Auto-center and scale the model ---
+            model.updateMatrixWorld(); // Ensure world matrix is computed
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+
+            // Calculate scale factor
+            const maxSize = Math.max(size.x, size.y, size.z);
+            const desiredSize = 1.5; // Target size within the preview box
+            const scale = desiredSize / maxSize;
+
+            model.scale.set(scale, scale, scale);
+
+            // Recalculate box after scaling
+            box.setFromObject(model);
+            const newCenter = box.getCenter(new THREE.Vector3());
+
+            // Position the model so its center is at origin, then slightly raise it
+            model.position.x -= newCenter.x;
+            model.position.y -= newCenter.y; // Center vertically first
+            model.position.y += 0.1; // Raise slightly from the ground
+            model.position.z -= newCenter.z;
+            // --- End auto-center and scale ---
+
+            scene.add(model);
+
+            // Render the scene
+            renderer.render(scene, camera);
+
+            // Optional: Animate rotation for dynamic preview
+            let modelRef = model; // Keep reference for animation/cleanup
+            const animate = () => {
+                if (!modelRef) return; // Stop if model removed
+                modelRef.rotation.y += 0.01;
+                renderer.render(scene, camera);
+                requestAnimationFrame(animate);
+            };
+            // animate(); // Uncomment to enable rotation
+
+            // Cleanup after a delay or on UI close
+            setTimeout(() => {
+                 if (modelRef && modelRef.parent) {
+                     scene.remove(modelRef);
+                 }
+                 modelRef = null;
+                 renderer.dispose(); // Dispose renderer resources
+            }, 5000); // Example cleanup after 5 seconds
+
+        },
+        undefined, // onProgress callback (optional)
+        (error) => {
+            console.error(`Error loading GLTF model (${modelPath}):`, error);
+            // Display error in canvas?
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = '#553333';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ffaaaa';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Load Error', canvas.width / 2, canvas.height / 2);
+            }
+        }
+    );
+}
+
 // Populate the asset grid based on selected category
 function populateAssetGrid(categoryId) {
     const assetsGrid = document.getElementById('assets-grid');
     if (!assetsGrid) return;
-    
+
     assetsGrid.innerHTML = '';
-    
+
     // Filter assets by category
-    const filteredAssets = categoryId === 'all' 
-        ? sampleAssets 
+    const filteredAssets = categoryId === 'all'
+        ? sampleAssets
         : sampleAssets.filter(asset => asset.category === categoryId);
-    
+
     if (filteredAssets.length === 0) {
         assetsGrid.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No assets found in this category</div>';
         return;
     }
-    
+
     filteredAssets.forEach(asset => {
         const assetItem = createAssetItemElement(asset);
         assetsGrid.appendChild(assetItem);
@@ -410,7 +524,7 @@ function getIconForCategory(category) {
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm0-4H5V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
             </svg>`;
-        case 'characters': 
+        case 'characters':
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
             </svg>`;
@@ -431,13 +545,13 @@ function getIconForCategory(category) {
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17 12h2L12 3 5 12h2v4H4v2h16v-2h-3v-4z"/>
             </svg>`;
-        case 'textures': 
+        case 'textures':
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M21 3H3v18h18V3zm-2 16H5V5h14v14zm-5-6h-2v2H7v-2h2v-2h2v-2h2v2h2v2h2v2h-2z" opacity=".3"/>
                 <path d="M5 3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5zm14 16H5V5h14v14z"/>
                 <path d="M7 15h2v-2H7v2zm4 0h2v-2h-2v2zm4 0h2v-2h-2v2zm-4-4h2V9h-2v2z"/>
             </svg>`;
-        default: 
+        default:
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
                 <path d="M18 9l-1.4-1.4-5.6 5.6-2.6-2.6L7 12l4 4z"/>
@@ -450,56 +564,66 @@ function setupAssetsEventListeners() {
     // Close button
     const closeButton = document.querySelector('.assets-close');
     if (closeButton) {
+        closeButton.removeEventListener('click', closeAssetsUI); // Remove previous listener if exists
         closeButton.addEventListener('click', closeAssetsUI);
     }
-    
+
     // Search input
     const searchInput = document.querySelector('.search-input');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            filterAssetsBySearch(searchTerm);
-        });
+        searchInput.removeEventListener('input', handleSearchInput); // Remove previous listener if exists
+        searchInput.addEventListener('input', handleSearchInput);
     }
-    
+
     // Sort select
     const sortSelect = document.querySelector('.sort-select');
     if (sortSelect) {
-        sortSelect.addEventListener('change', (e) => {
-            sortAssets(e.target.value);
-        });
+        sortSelect.removeEventListener('change', handleSortChange); // Remove previous listener if exists
+        sortSelect.addEventListener('change', handleSortChange);
     }
 }
+
+// Event handler for search input
+function handleSearchInput(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    filterAssetsBySearch(searchTerm);
+}
+
+// Event handler for sort select change
+function handleSortChange(e) {
+    sortAssets(e.target.value);
+}
+
 
 // Filter assets by search term
 function filterAssetsBySearch(searchTerm) {
     // Get current active category
     const activeCategory = document.querySelector('.category-item.active');
     const categoryId = activeCategory ? activeCategory.dataset.id : 'all';
-    
+
     // Filter assets by category and search term
-    let filteredAssets = categoryId === 'all' 
-        ? sampleAssets 
+    let filteredAssets = categoryId === 'all'
+        ? sampleAssets
         : sampleAssets.filter(asset => asset.category === categoryId);
-    
+
     // Further filter by search term
     if (searchTerm) {
-        filteredAssets = filteredAssets.filter(asset => 
+        filteredAssets = filteredAssets.filter(asset =>
             asset.name.toLowerCase().includes(searchTerm)
         );
     }
-    
+
     // Update the grid
     const assetsGrid = document.getElementById('assets-grid');
     if (!assetsGrid) return;
-    
+
     assetsGrid.innerHTML = '';
-    
+
     if (filteredAssets.length === 0) {
         assetsGrid.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No assets match your search</div>';
         return;
     }
-    
+
     // Repopulate with filtered assets
     filteredAssets.forEach(asset => {
         const assetItem = createAssetItemElement(asset);
@@ -513,18 +637,19 @@ function sortAssets(sortOption) {
     const assetItems = Array.from(document.querySelectorAll('.asset-item'));
     const assetsGrid = document.getElementById('assets-grid');
     if (!assetsGrid || assetItems.length === 0) return;
-    
+
     // Sort assets based on option
     assetItems.sort((a, b) => {
         const nameA = a.querySelector('.asset-name').textContent;
         const nameB = b.querySelector('.asset-name').textContent;
-        
+
         switch(sortOption) {
             case 'name-asc':
                 return nameA.localeCompare(nameB);
             case 'name-desc':
                 return nameB.localeCompare(nameA);
             case 'newest':
+                // Assuming higher ID means newer for now
                 return parseInt(b.dataset.id) - parseInt(a.dataset.id);
             case 'oldest':
                 return parseInt(a.dataset.id) - parseInt(b.dataset.id);
@@ -532,7 +657,7 @@ function sortAssets(sortOption) {
                 return 0;
         }
     });
-    
+
     // Clear and re-add sorted items
     assetsGrid.innerHTML = '';
     assetItems.forEach(item => {
@@ -546,7 +671,7 @@ function closeAssetsUI() {
     if (assetsPanel) {
         assetsPanel.classList.remove('active');
     }
-    
+
     playTrack('city');
 }
 
@@ -554,7 +679,7 @@ function closeAssetsUI() {
 export function openAssetsUI() {
     console.log('Opening Assets UI');
     hidePlotInfoPanel();
-    
+
     if (window.droneActive) {
         showConfirmationModal(
             "Cancel drone transport to open the Assets UI?",
