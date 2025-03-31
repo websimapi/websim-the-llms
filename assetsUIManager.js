@@ -30,14 +30,14 @@ const sampleAssets = [
     { id: 8, name: 'Lamp', category: 'furniture', image: '' },
     { id: 9, name: 'Painting', category: 'decorations', image: '' },
     { id: 10, name: 'Plant', category: 'nature', image: '' },
-    // Updated Tree asset with high/low detail paths
+    // Updated Tree asset with high/low detail paths (Ensure correct absolute paths)
     { 
         id: 11, 
         name: 'Pine Tree', 
         category: 'nature', 
         image: '', 
-        modelPathHigh: '/models/pine_tree_high.glb', 
-        modelPathLow: '/models/pine_tree_low.glb' 
+        modelPathHigh: '/pine_tree_high.glb', // Correct absolute path
+        modelPathLow: '/pine_tree_low.glb'   // Correct absolute path
     },
     { id: 12, name: 'Brick Wall', category: 'textures', image: '' },
     { id: 13, name: 'Wood Floor', category: 'textures', image: '' },
@@ -193,7 +193,13 @@ function createAssetItemElement(asset) {
         imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
         // Schedule GLTF rendering (default to high detail)
         const initialModelPath = asset.modelPathHigh || asset.modelPathLow; // Choose high first
-        setTimeout(() => renderGLTFPreview(assetItem.querySelector(`.${canvasClass}`), initialModelPath, asset.id), 50);
+        if (initialModelPath) { // Ensure there's a path before attempting to render
+             setTimeout(() => renderGLTFPreview(assetItem.querySelector(`.${canvasClass}`), initialModelPath, asset.id), 50);
+        } else {
+             console.warn(`Asset ${asset.id} (${asset.name}) has no model path defined.`);
+             imageContent = `<div style="background-color: #555; color: #f00; padding: 5px; text-align:center;">Missing Model</div>`; // Show error state
+        }
+
 
         // Add LD/HD toggle button if both paths exist
         if (asset.modelPathHigh && asset.modelPathLow) {
@@ -221,7 +227,7 @@ function createAssetItemElement(asset) {
             <div class="asset-image">
                 ${imageContent}
             </div>
-            ${detailToggle}
+            ${detailToggle} 
         </div>
         <div class="asset-info">
             <h3 class="asset-name">${asset.name}</h3>
@@ -251,6 +257,7 @@ function createAssetItemElement(asset) {
     // Add click event for the detail toggle button AFTER innerHTML is set
     const toggleButton = assetItem.querySelector('.asset-detail-toggle');
     if (toggleButton) {
+        toggleButton.removeEventListener('click', handleDetailToggle); // Remove previous listener
         toggleButton.addEventListener('click', handleDetailToggle);
     }
 
@@ -460,7 +467,7 @@ function renderGLTFPreview(canvas, modelPath, assetId) {
             const center = box.getCenter(new THREE.Vector3());
 
             // Check for invalid bounding box
-            if (!box.isEmpty() && size.length() > 0.001) {
+            if (!box.isEmpty() && size.length() > 0.001 && isFinite(size.length())) {
                 const maxSize = Math.max(size.x, size.y, size.z);
                 const desiredSize = 1.5; // Target size for the preview box
                 const scale = desiredSize / maxSize;
@@ -472,14 +479,20 @@ function renderGLTFPreview(canvas, modelPath, assetId) {
                 const scaledBox = new THREE.Box3().setFromObject(model);
                 const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
 
-                // Adjust position to center the model and place its bottom near y=0
-                model.position.x -= scaledCenter.x;
-                model.position.y -= scaledBox.min.y; // Move bottom to y=0
-                model.position.y += 0.05; // Add slight offset above ground
-                model.position.z -= scaledCenter.z;
+                 // Adjust position to center the model and place its bottom near y=0
+                if(isFinite(scaledCenter.x) && isFinite(scaledBox.min.y) && isFinite(scaledCenter.z)) {
+                    model.position.x -= scaledCenter.x;
+                    model.position.y -= scaledBox.min.y; // Move bottom to y=0
+                    model.position.y += 0.05; // Add slight offset above ground
+                    model.position.z -= scaledCenter.z;
+                } else {
+                    console.warn(`Scaled center or min y is not finite for ${modelPath}. Using default position.`);
+                    model.position.set(0, 0, 0); // Fallback position
+                }
+
 
             } else {
-                 console.warn(`Could not calculate valid bounding box for ${modelPath}. Using default position/scale.`);
+                 console.warn(`Could not calculate valid bounding box for ${modelPath} (Size: ${size.length()}). Using default position/scale.`);
                  model.position.set(0, 0, 0);
                  model.scale.set(1, 1, 1);
             }
@@ -500,6 +513,13 @@ function renderGLTFPreview(canvas, modelPath, assetId) {
         undefined, // Progress callback (optional)
         (error) => {
             console.error(`Error loading GLTF model (${modelPath}):`, error);
+             // More detailed error logging
+             if (error.target && error.target.status) {
+                 console.error(`Network error: Status ${error.target.status}`);
+             }
+             if (error.message) {
+                 console.error(`Loader message: ${error.message}`);
+             }
             // Display error in canvas
             const ctx = canvas.getContext('2d');
             if (ctx) {
@@ -742,15 +762,12 @@ function cleanupPreview(assetId) {
             previewData.scene.remove(previewData.model);
         }
         if (previewData.renderer) {
-            // Make sure context isn't lost before disposing
-            const context = previewData.renderer.getContext();
-            if (context && !context.isContextLost()) {
+            // Make sure context is not lost before disposing
+             if (!previewData.renderer.getContext().isContextLost()) {
                  previewData.renderer.dispose();
-            } else if (!context) {
-                 console.warn(`No WebGL context found for asset ${assetId} during cleanup.`);
-            } else {
-                 console.warn(`WebGL context lost for asset ${assetId} before cleanup.`);
-            }
+             } else {
+                 console.warn(`WebGL context lost for renderer of asset ${assetId}. Cannot dispose properly.`);
+             }
         }
         delete activeRenderers[assetId];
     }
