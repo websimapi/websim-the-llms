@@ -31,11 +31,11 @@ const sampleAssets = [
     { id: 9, name: 'Painting', category: 'decorations', image: '' },
     { id: 10, name: 'Plant', category: 'nature', image: '' },
     // Updated Tree asset with high/low detail paths (Ensure correct absolute paths)
-    { 
-        id: 11, 
-        name: 'Pine Tree', 
-        category: 'nature', 
-        image: '', 
+    {
+        id: 11,
+        name: 'Pine Tree',
+        category: 'nature',
+        image: '',
         modelPathHigh: '/pine_tree_high.glb', // Correct absolute path
         modelPathLow: '/pine_tree_low.glb'   // Correct absolute path
     },
@@ -482,8 +482,7 @@ function renderGLTFPreview(canvas, modelPath, assetId) {
                  // Adjust position to center the model and place its bottom near y=0
                 if(isFinite(scaledCenter.x) && isFinite(scaledBox.min.y) && isFinite(scaledCenter.z)) {
                     model.position.x -= scaledCenter.x;
-                    model.position.y -= scaledBox.min.y; // Move bottom to y=0
-                    model.position.y += 0.05; // Add slight offset above ground
+                    model.position.y -= scaledBox.min.y; 
                     model.position.z -= scaledCenter.z;
                 } else {
                     console.warn(`Scaled center or min y is not finite for ${modelPath}. Using default position.`);
