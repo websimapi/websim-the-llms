@@ -221,7 +221,7 @@ function createAssetItemElement(asset) {
             <div class="asset-image">
                 ${imageContent}
             </div>
-            ${detailToggle} 
+            ${detailToggle}
         </div>
         <div class="asset-info">
             <h3 class="asset-name">${asset.name}</h3>
@@ -742,7 +742,15 @@ function cleanupPreview(assetId) {
             previewData.scene.remove(previewData.model);
         }
         if (previewData.renderer) {
-            previewData.renderer.dispose();
+            // Make sure context isn't lost before disposing
+            const context = previewData.renderer.getContext();
+            if (context && !context.isContextLost()) {
+                 previewData.renderer.dispose();
+            } else if (!context) {
+                 console.warn(`No WebGL context found for asset ${assetId} during cleanup.`);
+            } else {
+                 console.warn(`WebGL context lost for asset ${assetId} before cleanup.`);
+            }
         }
         delete activeRenderers[assetId];
     }
