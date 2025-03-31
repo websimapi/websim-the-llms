@@ -13,7 +13,8 @@ const assetCategories = [
     { id: 'vehicles', name: 'Vehicles' },
     { id: 'furniture', name: 'Furniture' },
     { id: 'decorations', name: 'Decorations' },
-    { id: 'nature', name: 'Nature' }
+    { id: 'nature', name: 'Nature' },
+    { id: 'textures', name: 'Textures' } 
 ];
 
 // Sample assets with mock data
@@ -28,7 +29,11 @@ const sampleAssets = [
     { id: 8, name: 'Lamp', category: 'furniture', image: '' },
     { id: 9, name: 'Painting', category: 'decorations', image: '' },
     { id: 10, name: 'Plant', category: 'nature', image: '' },
-    { id: 11, name: 'Tree', category: 'nature', image: '' }
+    { id: 11, name: 'Tree', category: 'nature', image: '' },
+    { id: 12, name: 'Brick Wall', category: 'textures', image: '' },
+    { id: 13, name: 'Wood Floor', category: 'textures', image: '' },
+    { id: 14, name: 'Metal Panel', category: 'textures', image: '' },
+    { id: 15, name: 'Fabric Pattern', category: 'textures', image: '' }
 ];
 
 // Setup the Assets UI
@@ -39,7 +44,7 @@ export function setupAssetsUI() {
     const assetsPanel = document.getElementById('assets-ui-panel');
     if (!assetsPanel) {
         createAssetsUIElements();
-        return;
+        return; 
     }
     
     // Show the panel
@@ -162,6 +167,11 @@ function createAssetItemElement(asset) {
         imageContent = `<canvas class="drone-preview-canvas" width="180" height="180"></canvas>`;
         // Schedule rendering for the drone
         setTimeout(() => renderDronePreview(assetItem.querySelector('.drone-preview-canvas')), 50);
+    } else if (asset.category === 'textures') { // Handle textures
+        // Simple placeholder for textures
+        imageContent = `<div style="background-color: #555; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; font-size: 0.8em; color: #ccc;">
+            Texture
+        </div>`;
     } else {
         // Use icon for other assets
         imageContent = `<div style="background-color: #444; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%;">
@@ -421,7 +431,13 @@ function getIconForCategory(category) {
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17 12h2L12 3 5 12h2v4H4v2h16v-2h-3v-4z"/>
             </svg>`;
-        default:
+        case 'textures': 
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M21 3H3v18h18V3zm-2 16H5V5h14v14zm-5-6h-2v2H7v-2h2v-2h2v-2h2v2h2v2h2v2h-2z" opacity=".3"/>
+                <path d="M5 3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5zm14 16H5V5h14v14z"/>
+                <path d="M7 15h2v-2H7v2zm4 0h2v-2h-2v2zm4 0h2v-2h-2v2zm-4-4h2V9h-2v2z"/>
+            </svg>`;
+        default: 
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/>
                 <path d="M18 9l-1.4-1.4-5.6 5.6-2.6-2.6L7 12l4 4z"/>
