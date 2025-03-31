@@ -31,11 +31,11 @@ const sampleAssets = [
     { id: 9, name: 'Painting', category: 'decorations', image: '' },
     { id: 10, name: 'Plant', category: 'nature', image: '' },
     // Updated Tree asset with high/low detail paths (Ensure correct absolute paths)
-    { 
-        id: 11, 
-        name: 'Pine Tree', 
-        category: 'nature', 
-        image: '', 
+    {
+        id: 11,
+        name: 'Pine Tree',
+        category: 'nature',
+        image: '',
         modelPathHigh: '/pine_tree_high.glb', // Correct absolute path
         modelPathLow: '/pine_tree_low.glb'   // Correct absolute path
     },
@@ -177,29 +177,29 @@ function createAssetItemElement(asset) {
     let imageContent = '';
     let canvasClass = '';
     let detailToggle = ''; // Placeholder for the LD/HD toggle button
+    let hasPreview = false; // Flag to indicate if this asset has a 3D preview
 
-    if (asset.isDefaultRobot) {
+    if (asset.isDefaultRobot || asset.isDrone || asset.modelPathHigh || asset.modelPathLow) {
+        hasPreview = true; // Mark assets with 3D previews
         canvasClass = `preview-canvas-${asset.id}`;
         imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
-        // Schedule rendering after the element is added to DOM
-        setTimeout(() => renderDefaultRobotPreview(assetItem.querySelector(`.${canvasClass}`)), 50);
-    } else if (asset.isDrone) { // Check for the drone flag
-        canvasClass = `preview-canvas-${asset.id}`;
-        imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
-        // Schedule rendering for the drone
-        setTimeout(() => renderDronePreview(assetItem.querySelector(`.${canvasClass}`)), 50);
-    } else if (asset.modelPathHigh || asset.modelPathLow) { // Check for modelPathHigh or Low
-        canvasClass = `preview-canvas-${asset.id}`; // Unique class for each model canvas
-        imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
-        // Schedule GLTF rendering (default to high detail)
-        const initialModelPath = asset.modelPathHigh || asset.modelPathLow; // Choose high first
-        if (initialModelPath) { // Ensure there's a path before attempting to render
-             setTimeout(() => renderGLTFPreview(assetItem.querySelector(`.${canvasClass}`), initialModelPath, asset.id), 50);
-        } else {
-             console.warn(`Asset ${asset.id} (${asset.name}) has no model path defined.`);
-             imageContent = `<div style="background-color: #555; color: #f00; padding: 5px; text-align:center;">Missing Model</div>`; // Show error state
+
+        // Schedule initial rendering AFTER element is added to DOM
+        // These functions will now only render the first frame and store context
+        if (asset.isDefaultRobot) {
+            setTimeout(() => renderDefaultRobotPreview(assetItem.querySelector(`.${canvasClass}`), true), 50); // Pass true for initial render
+        } else if (asset.isDrone) {
+            setTimeout(() => renderDronePreview(assetItem.querySelector(`.${canvasClass}`), true), 50); // Pass true for initial render
+        } else { // GLTF model
+            const initialModelPath = asset.modelPathHigh || asset.modelPathLow;
+            if (initialModelPath) {
+                setTimeout(() => renderGLTFPreview(assetItem.querySelector(`.${canvasClass}`), initialModelPath, asset.id, true), 50); // Pass true for initial render
+            } else {
+                console.warn(`Asset ${asset.id} (${asset.name}) has no model path defined.`);
+                imageContent = `<div style="background-color: #555; color: #f00; padding: 5px; text-align:center;">Missing Model</div>`;
+                hasPreview = false; // No path, no preview
+            }
         }
-
 
         // Add LD/HD toggle button if both paths exist
         if (asset.modelPathHigh && asset.modelPathLow) {
@@ -227,7 +227,7 @@ function createAssetItemElement(asset) {
             <div class="asset-image">
                 ${imageContent}
             </div>
-            ${detailToggle} 
+            ${detailToggle}
         </div>
         <div class="asset-info">
             <h3 class="asset-name">${asset.name}</h3>
@@ -240,6 +240,13 @@ function createAssetItemElement(asset) {
             </button>
         </div>
     `;
+
+    // --- Add hover listeners ONLY for items with 3D previews ---
+    if (hasPreview) {
+        assetItem.addEventListener('mouseenter', handleAssetMouseEnter);
+        assetItem.addEventListener('mouseleave', handleAssetMouseLeave);
+    }
+    // --- End hover listeners ---
 
     // Add click event for the asset item itself (selection)
     assetItem.addEventListener('click', (e) => {
@@ -264,10 +271,42 @@ function createAssetItemElement(asset) {
     return assetItem;
 }
 
+// --- Mouse Enter/Leave Handlers ---
+function handleAssetMouseEnter(event) {
+    const assetItem = event.currentTarget;
+    const assetId = assetItem.dataset.id;
+    if (!assetId || !activeRenderers[assetId]) return;
+
+    const previewData = activeRenderers[assetId];
+
+    // Start animation only if it's not already running
+    if (previewData.animate && !previewData.animationFrameId) {
+        console.log(`Starting animation for asset ${assetId}`);
+        previewData.animate(); // Call the stored animate function to start the loop
+    }
+}
+
+function handleAssetMouseLeave(event) {
+    const assetItem = event.currentTarget;
+    const assetId = assetItem.dataset.id;
+    if (!assetId || !activeRenderers[assetId]) return;
+
+    const previewData = activeRenderers[assetId];
+
+    // Stop animation if it's running
+    if (previewData.animationFrameId) {
+        console.log(`Stopping animation for asset ${assetId}`);
+        cancelAnimationFrame(previewData.animationFrameId);
+        previewData.animationFrameId = null; // Reset the ID
+    }
+}
+// --- End Mouse Enter/Leave Handlers ---
+
+
 // --- Preview Rendering Functions ---
 
 // Function to render a default robot preview
-function renderDefaultRobotPreview(canvas) {
+function renderDefaultRobotPreview(canvas, initialRender = false) {
     if (!canvas) return;
     const assetId = canvas.closest('.asset-item')?.dataset.id;
     if (!assetId) return;
@@ -277,16 +316,26 @@ function renderDefaultRobotPreview(canvas) {
         const robotModel = module.createRobotModel(scene, '#3cb371', 'modern').model;
         robotModel.position.y = -0.8; // Adjust Y position for preview
         robotModel.rotation.y = -Math.PI / 6; // Rotate slightly
-        activeRenderers[assetId].model = robotModel; // Store model reference for cleanup
+        const previewData = activeRenderers[assetId];
+        if (!previewData) return; // Environment might have been cleaned up
+        previewData.model = robotModel; // Store model reference
 
-        const animate = () => {
-            const previewData = activeRenderers[assetId]; // Get current data
-            if (!previewData) return; // Stop if cleaned up
+        // Store the animate function reference but don't start loop yet if initialRender
+        previewData.animate = () => {
+            const currentPreviewData = activeRenderers[assetId]; // Get current data inside loop
+            if (!currentPreviewData) return; // Stop if cleaned up
             robotModel.rotation.y += 0.01;
-            previewData.renderer.render(previewData.scene, previewData.camera); // Use stored renderer/scene/camera
-            previewData.animationFrameId = requestAnimationFrame(animate); // Store new frame ID
+            currentPreviewData.renderer.render(currentPreviewData.scene, currentPreviewData.camera);
+            currentPreviewData.animationFrameId = requestAnimationFrame(currentPreviewData.animate); // Store new frame ID
         };
-        animate();
+
+        // Render first frame immediately
+        renderer.render(scene, camera);
+
+        if (!initialRender) {
+            // If not initial render (e.g., detail toggle), start animation
+            previewData.animate();
+        }
 
     }).catch(err => console.error("Error loading robot model for preview:", err));
 }
@@ -372,7 +421,7 @@ function createPreviewPropeller(THREE, hubMaterial, bladeMaterial) {
 }
 
 // New function to render the drone preview
-function renderDronePreview(canvas) {
+function renderDronePreview(canvas, initialRender = false) {
     if (!canvas) return;
     const assetId = canvas.closest('.asset-item')?.dataset.id;
     if (!assetId) return;
@@ -383,11 +432,14 @@ function renderDronePreview(canvas) {
     droneModel.position.y = 0.3;
     droneModel.rotation.y = -Math.PI / 6;
     scene.add(droneModel);
-    activeRenderers[assetId].model = droneModel;
+    const previewData = activeRenderers[assetId];
+    if (!previewData) return;
+    previewData.model = droneModel;
 
-    const animate = () => {
-        const previewData = activeRenderers[assetId]; // Get current data
-        if (!previewData) return; // Stop if cleaned up
+    // Store animate function reference
+    previewData.animate = () => {
+        const currentPreviewData = activeRenderers[assetId]; // Get current data inside loop
+        if (!currentPreviewData) return; // Stop if cleaned up
         droneModel.rotation.y += 0.01;
         // Animate propellers
         droneModel.traverse(child => {
@@ -395,10 +447,16 @@ function renderDronePreview(canvas) {
                  child.rotation.y += 0.3;
             }
         });
-        previewData.renderer.render(previewData.scene, previewData.camera); // Use stored renderer/scene/camera
-        previewData.animationFrameId = requestAnimationFrame(animate); // Store new frame ID
+        currentPreviewData.renderer.render(currentPreviewData.scene, currentPreviewData.camera); // Use stored renderer/scene/camera
+        currentPreviewData.animationFrameId = requestAnimationFrame(currentPreviewData.animate); // Store new frame ID
     };
-    animate();
+
+    // Render first frame immediately
+    renderer.render(scene, camera);
+
+    if (!initialRender) {
+        previewData.animate(); // Start animation if not initial render
+    }
 }
 
 // Generic setup for preview scene, camera, renderer, lights
@@ -417,7 +475,8 @@ function setupPreviewEnvironment(canvas, assetId, options = {}) {
     const renderer = new THREE.WebGLRenderer({
         canvas: canvas,
         antialias: true,
-        alpha: true // Keep alpha for transparency if needed
+        alpha: true, // Keep alpha for transparency if needed
+        preserveDrawingBuffer: true // Keep buffer for initial static frame
     });
     // Explicitly set the size again in case canvas dimensions changed
     renderer.setSize(canvas.width, canvas.height, false); // Set false to prevent style update
@@ -429,14 +488,14 @@ function setupPreviewEnvironment(canvas, assetId, options = {}) {
     scene.add(directionalLight);
 
     // Store the newly created environment
-    activeRenderers[assetId] = { scene, camera, renderer, animationFrameId: null, model: null };
+    activeRenderers[assetId] = { scene, camera, renderer, animationFrameId: null, model: null, animate: null }; // Add animate property
     console.log(`Setup preview environment for asset ${assetId}`);
 
     return activeRenderers[assetId];
 }
 
 // Function to render a GLTF model preview
-function renderGLTFPreview(canvas, modelPath, assetId) {
+function renderGLTFPreview(canvas, modelPath, assetId, initialRender = false) {
     if (!canvas || !modelPath || !assetId) {
         console.error("Canvas, model path, or asset ID missing for GLTF preview.");
         return;
@@ -501,14 +560,22 @@ function renderGLTFPreview(canvas, modelPath, assetId) {
             scene.add(model);
             currentPreviewData.model = model; // Store model reference
 
-            const animate = () => {
+            // Store animate function reference
+            currentPreviewData.animate = () => {
                 const framePreviewData = activeRenderers[assetId]; // Check again inside animation frame
                 if (!framePreviewData) return;
                 model.rotation.y += 0.01;
                 framePreviewData.renderer.render(framePreviewData.scene, framePreviewData.camera);
-                framePreviewData.animationFrameId = requestAnimationFrame(animate);
+                framePreviewData.animationFrameId = requestAnimationFrame(framePreviewData.animate);
             };
-            animate();
+
+            // Render first frame immediately
+            renderer.render(scene, camera);
+
+            if (!initialRender) {
+                // Start animation if not initial render
+                currentPreviewData.animate();
+            }
         },
         undefined, // Progress callback (optional)
         (error) => {
@@ -560,7 +627,9 @@ function handleDetailToggle(event) {
     assetItem.dataset.currentDetail = newDetail;
 
     // Re-render the preview (will call setupPreviewEnvironment which handles cleanup)
-    renderGLTFPreview(canvas, modelPath, assetId);
+    // Pass initialRender=false to start animation immediately if hovered
+    const isHovered = assetItem.matches(':hover');
+    renderGLTFPreview(canvas, modelPath, assetId, !isHovered); // Only initialRender if not currently hovered
 }
 
 // Populate the asset grid based on selected category
@@ -597,7 +666,7 @@ function getIconForCategory(category) {
             </svg>`;
         case 'characters':
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                 <path d="M12,2C9.8,2,8,3.8,8,6c0,1.1,0.4,2.1,1.2,2.8C7.3,9.5,6,11.4,6,13.5V16c0,1.1,0.9,2,2,2h1v3c0,0.6,0.4,1,1,1h6c0.6,0,1-0.4,1-1v-3h1c1.1,0,2-0.9,2-2v-2.5c0-2.1-1.3-4-3.2-4.7C17.6,8.1,18,7.1,18,6C18,3.8,16.2,2,14,2H12z M12,4h2c1.1,0,2,0.9,2,2s-0.9,2-2,2h-2C10.9,8,10,7.1,10,6S10.9,4,12,4z M9,13.5c0-1.4,1.1-2.5,2.5-2.5h3c1.4,0,2.5,1.1,2.5,2.5V16H9V13.5z"/>
             </svg>`;
         case 'vehicles':
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -763,10 +832,10 @@ function cleanupPreview(assetId) {
         }
         if (previewData.renderer) {
             // Make sure context is not lost before disposing
-             if (!previewData.renderer.getContext().isContextLost()) {
+             if (previewData.renderer.domElement.width > 0 && previewData.renderer.domElement.height > 0 && previewData.renderer.getContext() && !previewData.renderer.getContext().isContextLost()) {
                  previewData.renderer.dispose();
              } else {
-                 console.warn(`WebGL context lost for renderer of asset ${assetId}. Cannot dispose properly.`);
+                 console.warn(`WebGL context lost or invalid canvas size for renderer of asset ${assetId}. Cannot dispose properly.`);
              }
         }
         delete activeRenderers[assetId];
