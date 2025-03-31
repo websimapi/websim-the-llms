@@ -30,8 +30,15 @@ const sampleAssets = [
     { id: 8, name: 'Lamp', category: 'furniture', image: '' },
     { id: 9, name: 'Painting', category: 'decorations', image: '' },
     { id: 10, name: 'Plant', category: 'nature', image: '' },
-    // Updated Tree asset
-    { id: 11, name: 'Pine Tree', category: 'nature', image: '', modelPath: '/models/pine_tree_high.glb' }, 
+    // Updated Tree asset with high/low detail paths
+    { 
+        id: 11, 
+        name: 'Pine Tree', 
+        category: 'nature', 
+        image: '', 
+        modelPathHigh: '/models/pine_tree_high.glb', 
+        modelPathLow: '/models/pine_tree_low.glb' 
+    },
     { id: 12, name: 'Brick Wall', category: 'textures', image: '' },
     { id: 13, name: 'Wood Floor', category: 'textures', image: '' },
     { id: 14, name: 'Metal Panel', category: 'textures', image: '' },
@@ -41,10 +48,14 @@ const sampleAssets = [
 // GLTF Loader instance
 const loader = new GLTFLoader();
 
+// Store references to active renderers and animation frames for cleanup
+let activeRenderers = {};
+
 // Setup the Assets UI
 export function setupAssetsUI() {
     console.log('Setting up Assets UI');
     hidePlotInfoPanel();
+    cleanupAssetPreviews(); // Clean up any previous previews
 
     const assetsPanel = document.getElementById('assets-ui-panel');
     if (!assetsPanel) {
@@ -160,26 +171,36 @@ function createAssetItemElement(asset) {
     const assetItem = document.createElement('div');
     assetItem.className = 'asset-item';
     assetItem.dataset.id = asset.id;
+    assetItem.dataset.currentDetail = 'high'; // Default to high detail
 
     // Determine content based on asset type
     let imageContent = '';
     let canvasClass = '';
+    let detailToggle = ''; // Placeholder for the LD/HD toggle button
 
     if (asset.isDefaultRobot) {
-        canvasClass = 'robot-preview-canvas';
+        canvasClass = `preview-canvas-${asset.id}`;
         imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
         // Schedule rendering after the element is added to DOM
         setTimeout(() => renderDefaultRobotPreview(assetItem.querySelector(`.${canvasClass}`)), 50);
     } else if (asset.isDrone) { // Check for the drone flag
-        canvasClass = 'drone-preview-canvas';
+        canvasClass = `preview-canvas-${asset.id}`;
         imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
         // Schedule rendering for the drone
         setTimeout(() => renderDronePreview(assetItem.querySelector(`.${canvasClass}`)), 50);
-    } else if (asset.modelPath) { // Check for modelPath
-        canvasClass = `model-preview-canvas-${asset.id}`; // Unique class for each model canvas
+    } else if (asset.modelPathHigh || asset.modelPathLow) { // Check for modelPathHigh or Low
+        canvasClass = `preview-canvas-${asset.id}`; // Unique class for each model canvas
         imageContent = `<canvas class="${canvasClass}" width="180" height="180"></canvas>`;
-        // Schedule GLTF rendering
-        setTimeout(() => renderGLTFPreview(assetItem.querySelector(`.${canvasClass}`), asset.modelPath), 50);
+        // Schedule GLTF rendering (default to high detail)
+        const initialModelPath = asset.modelPathHigh || asset.modelPathLow; // Choose high first
+        setTimeout(() => renderGLTFPreview(assetItem.querySelector(`.${canvasClass}`), initialModelPath, asset.id), 50);
+
+        // Add LD/HD toggle button if both paths exist
+        if (asset.modelPathHigh && asset.modelPathLow) {
+            detailToggle = `
+                <button class="asset-detail-toggle" data-asset-id="${asset.id}" title="Toggle Detail Level">HD</button>
+            `;
+        }
     } else if (asset.category === 'textures') { // Handle textures
         // Simple placeholder for textures
         imageContent = `<div style="background-color: #555; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; font-size: 0.8em; color: #ccc;">
@@ -200,6 +221,7 @@ function createAssetItemElement(asset) {
             <div class="asset-image">
                 ${imageContent}
             </div>
+            ${detailToggle} {/* Add the toggle button here */}
         </div>
         <div class="asset-info">
             <h3 class="asset-name">${asset.name}</h3>
@@ -213,8 +235,12 @@ function createAssetItemElement(asset) {
         </div>
     `;
 
-    // Add click event
-    assetItem.addEventListener('click', () => {
+    // Add click event for the asset item itself (selection)
+    assetItem.addEventListener('click', (e) => {
+        // Prevent selection if clicking the detail toggle button
+        if (e.target.closest('.asset-detail-toggle')) {
+            return;
+        }
         // Select the asset
         document.querySelectorAll('.asset-item').forEach(item => {
             item.classList.remove('selected');
@@ -222,50 +248,40 @@ function createAssetItemElement(asset) {
         assetItem.classList.add('selected');
     });
 
+    // Add click event for the detail toggle button AFTER innerHTML is set
+    const toggleButton = assetItem.querySelector('.asset-detail-toggle');
+    if (toggleButton) {
+        toggleButton.addEventListener('click', handleDetailToggle);
+    }
+
     return assetItem;
 }
+
+// --- Preview Rendering Functions ---
 
 // Function to render a default robot preview
 function renderDefaultRobotPreview(canvas) {
     if (!canvas) return;
+    const assetId = canvas.closest('.asset-item')?.dataset.id;
+    if (!assetId) return;
 
-    // Create a temporary scene, camera, and renderer
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x333333);
+    const { scene, camera, renderer, animationFrameId } = setupPreviewEnvironment(canvas, assetId);
+    activeRenderers[assetId].animationFrameId = animationFrameId; // Store animation frame ID
 
-    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-    camera.position.set(0, 1.5, 3.5);
-    camera.lookAt(0, 1, 0);
-
-    const renderer = new THREE.WebGLRenderer({
-        canvas: canvas,
-        antialias: true
-    });
-    renderer.setSize(canvas.width, canvas.height);
-
-    // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(1, 2, 2);
-    scene.add(directionalLight);
-
-    // Import and create the default robot model
     import('./llmModelCreationRenderer.js').then(module => {
         const robotModel = module.createRobotModel(scene, '#3cb371', 'modern').model;
+        robotModel.position.y = -0.8; // Adjust Y position for preview
+        robotModel.rotation.y = -Math.PI / 6; // Rotate slightly
+        activeRenderers[assetId].model = robotModel; // Store model reference for cleanup
 
-        // Position the robot
-        robotModel.position.y = 0;
+        const animate = () => {
+            if (!activeRenderers[assetId]) return; // Stop if cleaned up
+            robotModel.rotation.y += 0.01;
+            renderer.render(scene, camera);
+            activeRenderers[assetId].animationFrameId = requestAnimationFrame(animate);
+        };
+        animate();
 
-        // Render the scene
-        renderer.render(scene, camera);
-
-        // Cleanup
-        setTimeout(() => {
-            scene.remove(robotModel);
-            renderer.dispose();
-        }, 200);
     }).catch(err => console.error("Error loading robot model for preview:", err));
 }
 
@@ -352,146 +368,151 @@ function createPreviewPropeller(THREE, hubMaterial, bladeMaterial) {
 // New function to render the drone preview
 function renderDronePreview(canvas) {
     if (!canvas) return;
+    const assetId = canvas.closest('.asset-item')?.dataset.id;
+    if (!assetId) return;
 
-    // Create a temporary scene, camera, and renderer
+    const { scene, camera, renderer, animationFrameId } = setupPreviewEnvironment(canvas, assetId, { cameraPos: new THREE.Vector3(0, 1.5, 4.5), lookAt: new THREE.Vector3(0, 0.2, 0) });
+    activeRenderers[assetId].animationFrameId = animationFrameId;
+
+    const droneModel = createDronePreviewModel(THREE);
+    droneModel.position.y = 0.3;
+    droneModel.rotation.y = -Math.PI / 6;
+    scene.add(droneModel);
+    activeRenderers[assetId].model = droneModel;
+
+    const animate = () => {
+        if (!activeRenderers[assetId]) return; // Stop if cleaned up
+        droneModel.rotation.y += 0.01;
+        // Animate propellers
+        droneModel.traverse(child => {
+            if (child.name === "Blades") {
+                 child.rotation.y += 0.3;
+            }
+        });
+        renderer.render(scene, camera);
+        activeRenderers[assetId].animationFrameId = requestAnimationFrame(animate);
+    };
+    animate();
+}
+
+// Generic setup for preview scene, camera, renderer, lights
+function setupPreviewEnvironment(canvas, assetId, options = {}) {
+    if (activeRenderers[assetId]) {
+        cleanupPreview(assetId); // Clean up previous if exists
+    }
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x333333);
 
-    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-    camera.position.set(0, 1.5, 4.5); // Slightly different angle/distance for drone
-    camera.lookAt(0, 0.2, 0); // Look slightly lower
-
-    const renderer = new THREE.WebGLRenderer({
-        canvas: canvas,
-        antialias: true
-    });
-    renderer.setSize(canvas.width, canvas.height);
-
-    // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
-    directionalLight.position.set(2, 3, 3);
-    scene.add(directionalLight);
-
-    // Create the drone model
-    const droneModel = createDronePreviewModel(THREE);
-
-    // Position the drone slightly higher
-    droneModel.position.y = 0.3;
-    droneModel.rotation.y = -Math.PI / 6; // Slight rotation for better view
-
-    scene.add(droneModel);
-
-    // Render the scene
-    renderer.render(scene, camera);
-
-    // Cleanup
-    setTimeout(() => {
-        scene.remove(droneModel);
-        renderer.dispose();
-    }, 200);
-}
-
-// Function to render a GLTF model preview
-function renderGLTFPreview(canvas, modelPath) {
-    if (!canvas || !modelPath) {
-        console.error("Canvas or model path missing for GLTF preview.");
-        return;
-    }
-
-    // Create a temporary scene, camera, and renderer
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x333333); // Background for previews
-
     const camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.1, 100);
-    camera.position.set(0, 1, 3); // Adjust camera position based on expected model size
-    camera.lookAt(0, 0.5, 0); // Adjust lookAt point
+    camera.position.copy(options.cameraPos || new THREE.Vector3(0, 1, 3));
+    camera.lookAt(options.lookAt || new THREE.Vector3(0, 0.5, 0));
 
     const renderer = new THREE.WebGLRenderer({
         canvas: canvas,
         antialias: true,
-        alpha: true // Ensure background is transparent if needed
+        alpha: true
     });
     renderer.setSize(canvas.width, canvas.height);
 
-    // Add lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
     directionalLight.position.set(2, 3, 2);
     scene.add(directionalLight);
 
-    // Load the GLTF model
+    activeRenderers[assetId] = { scene, camera, renderer, animationFrameId: null, model: null };
+
+    return activeRenderers[assetId];
+}
+
+// Function to render a GLTF model preview
+function renderGLTFPreview(canvas, modelPath, assetId) {
+    if (!canvas || !modelPath || !assetId) {
+        console.error("Canvas, model path, or asset ID missing for GLTF preview.");
+        return;
+    }
+
+    const { scene, camera, renderer } = setupPreviewEnvironment(canvas, assetId);
+
     loader.load(
         modelPath,
         (gltf) => {
-            const model = gltf.scene;
+            if (!activeRenderers[assetId]) return; // Check if cleaned up before adding model
 
-            // --- Auto-center and scale the model ---
-            model.updateMatrixWorld(); // Ensure world matrix is computed
+            const model = gltf.scene;
+            model.updateMatrixWorld();
             const box = new THREE.Box3().setFromObject(model);
             const size = box.getSize(new THREE.Vector3());
             const center = box.getCenter(new THREE.Vector3());
-
-            // Calculate scale factor
             const maxSize = Math.max(size.x, size.y, size.z);
-            const desiredSize = 1.5; // Target size within the preview box
+            const desiredSize = 1.5;
             const scale = desiredSize / maxSize;
-
             model.scale.set(scale, scale, scale);
-
-            // Recalculate box after scaling
-            box.setFromObject(model);
+            box.setFromObject(model); // Recalculate box
             const newCenter = box.getCenter(new THREE.Vector3());
-
-            // Position the model so its center is at origin, then slightly raise it
             model.position.x -= newCenter.x;
-            model.position.y -= newCenter.y; // Center vertically first
-            model.position.y += 0.1; // Raise slightly from the ground
+            model.position.y -= newCenter.y;
+            model.position.y += 0.1; // Raise slightly
             model.position.z -= newCenter.z;
-            // --- End auto-center and scale ---
 
             scene.add(model);
+            activeRenderers[assetId].model = model; // Store model reference
 
-            // Render the scene
-            renderer.render(scene, camera);
-
-            // Optional: Animate rotation for dynamic preview
-            let modelRef = model; // Keep reference for animation/cleanup
             const animate = () => {
-                if (!modelRef) return; // Stop if model removed
-                modelRef.rotation.y += 0.01;
+                if (!activeRenderers[assetId]) return; // Stop if cleaned up
+                model.rotation.y += 0.01;
                 renderer.render(scene, camera);
-                requestAnimationFrame(animate);
+                activeRenderers[assetId].animationFrameId = requestAnimationFrame(animate);
             };
-            // animate(); // Uncomment to enable rotation
-
-            // Cleanup after a delay or on UI close
-            setTimeout(() => {
-                 if (modelRef && modelRef.parent) {
-                     scene.remove(modelRef);
-                 }
-                 modelRef = null;
-                 renderer.dispose(); // Dispose renderer resources
-            }, 5000); // Example cleanup after 5 seconds
-
+            animate();
         },
-        undefined, // onProgress callback (optional)
+        undefined,
         (error) => {
             console.error(`Error loading GLTF model (${modelPath}):`, error);
-            // Display error in canvas?
+            // Display error in canvas
             const ctx = canvas.getContext('2d');
             if (ctx) {
-                ctx.fillStyle = '#553333';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#ffaaaa';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
+                ctx.fillStyle = '#553333'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ffaaaa'; ctx.font = '12px Arial'; ctx.textAlign = 'center';
                 ctx.fillText('Load Error', canvas.width / 2, canvas.height / 2);
             }
+            // Clean up renderer if load fails
+             if (activeRenderers[assetId]) {
+                 cleanupPreview(assetId);
+             }
         }
     );
+}
+
+// --- End Preview Rendering Functions ---
+
+// --- Detail Toggle Handler ---
+function handleDetailToggle(event) {
+    event.stopPropagation(); // Prevent asset selection
+
+    const button = event.currentTarget;
+    const assetId = button.dataset.assetId;
+    const assetItem = button.closest('.asset-item');
+    const canvas = assetItem.querySelector('canvas');
+
+    if (!assetId || !assetItem || !canvas) return;
+
+    const asset = sampleAssets.find(a => a.id == assetId);
+    if (!asset || !asset.modelPathHigh || !asset.modelPathLow) return;
+
+    const currentDetail = assetItem.dataset.currentDetail;
+    const newDetail = currentDetail === 'high' ? 'low' : 'high';
+    const modelPath = newDetail === 'high' ? asset.modelPathHigh : asset.modelPathLow;
+
+    console.log(`Toggling detail for asset ${assetId} to ${newDetail}`);
+
+    // Update button text
+    button.textContent = newDetail === 'high' ? 'HD' : 'LD';
+    assetItem.dataset.currentDetail = newDetail;
+
+    // Re-render the preview
+    renderGLTFPreview(canvas, modelPath, assetId);
 }
 
 // Populate the asset grid based on selected category
@@ -499,6 +520,8 @@ function populateAssetGrid(categoryId) {
     const assetsGrid = document.getElementById('assets-grid');
     if (!assetsGrid) return;
 
+    // Cleanup previews before clearing grid
+    cleanupAssetPreviews();
     assetsGrid.innerHTML = '';
 
     // Filter assets by category
@@ -594,7 +617,6 @@ function handleSortChange(e) {
     sortAssets(e.target.value);
 }
 
-
 // Filter assets by search term
 function filterAssetsBySearch(searchTerm) {
     // Get current active category
@@ -617,6 +639,7 @@ function filterAssetsBySearch(searchTerm) {
     const assetsGrid = document.getElementById('assets-grid');
     if (!assetsGrid) return;
 
+    cleanupAssetPreviews(); // Clean up previews before clearing
     assetsGrid.innerHTML = '';
 
     if (filteredAssets.length === 0) {
@@ -659,10 +682,37 @@ function sortAssets(sortOption) {
     });
 
     // Clear and re-add sorted items
+    cleanupAssetPreviews(); // Clean up previews before clearing
     assetsGrid.innerHTML = '';
     assetItems.forEach(item => {
         assetsGrid.appendChild(item);
     });
+}
+
+// Function to clean up a single preview renderer and animation frame
+function cleanupPreview(assetId) {
+    const previewData = activeRenderers[assetId];
+    if (previewData) {
+        if (previewData.animationFrameId) {
+            cancelAnimationFrame(previewData.animationFrameId);
+        }
+        if (previewData.model && previewData.model.parent) {
+            previewData.scene.remove(previewData.model);
+            // Optionally dispose geometry/material if needed, be careful if shared
+        }
+        if (previewData.renderer) {
+            previewData.renderer.dispose();
+        }
+        delete activeRenderers[assetId];
+    }
+}
+
+// Function to clean up all active previews
+function cleanupAssetPreviews() {
+    Object.keys(activeRenderers).forEach(assetId => {
+        cleanupPreview(assetId);
+    });
+    activeRenderers = {}; // Reset the tracker
 }
 
 // Close the Assets UI
@@ -671,7 +721,7 @@ function closeAssetsUI() {
     if (assetsPanel) {
         assetsPanel.classList.remove('active');
     }
-
+    cleanupAssetPreviews(); // Clean up previews when closing the UI
     playTrack('city');
 }
 
