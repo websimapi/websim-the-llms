@@ -3,12 +3,15 @@ import { toggleConsolePanel } from './cityScene.js';
 import { hidePlotInfoPanel } from './plotHoverInfo.js'; // Import the hide function
 import { showConfirmationModal } from './confirmationModal.js';
 import { deactivateDroneTransport } from './llmDroneTransport.js'; // Import drone deactivation
+import { cityData } from './cityData.js'; // Import cityData for plot state
+import { llmDataManager } from './llmDataManager.js'; // Import LLM data manager
 
 // Setup UI interactions for the city scene
 export function setupUIInteractions() {
     setupMenuButtons();
     setupConsoleToggle();
     setupCameraControls();
+    // Removed setupConsolePanel call from here as it's called in cityScene.js after UI elements are guaranteed to exist
 }
 
 function setupMenuButtons() {
@@ -115,6 +118,10 @@ function openAssetsUI() {
 // Setup console toggle key listener
 export function setupConsoleToggle() {
     document.addEventListener('keydown', (event) => {
+        // Prevent console toggle if an input field is focused
+        if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+            return;
+        }
         if (event.key === '`' || event.key === '~') {
             toggleConsolePanel();
         }
@@ -133,10 +140,10 @@ function setupCameraControls() {
 // Setup console panel functionality
 export function setupConsolePanel() {
     const consolePanel = document.getElementById('console-panel');
-    const closeButton = document.querySelector('.console-close');
+    const closeButton = consolePanel.querySelector('.console-close');
     const exportButton = document.getElementById('export-data');
     const importButton = document.getElementById('import-data');
-    const gridToggleButton = document.getElementById('toggle-grid');
+    const gridToggleButton = document.getElementById('toggle-grid'); // Ensure this button exists or is handled
 
     if (closeButton) {
         closeButton.addEventListener('click', () => {
@@ -144,39 +151,170 @@ export function setupConsolePanel() {
         });
     }
 
+    // Only add grid toggle listener if the button exists
     if (gridToggleButton) {
-        gridToggleButton.addEventListener('click', () => {
-            if (window.cityGrid) {
-                window.cityGrid.visible = !window.cityGrid.visible;
-                const consoleContent = document.querySelector('#console-panel .console-content'); // Corrected selector
-                if (consoleContent) { // Add null check
-                    consoleContent.innerHTML += `<p>Grid ${window.cityGrid.visible ? 'shown' : 'hidden'}</p>`;
-                }
+         gridToggleButton.removeEventListener('click', toggleGridHandler); // Clean up previous listener
+         gridToggleButton.addEventListener('click', toggleGridHandler);
+    }
+
+    // Setup data export/import functionality
+    setupDataExportImport(exportButton, importButton, consolePanel); // Pass consolePanel
+}
+
+
+function toggleGridHandler() {
+     if (window.cityGrid) {
+         window.cityGrid.visible = !window.cityGrid.visible;
+         logToConsole(`Grid ${window.cityGrid.visible ? 'shown' : 'hidden'}`);
+     } else {
+         logToConsole('Grid not available');
+     }
+ }
+
+// Log messages to the in-game console
+function logToConsole(message) {
+    const consoleContent = document.querySelector('#console-panel .console-content');
+    if (consoleContent) {
+        const timestamp = new Date().toLocaleTimeString();
+        consoleContent.innerHTML += `<p>[${timestamp}] ${message}</p>`;
+        consoleContent.scrollTop = consoleContent.scrollHeight; // Scroll to bottom
+    }
+    console.log(message); // Also log to browser console
+}
+
+function setupDataExportImport(exportButton, importButton, consolePanel) {
+    if (exportButton) {
+        exportButton.addEventListener('click', () => {
+            try {
+                logToConsole("Starting data export...");
+                // 1. Get LLM data from localStorage (via llmDataManager)
+                const llms = llmDataManager.getAllLLMs();
+
+                // 2. Get plot state data from cityData (occupants, availability etc.)
+                // Create a serializable version of cityData.lots
+                const plotStates = cityData.lots.map(lot => ({
+                    id: lot.id,
+                    available: lot.available,
+                    occupants: lot.occupants || [] // Ensure occupants array exists
+                }));
+
+                // 3. Combine into a single export object
+                const exportData = {
+                    version: 1, // Add a version number for future compatibility
+                    exportedAt: new Date().toISOString(),
+                    llms: llms,
+                    plotStates: plotStates,
+                    // Add other relevant game state here if needed in the future
+                };
+
+                // 4. Convert to JSON string
+                const jsonData = JSON.stringify(exportData, null, 2); // Pretty print JSON
+
+                // 5. Create downloadable file
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                // Use city name in the filename if available, otherwise default
+                const cityName = cityData.name ? cityData.name.replace(/\s+/g, '_') : 'promptopia';
+                a.download = `${cityName}_save_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+
+                // 6. Clean up
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    logToConsole("Data export successful!");
+                }, 100);
+
+            } catch (error) {
+                console.error("Error during data export:", error);
+                logToConsole(`Error exporting data: ${error.message}`);
             }
         });
     }
 
-    // Setup data export/import functionality
-    setupDataExportImport(exportButton, importButton);
-}
+    if (importButton) {
+        importButton.addEventListener('click', () => {
+            logToConsole("Initiating data import...");
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
 
-function setupDataExportImport(exportButton, importButton) {
-    // Implementation of export/import functionality
-    // This can be expanded as needed
-     if (exportButton) {
-        exportButton.addEventListener('click', () => {
-             // Add export logic here - potentially using cityData.saveGame()
-             console.log("Export button clicked - Implement export logic.");
-             const consoleContent = document.querySelector('#console-panel .console-content');
-             if(consoleContent) consoleContent.innerHTML += `<p>Export requested...</p>`;
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) {
+                    logToConsole("Import cancelled: No file selected.");
+                    return;
+                }
+
+                logToConsole(`Selected file: ${file.name}`);
+                const reader = new FileReader();
+
+                reader.onload = event => {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        logToConsole("File read successfully. Validating data...");
+
+                        // Basic validation
+                        if (!importedData || typeof importedData !== 'object' || !Array.isArray(importedData.llms) || !Array.isArray(importedData.plotStates)) {
+                             throw new Error("Invalid save file format.");
+                        }
+
+                        // Ask for confirmation before overwriting
+                         showConfirmationModal(
+                             "Importing this file will overwrite your current city and LLMs. Are you sure you want to proceed?",
+                             () => { // onConfirm
+                                 try {
+                                     logToConsole("Import confirmed. Applying data...");
+                                     // 1. Update LLM Data
+                                     llmDataManager.importFromCityData({ llms: importedData.llms }); // Use existing import method
+                                     logToConsole(`Imported ${importedData.llms.length} LLMs.`);
+
+                                     // 2. Update Plot States
+                                     let updatedPlots = 0;
+                                     importedData.plotStates.forEach(importedPlot => {
+                                         const existingPlot = cityData.lots.find(lot => lot.id === importedPlot.id);
+                                         if (existingPlot) {
+                                             existingPlot.available = importedPlot.available;
+                                             existingPlot.occupants = importedPlot.occupants || []; // Ensure array exists
+                                             updatedPlots++;
+                                         }
+                                     });
+                                     logToConsole(`Updated ${updatedPlots} plot states.`);
+
+                                     // 3. Optional: Update other city data if included in export
+
+                                     logToConsole("Import successful! Reloading the city...");
+                                     // Reload the page to apply changes consistently
+                                     // Use setTimeout to allow the console message to be visible briefly
+                                     setTimeout(() => location.reload(), 1500);
+                                 } catch (applyError) {
+                                     console.error("Error applying imported data:", applyError);
+                                     logToConsole(`Error applying imported data: ${applyError.message}`);
+                                 }
+                             },
+                             () => { // onCancel
+                                 logToConsole("Import cancelled by user.");
+                             }
+                         );
+
+                    } catch (parseError) {
+                        console.error("Error parsing import file:", parseError);
+                        logToConsole(`Error importing data: ${parseError.message}`);
+                    }
+                };
+
+                reader.onerror = () => {
+                     console.error("Error reading file:", reader.error);
+                     logToConsole(`Error reading file: ${reader.error}`);
+                };
+
+                reader.readAsText(file);
+            };
+
+            input.click();
         });
-     }
-     if (importButton) {
-         importButton.addEventListener('click', () => {
-             // Add import logic here - potentially using cityData.loadGame()
-             console.log("Import button clicked - Implement import logic.");
-             const consoleContent = document.querySelector('#console-panel .console-content');
-             if(consoleContent) consoleContent.innerHTML += `<p>Import requested...</p>`;
-         });
-     }
+    }
 }
