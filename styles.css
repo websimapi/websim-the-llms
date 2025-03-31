@@ -426,11 +426,10 @@ input:checked + .llm-toggle-slider:before {
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, filter 0.3s ease; 
     color: white;
     margin: 0 10px;
     padding: 0;
-    transform: translateY(0);
     filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.4));
 }
 
@@ -439,8 +438,15 @@ input:checked + .llm-toggle-slider:before {
 }
 
 .circle-button:hover {
-    transform: translateY(-5px) scale(1.05);
-    filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.6));
+    transform: scale(1.05); 
+    filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.6)); 
+}
+
+.arc-button-1:hover, 
+.arc-button-2:hover, 
+.arc-button-3:hover, 
+.arc-button-4:hover {
+   transform: scale(1.05); 
 }
 
 .main-button {
@@ -448,15 +454,17 @@ input:checked + .llm-toggle-slider:before {
     z-index: 10;
     width: 80px;
     height: 80px;
+    transform: translateY(0); 
 }
 
 .arc-button-1, .arc-button-3 {
-    transform: translateY(20px);
+    transform: translateY(20px); 
 }
 
 .arc-button-2, .arc-button-4 {
-    transform: translateY(40px);
+    transform: translateY(40px); 
 }
+
 
 #start-button {
     padding: 15px 30px;
