@@ -1,9 +1,9 @@
 // Assets UI Management
 import { hidePlotInfoPanel } from './plotHoverInfo.js';
-import { playTrack } from './musicPlayer.js';
+import { playTrack } from './musicPlayer.js'; 
 import { showConfirmationModal } from './confirmationModal.js';
 import { deactivateDroneTransport } from './llmDroneTransport.js';
-import * as THREE from 'three'; // Add import for THREE.js
+import * as THREE from 'three'; 
 
 // Sample asset categories and data
 const assetCategories = [
@@ -21,7 +21,7 @@ const sampleAssets = [
     { id: 1, name: 'Modern House', category: 'buildings', image: '' },
     { id: 2, name: 'Office Building', category: 'buildings', image: '' },
     { id: 3, name: 'Robot Character', category: 'characters', image: '', isDefaultRobot: true },
-    { id: 4, name: 'Transport Drone', category: 'vehicles', image: '', isDrone: true }, // Added Drone asset
+    { id: 4, name: 'Transport Drone', category: 'vehicles', image: '', isDrone: true }, 
     { id: 5, name: 'Car', category: 'vehicles', image: '' },
     { id: 6, name: 'Office Chair', category: 'furniture', image: '' },
     { id: 7, name: 'Desk', category: 'furniture', image: '' },
@@ -400,7 +400,7 @@ function getIconForCategory(category) {
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M15 11V5l-3-3-3 3v2H3v14h18V11h-6zm-8 8H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm0-4H5V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm6 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
             </svg>`;
-        case 'characters': // Updated icon
+        case 'characters': 
             return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
             </svg>`;
@@ -531,7 +531,6 @@ function closeAssetsUI() {
         assetsPanel.classList.remove('active');
     }
     
-    // Play city music when returning to city view
     playTrack('city');
 }
 
@@ -540,12 +539,12 @@ export function openAssetsUI() {
     console.log('Opening Assets UI');
     hidePlotInfoPanel();
     
-    // Check if a drone transport is active
     if (window.droneActive) {
         showConfirmationModal(
             "Cancel drone transport to open the Assets UI?",
             () => {
                 deactivateDroneTransport(true);
+                playTrack('creation');
                 setupAssetsUI();
             },
             () => {
@@ -553,6 +552,7 @@ export function openAssetsUI() {
             }
         );
     } else {
+        playTrack('creation');
         setupAssetsUI();
     }
 }
