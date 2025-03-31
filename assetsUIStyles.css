@@ -207,10 +207,35 @@
     background-color: rgba(60, 179, 113, 0.7);
 }
 
+.asset-action-btn.delete {
+    background-color: rgba(255, 68, 68, 0.7); /* Red */
+}
+
+.asset-action-btn.delete:hover {
+    background-color: rgba(229, 57, 53, 0.9);
+}
+
 .assets-filter {
     margin-bottom: 20px;
     display: flex;
     gap: 10px;
+    align-items: center; /* Align items vertically */
+}
+
+.create-new-asset-btn {
+    padding: 10px 15px;
+    background-color: #3cb371;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    white-space: nowrap; /* Prevent wrapping */
+}
+
+.create-new-asset-btn:hover {
+    background-color: #2a8c5a;
 }
 
 .search-container {
@@ -242,6 +267,128 @@
     border: none;
     border-radius: 4px;
     color: white;
+}
+
+#create-asset-form {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: 1px solid #3cb371;
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 15px;
+}
+
+#create-asset-form.active {
+    display: flex; /* Show when active */
+}
+
+.create-asset-title {
+    color: #3cb371;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.create-asset-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.create-asset-label {
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.create-asset-input,
+.create-asset-select,
+.create-asset-file-input {
+    width: 100%;
+    padding: 10px;
+    background-color: #333;
+    border: 1px solid #555;
+    color: white;
+    border-radius: 4px;
+}
+
+.create-asset-file-label {
+    display: block;
+    padding: 10px;
+    background-color: #444;
+    border: 1px dashed #666;
+    color: #ccc;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.create-asset-file-label:hover {
+    background-color: #555;
+    border-color: #777;
+}
+
+.create-asset-file-input[type="file"] {
+    display: none; /* Hide the actual file input */
+}
+
+.file-name-display {
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-top: 5px;
+    text-align: center;
+}
+
+.create-asset-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.create-asset-save-btn,
+.create-asset-cancel-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.create-asset-save-btn {
+    background-color: #3cb371;
+    color: white;
+}
+
+.create-asset-save-btn:hover {
+    background-color: #2a8c5a;
+}
+
+.create-asset-cancel-btn {
+    background-color: #555;
+    color: white;
+}
+
+.create-asset-cancel-btn:hover {
+    background-color: #666;
+}
+
+.upload-progress {
+    margin-top: 10px;
+    text-align: center;
+    color: #3cb371;
+    font-style: italic;
+    display: none; /* Hidden by default */
+}
+
+.asset-image-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Use contain for general images */
 }
 
 /* Mobile responsiveness */
