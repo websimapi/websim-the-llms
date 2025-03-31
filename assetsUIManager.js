@@ -221,7 +221,7 @@ function createAssetItemElement(asset) {
             <div class="asset-image">
                 ${imageContent}
             </div>
-            ${detailToggle} {/* Add the toggle button here */}
+            ${detailToggle} 
         </div>
         <div class="asset-info">
             <h3 class="asset-name">${asset.name}</h3>
@@ -265,9 +265,7 @@ function renderDefaultRobotPreview(canvas) {
     const assetId = canvas.closest('.asset-item')?.dataset.id;
     if (!assetId) return;
 
-    const { scene, camera, renderer, animationFrameId } = setupPreviewEnvironment(canvas, assetId);
-    activeRenderers[assetId].animationFrameId = animationFrameId; // Store animation frame ID
-
+    const { scene, camera, renderer } = setupPreviewEnvironment(canvas, assetId);
     import('./llmModelCreationRenderer.js').then(module => {
         const robotModel = module.createRobotModel(scene, '#3cb371', 'modern').model;
         robotModel.position.y = -0.8; // Adjust Y position for preview
@@ -275,10 +273,11 @@ function renderDefaultRobotPreview(canvas) {
         activeRenderers[assetId].model = robotModel; // Store model reference for cleanup
 
         const animate = () => {
-            if (!activeRenderers[assetId]) return; // Stop if cleaned up
+            const previewData = activeRenderers[assetId]; // Get current data
+            if (!previewData) return; // Stop if cleaned up
             robotModel.rotation.y += 0.01;
-            renderer.render(scene, camera);
-            activeRenderers[assetId].animationFrameId = requestAnimationFrame(animate);
+            previewData.renderer.render(previewData.scene, previewData.camera); // Use stored renderer/scene/camera
+            previewData.animationFrameId = requestAnimationFrame(animate); // Store new frame ID
         };
         animate();
 
@@ -371,8 +370,7 @@ function renderDronePreview(canvas) {
     const assetId = canvas.closest('.asset-item')?.dataset.id;
     if (!assetId) return;
 
-    const { scene, camera, renderer, animationFrameId } = setupPreviewEnvironment(canvas, assetId, { cameraPos: new THREE.Vector3(0, 1.5, 4.5), lookAt: new THREE.Vector3(0, 0.2, 0) });
-    activeRenderers[assetId].animationFrameId = animationFrameId;
+    const { scene, camera, renderer } = setupPreviewEnvironment(canvas, assetId, { cameraPos: new THREE.Vector3(0, 1.5, 4.5), lookAt: new THREE.Vector3(0, 0.2, 0) });
 
     const droneModel = createDronePreviewModel(THREE);
     droneModel.position.y = 0.3;
@@ -381,7 +379,8 @@ function renderDronePreview(canvas) {
     activeRenderers[assetId].model = droneModel;
 
     const animate = () => {
-        if (!activeRenderers[assetId]) return; // Stop if cleaned up
+        const previewData = activeRenderers[assetId]; // Get current data
+        if (!previewData) return; // Stop if cleaned up
         droneModel.rotation.y += 0.01;
         // Animate propellers
         droneModel.traverse(child => {
@@ -389,17 +388,16 @@ function renderDronePreview(canvas) {
                  child.rotation.y += 0.3;
             }
         });
-        renderer.render(scene, camera);
-        activeRenderers[assetId].animationFrameId = requestAnimationFrame(animate);
+        previewData.renderer.render(previewData.scene, previewData.camera); // Use stored renderer/scene/camera
+        previewData.animationFrameId = requestAnimationFrame(animate); // Store new frame ID
     };
     animate();
 }
 
 // Generic setup for preview scene, camera, renderer, lights
 function setupPreviewEnvironment(canvas, assetId, options = {}) {
-    if (activeRenderers[assetId]) {
-        cleanupPreview(assetId); // Clean up previous if exists
-    }
+    // Clean up previous renderer for this asset ID if it exists
+    cleanupPreview(assetId);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x333333);
@@ -408,12 +406,14 @@ function setupPreviewEnvironment(canvas, assetId, options = {}) {
     camera.position.copy(options.cameraPos || new THREE.Vector3(0, 1, 3));
     camera.lookAt(options.lookAt || new THREE.Vector3(0, 0.5, 0));
 
+    // Important: Make sure the renderer uses the provided canvas
     const renderer = new THREE.WebGLRenderer({
         canvas: canvas,
         antialias: true,
-        alpha: true
+        alpha: true // Keep alpha for transparency if needed
     });
-    renderer.setSize(canvas.width, canvas.height);
+    // Explicitly set the size again in case canvas dimensions changed
+    renderer.setSize(canvas.width, canvas.height, false); // Set false to prevent style update
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
@@ -421,7 +421,9 @@ function setupPreviewEnvironment(canvas, assetId, options = {}) {
     directionalLight.position.set(2, 3, 2);
     scene.add(directionalLight);
 
+    // Store the newly created environment
     activeRenderers[assetId] = { scene, camera, renderer, animationFrameId: null, model: null };
+    console.log(`Setup preview environment for asset ${assetId}`);
 
     return activeRenderers[assetId];
 }
@@ -433,41 +435,69 @@ function renderGLTFPreview(canvas, modelPath, assetId) {
         return;
     }
 
-    const { scene, camera, renderer } = setupPreviewEnvironment(canvas, assetId);
+    // Get the preview environment (cleans up previous if needed)
+    const previewData = setupPreviewEnvironment(canvas, assetId);
+    const { scene, camera, renderer } = previewData;
+
+    console.log(`Loading GLTF model: ${modelPath} for asset ${assetId}`);
 
     loader.load(
         modelPath,
         (gltf) => {
-            if (!activeRenderers[assetId]) return; // Check if cleaned up before adding model
+            // Double check if the preview for this assetId still exists after async load
+            const currentPreviewData = activeRenderers[assetId];
+            if (!currentPreviewData) {
+                console.log(`Preview for asset ${assetId} cleaned up before model loaded.`);
+                return;
+            }
 
             const model = gltf.scene;
-            model.updateMatrixWorld();
+
+            // --- Model centering and scaling logic ---
+            model.updateMatrixWorld(); // Ensure matrix is updated
             const box = new THREE.Box3().setFromObject(model);
             const size = box.getSize(new THREE.Vector3());
             const center = box.getCenter(new THREE.Vector3());
-            const maxSize = Math.max(size.x, size.y, size.z);
-            const desiredSize = 1.5;
-            const scale = desiredSize / maxSize;
-            model.scale.set(scale, scale, scale);
-            box.setFromObject(model); // Recalculate box
-            const newCenter = box.getCenter(new THREE.Vector3());
-            model.position.x -= newCenter.x;
-            model.position.y -= newCenter.y;
-            model.position.y += 0.1; // Raise slightly
-            model.position.z -= newCenter.z;
+
+            // Check for invalid bounding box
+            if (!box.isEmpty() && size.length() > 0.001) {
+                const maxSize = Math.max(size.x, size.y, size.z);
+                const desiredSize = 1.5; // Target size for the preview box
+                const scale = desiredSize / maxSize;
+
+                model.scale.set(scale, scale, scale);
+
+                // Recalculate box after scaling
+                model.updateMatrixWorld();
+                const scaledBox = new THREE.Box3().setFromObject(model);
+                const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+
+                // Adjust position to center the model and place its bottom near y=0
+                model.position.x -= scaledCenter.x;
+                model.position.y -= scaledBox.min.y; // Move bottom to y=0
+                model.position.y += 0.05; // Add slight offset above ground
+                model.position.z -= scaledCenter.z;
+
+            } else {
+                 console.warn(`Could not calculate valid bounding box for ${modelPath}. Using default position/scale.`);
+                 model.position.set(0, 0, 0);
+                 model.scale.set(1, 1, 1);
+            }
+            // --- End centering logic ---
 
             scene.add(model);
-            activeRenderers[assetId].model = model; // Store model reference
+            currentPreviewData.model = model; // Store model reference
 
             const animate = () => {
-                if (!activeRenderers[assetId]) return; // Stop if cleaned up
+                const framePreviewData = activeRenderers[assetId]; // Check again inside animation frame
+                if (!framePreviewData) return;
                 model.rotation.y += 0.01;
-                renderer.render(scene, camera);
-                activeRenderers[assetId].animationFrameId = requestAnimationFrame(animate);
+                framePreviewData.renderer.render(framePreviewData.scene, framePreviewData.camera);
+                framePreviewData.animationFrameId = requestAnimationFrame(animate);
             };
             animate();
         },
-        undefined,
+        undefined, // Progress callback (optional)
         (error) => {
             console.error(`Error loading GLTF model (${modelPath}):`, error);
             // Display error in canvas
@@ -478,9 +508,7 @@ function renderGLTFPreview(canvas, modelPath, assetId) {
                 ctx.fillText('Load Error', canvas.width / 2, canvas.height / 2);
             }
             // Clean up renderer if load fails
-             if (activeRenderers[assetId]) {
-                 cleanupPreview(assetId);
-             }
+             cleanupPreview(assetId); // Use the cleanup function
         }
     );
 }
@@ -511,7 +539,7 @@ function handleDetailToggle(event) {
     button.textContent = newDetail === 'high' ? 'HD' : 'LD';
     assetItem.dataset.currentDetail = newDetail;
 
-    // Re-render the preview
+    // Re-render the preview (will call setupPreviewEnvironment which handles cleanup)
     renderGLTFPreview(canvas, modelPath, assetId);
 }
 
@@ -693,12 +721,25 @@ function sortAssets(sortOption) {
 function cleanupPreview(assetId) {
     const previewData = activeRenderers[assetId];
     if (previewData) {
+        console.log(`Cleaning up preview for asset ${assetId}`);
         if (previewData.animationFrameId) {
             cancelAnimationFrame(previewData.animationFrameId);
         }
         if (previewData.model && previewData.model.parent) {
+             // Recursively dispose of geometry and materials in the model
+             previewData.model.traverse(child => {
+                 if (child.isMesh) {
+                     if (child.geometry) child.geometry.dispose();
+                     if (child.material) {
+                         if (Array.isArray(child.material)) {
+                             child.material.forEach(mat => mat.dispose());
+                         } else {
+                             child.material.dispose();
+                         }
+                     }
+                 }
+             });
             previewData.scene.remove(previewData.model);
-            // Optionally dispose geometry/material if needed, be careful if shared
         }
         if (previewData.renderer) {
             previewData.renderer.dispose();
@@ -709,6 +750,7 @@ function cleanupPreview(assetId) {
 
 // Function to clean up all active previews
 function cleanupAssetPreviews() {
+    console.log("Cleaning up all asset previews...");
     Object.keys(activeRenderers).forEach(assetId => {
         cleanupPreview(assetId);
     });
@@ -735,7 +777,7 @@ export function openAssetsUI() {
             "Cancel drone transport to open the Assets UI?",
             () => {
                 deactivateDroneTransport(true);
-                playTrack('creation');
+                playTrack('creation'); // Switch to creation music
                 setupAssetsUI();
             },
             () => {
@@ -743,7 +785,7 @@ export function openAssetsUI() {
             }
         );
     } else {
-        playTrack('creation');
+        playTrack('creation'); // Switch to creation music
         setupAssetsUI();
     }
 }
